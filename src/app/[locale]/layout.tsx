@@ -3,6 +3,8 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
+import { getCurrentMember } from '@/lib/auth';
+import { buildThemeVars } from '@/lib/theme';
 import '../globals.css';
 
 export const metadata: Metadata = {
@@ -18,16 +20,21 @@ interface LocaleLayoutProps {
 export default async function LocaleLayout({ children, params }: LocaleLayoutProps) {
   const { locale } = await params;
 
-  // Validate the locale
   if (!routing.locales.includes(locale as 'de' | 'en')) {
     notFound();
   }
 
   const messages = await getMessages();
+  const member = await getCurrentMember();
+
+  // Build theme CSS variables from the logged-in member's club
+  const themeVars = member?.club
+    ? buildThemeVars(member.club)
+    : {};
 
   return (
     <html lang={locale}>
-      <body>
+      <body style={themeVars as React.CSSProperties}>
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>

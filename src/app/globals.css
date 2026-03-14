@@ -2,6 +2,24 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Club theme defaults — overridden dynamically via inline style on <body> */
+:root {
+  --color-primary: #005982;
+  --color-secondary: #3089ac;
+  --color-accent: #a91a1a;
+  --color-bg: #ffffff;
+}
+
+/* Themed button/link colors using CSS variables */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-secondary);
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
