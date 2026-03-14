@@ -7,10 +7,15 @@ export function buildThemeVars(club: {
   bgColor: string;
 }): Record<string, string> {
   return {
-    '--color-primary': `#${club.farbe1}`,
+    // Tailwind-safe names (--kn-* avoids conflicts with Tailwind's @theme tokens)
+    '--kn-primary':   `#${club.farbe1}`,
+    '--kn-secondary': `#${club.farbe2}`,
+    '--kn-accent':    `#${club.farbe3}`,
+    '--kn-bg':        `#${club.bgColor}`,
+    // Also set the old names for any components that still reference them
+    '--color-primary':   `#${club.farbe1}`,
     '--color-secondary': `#${club.farbe2}`,
-    '--color-accent': `#${club.farbe3}`,
-    '--color-bg': `#${club.bgColor}`,
+    '--color-accent':    `#${club.farbe3}`,
   };
 }
 

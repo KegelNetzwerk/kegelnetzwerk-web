@@ -79,10 +79,12 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
 
       // Apply new theme colors immediately
       const root = document.body;
+      root.style.setProperty('--kn-primary', farbe1);
+      root.style.setProperty('--kn-secondary', farbe2);
+      root.style.setProperty('--kn-accent', farbe3);
       root.style.setProperty('--color-primary', farbe1);
       root.style.setProperty('--color-secondary', farbe2);
       root.style.setProperty('--color-accent', farbe3);
-      root.style.setProperty('--color-bg', bgColor);
     } finally {
       setSaving(false);
     }

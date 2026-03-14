@@ -3,29 +3,46 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import MainNav from './MainNav';
 
-interface AppShellProps {
-  children: React.ReactNode;
-}
-
-export default async function AppShell({ children }: AppShellProps) {
+export default async function AppShell({ children }: { children: React.ReactNode }) {
   const member = await getCurrentMember();
-  const locale = 'de'; // resolved from routing; simplified here
+  const locale = 'de';
   const isAdmin = member?.role === 'ADMIN';
 
   return (
-    <div className="kn-bg">
-      <div className="kn-page">
+    <div
+      className="min-h-screen py-6 px-4"
+      style={{
+        backgroundImage: "url('/images/fullbg.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+        backgroundAttachment: 'fixed',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      <div
+        className="mx-auto max-w-6xl"
+        style={{ filter: 'drop-shadow(0 4px 28px rgba(0,0,0,0.55))' }}
+      >
         <Header member={member} />
         <MainNav isAdmin={isAdmin ?? false} locale={locale} nickname={member?.nickname ?? ''} />
-        <div className="kn-body">
+        <div className="flex" style={{ background: '#ffffff', minHeight: 420 }}>
           <Sidebar member={member} locale={locale} />
-          <main className="kn-main">
+          <main className="flex-1 p-7 min-w-0">
             {children}
           </main>
         </div>
-        <footer className="kn-footer">
-          <span className="kn-footer-text">KegelNetzwerk</span>
-        </footer>
+        <div
+          className="flex items-center justify-center h-9"
+          style={{
+            background: 'linear-gradient(to bottom, #111111, #2a2a2a)',
+            borderBottomLeftRadius: 30,
+            borderBottomRightRadius: 30,
+          }}
+        >
+          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            KegelNetzwerk
+          </span>
+        </div>
       </div>
     </div>
   );

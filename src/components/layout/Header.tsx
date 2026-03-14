@@ -1,24 +1,28 @@
 import Link from 'next/link';
 import type { Member, Club } from '@prisma/client';
 
-interface HeaderProps {
-  member: (Member & { club: Club }) | null;
-}
-
-export default function Header({ member }: HeaderProps) {
-  const headerSrc =
+export default function Header({ member }: { member: (Member & { club: Club }) | null }) {
+  const logoSrc =
     member?.club?.header && member.club.header !== 'none'
       ? member.club.header
       : '/images/splash.png';
 
   return (
-    <header className="kn-header">
+    <header
+      className="flex items-center justify-center overflow-hidden"
+      style={{
+        background: 'linear-gradient(to bottom, #2e2e2e 0%, #111111 100%)',
+        height: 120,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+      }}
+    >
       <Link href="/">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={headerSrc}
+          src={logoSrc}
           alt="KegelNetzwerk"
-          className="kn-header-logo"
+          style={{ height: 82, objectFit: 'contain' }}
         />
       </Link>
     </header>
