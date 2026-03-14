@@ -26,6 +26,7 @@ export default function MainNav({ isAdmin, locale }: MainNavProps) {
     { href: `/${locale}/scoring`, label: t('scoring') },
     { href: `/${locale}/club`, label: t('clubProfile') },
     { href: `/${locale}/contact`, label: t('contactList') },
+    { href: `/${locale}/profile`, label: t('editProfile') },
     { href: `/${locale}/secret-santa`, label: t('secretSanta') },
     { href: `/${locale}/admin`, label: t('admin'), adminOnly: true },
   ];
