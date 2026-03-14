@@ -13,9 +13,10 @@ interface NavItem {
 interface MainNavProps {
   isAdmin: boolean;
   locale: string;
+  nickname: string;
 }
 
-export default function MainNav({ isAdmin, locale }: MainNavProps) {
+export default function MainNav({ isAdmin, locale, nickname }: MainNavProps) {
   const t = useTranslations('nav');
   const pathname = usePathname();
 
@@ -26,33 +27,38 @@ export default function MainNav({ isAdmin, locale }: MainNavProps) {
     { href: `/${locale}/scoring`, label: t('scoring') },
     { href: `/${locale}/club`, label: t('clubProfile') },
     { href: `/${locale}/contact`, label: t('contactList') },
-    { href: `/${locale}/profile`, label: t('editProfile') },
     { href: `/${locale}/secret-santa`, label: t('secretSanta') },
     { href: `/${locale}/admin`, label: t('admin'), adminOnly: true },
   ];
 
   return (
-    <nav className="flex flex-col gap-1">
-      {navItems
-        .filter((item) => !item.adminOnly || isAdmin)
-        .map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
-              pathname.startsWith(item.href)
-                ? 'text-white'
-                : 'text-white/70 hover:text-white hover:bg-white/10'
-            }`}
-            style={
-              pathname.startsWith(item.href)
-                ? { backgroundColor: 'var(--color-secondary)' }
-                : {}
-            }
-          >
-            {item.label}
-          </Link>
-        ))}
+    <nav className="kn-navbar">
+      <div className="kn-navbar-links">
+        {navItems
+          .filter((item) => !item.adminOnly || isAdmin)
+          .map((item) => {
+            const active = pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`kn-nav-link${active ? ' kn-nav-link-active' : ''}`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+      </div>
+      <div className="kn-navbar-right">
+        <Link href={`/${locale}/profile`} className="kn-nav-link">
+          {nickname}
+        </Link>
+        <form action="/api/auth/logout" method="POST">
+          <button type="submit" className="kn-nav-link kn-nav-logout">
+            {t('logout')}
+          </button>
+        </form>
+      </div>
     </nav>
   );
 }

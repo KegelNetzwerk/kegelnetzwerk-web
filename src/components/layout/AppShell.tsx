@@ -1,6 +1,7 @@
 import { getCurrentMember } from '@/lib/auth';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import MainNav from './MainNav';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -8,15 +9,23 @@ interface AppShellProps {
 
 export default async function AppShell({ children }: AppShellProps) {
   const member = await getCurrentMember();
+  const locale = 'de'; // resolved from routing; simplified here
+  const isAdmin = member?.role === 'ADMIN';
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header member={member} />
-      <div className="flex flex-1">
-        <Sidebar member={member} />
-        <main className="flex-1 p-6 max-w-5xl">
-          {children}
-        </main>
+    <div className="kn-bg">
+      <div className="kn-page">
+        <Header member={member} />
+        <MainNav isAdmin={isAdmin ?? false} locale={locale} nickname={member?.nickname ?? ''} />
+        <div className="kn-body">
+          <Sidebar member={member} locale={locale} />
+          <main className="kn-main">
+            {children}
+          </main>
+        </div>
+        <footer className="kn-footer">
+          <span className="kn-footer-text">KegelNetzwerk</span>
+        </footer>
       </div>
     </div>
   );

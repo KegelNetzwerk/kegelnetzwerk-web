@@ -3,22 +3,259 @@
 @import "shadcn/tailwind.css";
 @plugin "@tailwindcss/typography";
 
-/* Club theme defaults — overridden dynamically via inline style on <body> */
+/* ── Club theme defaults (overridden per-club via inline style on <body>) ── */
 :root {
-  --color-primary: #005982;
+  --color-primary:   #005982;
   --color-secondary: #3089ac;
-  --color-accent: #a91a1a;
-  --color-bg: #ffffff;
+  --color-accent:    #a91a1a;
+  --color-bg:        #ffffff;
 }
 
-/* Themed button/link colors using CSS variables */
+/* ═══════════════════════════════════════════════════════════════════════════
+   KEGELNETZWERK LAYOUT
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Full-page background image */
+.kn-bg {
+  min-height: 100vh;
+  background: url('/images/fullbg.jpg') center top / cover fixed no-repeat;
+  padding: 25px 15px 40px;
+}
+
+/* Centered page container */
+.kn-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  /* Subtle drop shadow so the card floats above the photo */
+  filter: drop-shadow(0 4px 24px rgba(0,0,0,0.45));
+}
+
+/* ── Header bar (dark, rounded top) ── */
+.kn-header {
+  background: linear-gradient(to bottom, #2a2a2a 0%, #111111 100%);
+  border-top-left-radius:  35px;
+  border-top-right-radius: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 130px;
+  overflow: hidden;
+}
+
+.kn-header-logo {
+  height: 90px;
+  object-fit: contain;
+}
+
+/* ── Navigation bar (primary-to-secondary gradient) ── */
+.kn-navbar {
+  background: linear-gradient(to bottom, var(--color-primary) 0%, var(--color-secondary) 100%);
+  height: 44px;
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 0 8px;
+}
+
+.kn-navbar-auth {
+  height: 10px;
+}
+
+.kn-navbar-links {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0;
+}
+
+.kn-navbar-right {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+.kn-nav-link {
+  color: rgba(255,255,255,0.85);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.kn-nav-link:hover,
+.kn-nav-link-active {
+  background: rgba(0,0,0,0.20);
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.kn-nav-logout {
+  font-family: inherit;
+  font-size: 13px;
+}
+
+/* ── Body row (sidebar + main) ── */
+.kn-body {
+  background: #ffffff;
+  display: flex;
+  min-height: 420px;
+}
+
+/* ── Sidebar ── */
+.kn-sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: linear-gradient(to bottom, var(--color-primary) 0%, color-mix(in srgb, var(--color-primary) 70%, #000) 100%);
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kn-sidebar-logo-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.kn-sidebar-logo {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+}
+
+.kn-sidebar-logo-placeholder {
+  width: 110px;
+  height: 110px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.5);
+  font-size: 36px;
+  font-weight: bold;
+}
+
+.kn-sidebar-clubname {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+}
+
+.kn-sidebar-divider {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  margin: 4px 0;
+}
+
+.kn-sidebar-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kn-sidebar-info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+}
+
+.kn-sidebar-label {
+  color: rgba(255,255,255,0.55);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Main content area ── */
+.kn-main {
+  flex: 1;
+  padding: 28px 30px;
+  min-width: 0;
+}
+
+/* Auth pages: centred card inside white area */
+.kn-auth-body {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.kn-auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+
+/* ── Footer bar (dark, rounded bottom) ── */
+.kn-footer {
+  background: linear-gradient(to bottom, #111111 0%, #2a2a2a 100%);
+  border-bottom-left-radius:  35px;
+  border-bottom-right-radius: 35px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kn-footer-text {
+  color: rgba(255,255,255,0.4);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TYPOGRAPHY & COMPONENTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Page headings follow club accent color */
+.kn-main h1 {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--color-accent);
+  padding-bottom: 16px;
+  margin: 0;
+}
+
+.kn-main h2 {
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--color-secondary);
+  margin: 0;
+}
+
+/* Gradient divider bar (used as section separator) */
+.kn-gradientbar {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  margin: 12px 0;
+}
+
+/* Themed primary button */
 .btn-primary {
-  background-color: var(--color-primary);
+  background: linear-gradient(to bottom, var(--color-primary), var(--color-secondary));
   color: white;
+  font-weight: 600;
 }
 
 .btn-primary:hover {
-  background-color: var(--color-secondary);
+  background: linear-gradient(to bottom, var(--color-secondary), var(--color-primary));
 }
 
 @custom-variant dark (&:is(.dark *));

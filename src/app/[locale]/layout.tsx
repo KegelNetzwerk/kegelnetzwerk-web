@@ -34,7 +34,12 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   return (
     <html lang={locale}>
-      <body style={themeVars as React.CSSProperties}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <body style={{ fontFamily: "'Open Sans', sans-serif", ...themeVars as React.CSSProperties }}>
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
