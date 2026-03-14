@@ -19,6 +19,7 @@ export default function RichTextEditor({
   minHeight = '120px',
 }: RichTextEditorProps) {
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
       StarterKit,
       Placeholder.configure({ placeholder }),
