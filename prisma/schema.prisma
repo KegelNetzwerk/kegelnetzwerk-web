@@ -1,13 +1,301 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Prisma schema for KegelNetzwerk
+// Multi-tenant: all clubs share one database, separated by clubId
 
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  MEMBER
+  ADMIN
+}
+
+enum Unit {
+  POINTS
+  EURO
+}
+
+enum CommentType {
+  NEWS
+  VOTE
+  EVENT
+}
+
+// ─── Club ────────────────────────────────────────────────────────────────────
+
+model Club {
+  id             Int      @id @default(autoincrement())
+  name           String   @unique // used as URL slug
+  regCode        String   // hashed registration code
+  regDate        DateTime @default(now())
+
+  // Appearance
+  pic            String   @default("none")   // logo image path
+  header         String   @default("none")   // banner image path
+  aboutUs        String   @default("")       // rich text "Über uns"
+  farbe1         String   @default("005982") // primary color hex
+  farbe2         String   @default("3089AC") // secondary color hex
+  farbe3         String   @default("A91A1A") // accent color hex
+  mono           Boolean  @default(false)
+  bg1            Int      @default(0)        // background preset 0-2
+  bg2            Int      @default(0)        // inner background preset 0-3
+  bgColor        String   @default("FFFFFF") // custom background color hex
+
+  // Banking info (displayed on cash overview)
+  accountHolder  String   @default("")
+  accountNumber  String   @default("")
+  bankCode       String   @default("")
+  iban           String   @default("")
+  bic            String   @default("")
+  paypal         String   @default("")
+
+  createdAt      DateTime @default(now())
+
+  // Relations
+  members          Member[]
+  news             News[]
+  votes            Vote[]
+  events           Event[]
+  gamesOrPenalties GameOrPenalty[]
+  parts            Part[]
+  results          Result[]
+}
+
+// ─── Member ───────────────────────────────────────────────────────────────────
+
+model Member {
+  id                   Int      @id @default(autoincrement())
+  clubId               Int
+  club                 Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+
+  nickname             String
+  email                String   @default("")
+  firstName            String   @default("")
+  lastName             String   @default("")
+  birthday             DateTime?
+  passwordHash         String
+  role                 Role     @default(MEMBER)
+  pic                  String   @default("none") // avatar path
+  phone                String   @default("")
+
+  // Secret Santa self-relation
+  secretSantaPartnerId Int?
+  secretSantaPartner   Member?  @relation("SecretSanta", fields: [secretSantaPartnerId], references: [id])
+  secretSantaOf        Member[] @relation("SecretSanta")
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Relations
+  sessions             Session[]
+  passwordResetTokens  PasswordResetToken[]
+  authoredNews         News[]               @relation("NewsAuthor")
+  authoredVotes        Vote[]               @relation("VoteAuthor")
+  authoredEvents       Event[]              @relation("EventAuthor")
+  votings              Voting[]
+  eventCancellations   EventCancellation[]
+  comments             Comment[]
+  results              Result[]
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+
+model Session {
+  id        String   @id @default(cuid())
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model RegistrationCode {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique // hashed
+  createdAt DateTime @default(now())
+}
+
+// ─── News ─────────────────────────────────────────────────────────────────────
+
+model News {
+  id             Int      @id @default(autoincrement())
+  clubId         Int
+  club           Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId       Int
+  author         Member   @relation("NewsAuthor", fields: [authorId], references: [id])
+  editorIds      String   @default("") // comma-separated member IDs
+  title          String
+  content        String   // rich text (HTML)
+  internal       Boolean  @default(false)
+  emailNotified  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  comments       Comment[]
+}
+
+// ─── Votes / Polls ────────────────────────────────────────────────────────────
+
+model Vote {
+  id             Int      @id @default(autoincrement())
+  clubId         Int
+  club           Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId       Int
+  author         Member   @relation("VoteAuthor", fields: [authorId], references: [id])
+  title          String
+  description    String   @default("") // rich text
+  maxVoices      Int      @default(1)  // -1 = unlimited
+  anonymous      Boolean  @default(false)
+  maybe          Boolean  @default(false)
+  previewResults Boolean  @default(false)
+  allowSwitch    Boolean  @default(false)
+  closed         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  options        VoteOption[]
+  votings        Voting[]
+  comments       Comment[]
+}
+
+model VoteOption {
+  id       Int    @id @default(autoincrement())
+  voteId   Int
+  vote     Vote   @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  text     String
+  position Int    @default(0)
+
+  votings  Voting[]
+}
+
+model Voting {
+  id        Int        @id @default(autoincrement())
+  voteId    Int
+  vote      Vote       @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  optionId  Int
+  option    VoteOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  memberId  Int
+  member    Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  maybe     Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  clubId      Int
+  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId    Int
+  author      Member   @relation("EventAuthor", fields: [authorId], references: [id])
+  date        DateTime
+  subject     String
+  location    String   @default("")
+  description String   @default("") // rich text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cancellations EventCancellation[]
+  comments      Comment[]
+}
+
+model EventCancellation {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  memberId  Int
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, memberId])
+}
+
+// ─── Comments ─────────────────────────────────────────────────────────────────
+
+model Comment {
+  id          Int         @id @default(autoincrement())
+  authorId    Int
+  author      Member      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content     String
+  type        CommentType
+  referenceId Int         // FK to News.id, Vote.id, or Event.id
+
+  // Optional explicit FK relations for each type
+  news        News?       @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  newsId      Int?
+  vote        Vote?       @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  voteId      Int?
+  event       Event?      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     Int?
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// ─── Scoring ──────────────────────────────────────────────────────────────────
+
+model GameOrPenalty {
+  id      Int    @id @default(autoincrement())
+  clubId  Int
+  club    Club   @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  name    String
+
+  parts   Part[]
+  results Result[]
+
+  createdAt DateTime @default(now())
+}
+
+model Part {
+  id               Int           @id @default(autoincrement())
+  clubId           Int
+  club             Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  gameOrPenaltyId  Int
+  gameOrPenalty    GameOrPenalty @relation(fields: [gameOrPenaltyId], references: [id], onDelete: Cascade)
+  name             String
+  unit             Unit          @default(POINTS)
+  once             Boolean       @default(false) // fixed per session
+  value            Float         @default(0)
+  variable         Boolean       @default(false) // value entered at result-entry time
+  factor           Float         @default(1.0)
+  bonus            Float         @default(0.0)
+  description      String        @default("") // rich text
+  pic              String        @default("none")
+
+  results          Result[]
+
+  createdAt        DateTime      @default(now())
+}
+
+model Result {
+  id              Int           @id @default(autoincrement())
+  clubId          Int
+  club            Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  memberId        Int
+  member          Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  partId          Int
+  part            Part          @relation(fields: [partId], references: [id], onDelete: Cascade)
+  gopId           Int
+  gameOrPenalty   GameOrPenalty @relation(fields: [gopId], references: [id], onDelete: Cascade)
+  value           Float
+  date            DateTime
+  sessionGroup    Int           // groups results that belong to the same game session
+
+  createdAt       DateTime      @default(now())
 }
