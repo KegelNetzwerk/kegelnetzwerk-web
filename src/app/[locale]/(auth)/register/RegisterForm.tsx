@@ -34,6 +34,7 @@ export default function RegisterForm() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         clubName: formData.get('clubName'),
+        nickname: formData.get('nickname'),
         email: formData.get('email'),
         password,
         inviteCode: formData.get('inviteCode'),
@@ -73,6 +74,10 @@ export default function RegisterForm() {
           <div className="space-y-2">
             <Label htmlFor="clubName">{t('clubName')}</Label>
             <Input id="clubName" name="clubName" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="nickname">{t('nickname')}</Label>
+            <Input id="nickname" name="nickname" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">{t('email')}</Label>

@@ -8,9 +8,9 @@ function hashCode(code: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { clubName, email, password, inviteCode } = await req.json();
+  const { clubName, nickname, email, password, inviteCode } = await req.json();
 
-  if (!clubName || !email || !password || !inviteCode) {
+  if (!clubName || !nickname || !email || !password || !inviteCode) {
     return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
   }
 
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     await tx.member.create({
       data: {
         clubId: club.id,
-        nickname: '',
+        nickname,
         email,
         passwordHash,
         role: 'ADMIN',

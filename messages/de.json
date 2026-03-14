@@ -54,6 +54,7 @@
     "register": {
       "title": "Klub registrieren",
       "clubName": "Klubname",
+      "nickname": "Ihr Spitzname",
       "email": "E-Mail-Adresse",
       "password": "Passwort",
       "confirmPassword": "Passwort bestätigen",

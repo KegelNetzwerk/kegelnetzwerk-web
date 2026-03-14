@@ -54,6 +54,7 @@
     "register": {
       "title": "Register Club",
       "clubName": "Club name",
+      "nickname": "Your nickname",
       "email": "Email address",
       "password": "Password",
       "confirmPassword": "Confirm password",
