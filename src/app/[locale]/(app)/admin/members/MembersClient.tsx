@@ -86,7 +86,8 @@ export default function MembersClient({ initialMembers, currentMemberId }: Membe
 
       if (!res.ok) {
         const data = await res.json();
-        toast.error(t(`error.${data.error}`) || tCommon('unknownError'));
+        const knownErrors = ['nicknameTaken', 'nicknameTooShort', 'passwordRequired', 'weakPassword', 'saveFailed'];
+        toast.error(knownErrors.includes(data.error) ? t(`error.${data.error}`) : tCommon('unknownError'));
         return;
       }
 

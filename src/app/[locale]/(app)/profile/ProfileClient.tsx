@@ -66,7 +66,8 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
       const res = await fetch('/api/profile', { method: 'PUT', body: formData });
       if (!res.ok) {
         const data = await res.json();
-        toast.error(t(`error.${data.error}`) || tCommon('unknownError'));
+        const knownErrors = ['nicknameTaken', 'emailTaken', 'passwordMismatch', 'nicknameRequired'];
+        toast.error(knownErrors.includes(data.error) ? t(`error.${data.error}`) : tCommon('unknownError'));
         return;
       }
       toast.success(t('success'));

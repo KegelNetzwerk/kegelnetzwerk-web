@@ -310,6 +310,7 @@
     "updateSuccess": "Mitglied erfolgreich aktualisiert.",
     "deleteSuccess": "Mitglied erfolgreich gelöscht.",
     "error": {
+      "nicknameTaken": "Dieser Spitzname oder diese E-Mail-Adresse ist bereits vergeben.",
       "nicknameTooShort": "Spitzname muss mindestens 2 Zeichen lang sein.",
       "passwordRequired": "Passwort ist erforderlich.",
       "weakPassword": "Passwort muss mindestens 4 Zeichen lang sein.",
