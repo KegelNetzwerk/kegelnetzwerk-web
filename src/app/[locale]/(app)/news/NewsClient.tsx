@@ -1,0 +1,266 @@
+'use client';
+
+import { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import RichTextEditor from '@/components/RichTextEditor';
+import Comments, { type CommentData } from '@/components/Comments';
+
+interface NewsItem {
+  id: number;
+  title: string;
+  content: string;
+  internal: boolean;
+  createdAt: string;
+  updatedAt: string;
+  editorIds: string;
+  author: { nickname: string };
+  comments: (CommentData & { isOwn?: boolean })[];
+}
+
+interface NewsClientProps {
+  initialItems: NewsItem[];
+  initialTotal: number;
+  pageSize: number;
+  currentMemberId: number;
+  isAdmin: boolean;
+}
+
+export default function NewsClient({
+  initialItems,
+  initialTotal,
+  pageSize,
+  currentMemberId,
+  isAdmin,
+}: NewsClientProps) {
+  const t = useTranslations('news');
+  const tc = useTranslations('common');
+
+  const [items, setItems] = useState<NewsItem[]>(initialItems);
+  const [total, setTotal] = useState(initialTotal);
+  const [offset, setOffset] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  // Form state
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [internal, setInternal] = useState(false);
+  const [sendNotification, setSendNotification] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [formLoading, setFormLoading] = useState(false);
+
+  const fetchPage = useCallback(async (newOffset: number) => {
+    setLoading(true);
+    const res = await fetch(`/api/news?offset=${newOffset}`);
+    if (res.ok) {
+      const data = await res.json();
+      setItems(data.items.map((item: NewsItem) => ({
+        ...item,
+        comments: item.comments.map((c) => ({ ...c, isOwn: c.author.nickname === '' })),
+      })));
+      setTotal(data.total);
+      setOffset(newOffset);
+    }
+    setLoading(false);
+  }, []);
+
+  function openCreate() {
+    setEditingId(null);
+    setTitle('');
+    setContent('');
+    setInternal(false);
+    setSendNotification(false);
+    setFormError('');
+    setFormOpen(true);
+  }
+
+  function openEdit(item: NewsItem) {
+    setEditingId(item.id);
+    setTitle(item.title);
+    setContent(item.content);
+    setInternal(item.internal);
+    setSendNotification(false);
+    setFormError('');
+    setFormOpen(true);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError('');
+    setFormLoading(true);
+
+    const body = { title, content, internal, sendNotification };
+    const res = editingId
+      ? await fetch(`/api/news/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+      : await fetch('/api/news', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+    if (res.ok) {
+      setFormOpen(false);
+      await fetchPage(0);
+    } else {
+      const data = await res.json();
+      setFormError(data.error || t('error.saveFailed'));
+    }
+    setFormLoading(false);
+  }
+
+  async function handleDelete(id: number) {
+    if (!confirm(t('deleteConfirm'))) return;
+    await fetch(`/api/news/${id}`, { method: 'DELETE' });
+    await fetchPage(offset);
+  }
+
+  const totalPages = Math.ceil(total / pageSize);
+  const currentPage = Math.floor(offset / pageSize);
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <Button onClick={openCreate}>{t('newPost')}</Button>
+      </div>
+
+      {/* Create/Edit Form */}
+      {formOpen && (
+        <div className="border rounded-lg p-4 space-y-4 bg-gray-50">
+          <h2 className="font-semibold">{editingId ? t('editPost') : t('newPost')}</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {formError && <p className="text-red-500 text-sm">{formError}</p>}
+            <div className="space-y-1">
+              <Label>{t('postTitle')}</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} required />
+            </div>
+            <div className="space-y-1">
+              <Label>{t('postContent')}</Label>
+              <RichTextEditor value={content} onChange={setContent} />
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={internal}
+                onChange={(e) => setInternal(e.target.checked)}
+                className="rounded"
+              />
+              {t('internalOnly')}
+            </label>
+            {!editingId && (
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendNotification}
+                  onChange={(e) => setSendNotification(e.target.checked)}
+                  className="rounded"
+                />
+                {t('sendEmail')}
+              </label>
+            )}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={formLoading}>
+                {editingId ? t('update') : t('submit')}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
+                {tc('cancel')}
+              </Button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* News list */}
+      {loading ? (
+        <p className="text-gray-500 text-sm">{tc('loading')}</p>
+      ) : (
+        <div className="space-y-6">
+          {items.map((item, idx) => (
+            <div key={item.id} className="space-y-2">
+              {idx > 0 && <hr />}
+              <div>
+                <h2 className="text-lg font-semibold">{item.title}</h2>
+                <div
+                  className="prose prose-sm mt-2"
+                  dangerouslySetInnerHTML={{ __html: item.content }}
+                />
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-xs text-gray-400">
+                    {t('postedBy')} {item.author.nickname}
+                    {item.internal && (
+                      <span className="ml-2 text-orange-500">🔒</span>
+                    )}
+                  </span>
+                  <div className="flex gap-3 text-sm">
+                    <button
+                      onClick={() => openEdit(item)}
+                      className="text-blue-500 hover:underline"
+                    >
+                      {tc('edit')}
+                    </button>
+                    {(isAdmin) && (
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="text-red-500 hover:underline"
+                      >
+                        {tc('delete')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Comments
+                referenceId={item.id}
+                type="NEWS"
+                initialComments={item.comments.map((c) => ({
+                  ...c,
+                  isOwn: (c as { authorId?: number }).authorId === currentMemberId,
+                }))}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center gap-2 justify-center mt-4 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === 0}
+            onClick={() => fetchPage(Math.max(0, offset - pageSize))}
+          >
+            ‹
+          </Button>
+          {Array.from({ length: totalPages }, (_, i) => (
+            <Button
+              key={i}
+              variant={i === currentPage ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => fetchPage(i * pageSize)}
+            >
+              {i + 1}
+            </Button>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={currentPage === totalPages - 1}
+            onClick={() => fetchPage(offset + pageSize)}
+          >
+            ›
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
