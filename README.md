@@ -86,7 +86,10 @@ npm run db:seed
 
 This inserts the code **`kegel2026`** into the `RegistrationCode` table. You can change the code by editing `prisma/seed.ts` before running the command.
 
-> To insert a custom code manually via SQL instead:
+> The seed command is configured in `prisma.config.ts` (`migrations.seed`).
+> To use a different code, edit the `REGISTRATION_CODE` constant in `prisma/seed.ts` before seeding.
+>
+> Alternatively, insert a code directly via SQL:
 > ```sql
 > INSERT INTO "RegistrationCode" (code, "createdAt")
 > VALUES (encode(sha256('your-secret-code'), 'hex'), now());
