@@ -55,12 +55,22 @@ export async function GET(req: NextRequest) {
       sessionMap.set(r.sessionGroup, current + r.value);
     }
 
+    // Actual results per session
     const sessionValues = Array.from(sessionMap.entries()).map(([sg, val]) => ({
       sessionGroup: sg,
       value: val,
+      missed: false,
     }));
 
-    // Elimination
+    // Pad with zero for every session the member missed — zeros compete in elimination
+    const attendedGroups = new Set(sessionMap.keys());
+    for (const s of sessions) {
+      if (!attendedGroups.has(s.sessionGroup)) {
+        sessionValues.push({ sessionGroup: s.sessionGroup, value: 0, missed: true });
+      }
+    }
+
+    // Elimination (operates on all sessions including zeros for missed ones)
     let includedSessions = [...sessionValues];
     if (eliLowest > 0) {
       const sorted = [...includedSessions].sort((a, b) => a.value - b.value);
@@ -76,12 +86,19 @@ export async function GET(req: NextRequest) {
     const total = includedSessions.reduce((sum, s) => sum + s.value, 0);
     const rawTotal = sessionValues.reduce((sum, s) => sum + s.value, 0);
 
+    const includedGroups = new Set(includedSessions.map((s) => s.sessionGroup));
+
     return {
       id: m.id,
       nickname: m.nickname,
       total,
       rawTotal,
-      sessions: sessionValues,
+      sessions: sessionValues.map((s) => ({
+        sessionGroup: s.sessionGroup,
+        value: s.value,
+        excluded: !includedGroups.has(s.sessionGroup),
+        missed: s.missed,
+      })),
     };
   });
 

@@ -261,7 +261,10 @@
     "eliminateHighest": "Höchste Ergebnisse ignorieren",
     "applyFilter": "Filtern",
     "quickYear": "Schnellauswahl Jahr",
+    "quickAllTime": "Alle",
     "total": "Gesamt",
+    "totalAll": "Gesamt (alle)",
+    "totalFiltered": "Gesamt (gefiltert)",
     "name": "Name",
     "chartTitle": "Punkteverlauf",
     "partsBreakdown": "Einzelwertungen",
@@ -380,7 +383,14 @@
     "title": "Klubprofil",
     "members": "Mitglieder",
     "aboutUs": "Über uns",
-    "noLogo": "Kein Logo"
+    "noLogo": "Kein Logo",
+    "yearlyWinners": "Jahressieger",
+    "year": "Jahr",
+    "rank1": "🥇 Sieger",
+    "rank2": "🥈 2. Platz",
+    "rank3": "🥉 3. Platz",
+    "lastPlace": "Letzter",
+    "noWinnersData": "Keine Ergebnisse vorhanden."
   },
   "contactList": {
     "title": "Kontaktliste",

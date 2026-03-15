@@ -261,7 +261,10 @@
     "eliminateHighest": "Ignore highest results",
     "applyFilter": "Apply filter",
     "quickYear": "Quick year filter",
+    "quickAllTime": "All time",
     "total": "Total",
+    "totalAll": "Total (all)",
+    "totalFiltered": "Total (filtered)",
     "name": "Name",
     "chartTitle": "Score history",
     "partsBreakdown": "Individual scores",
@@ -380,7 +383,14 @@
     "title": "Club Profile",
     "members": "Members",
     "aboutUs": "About us",
-    "noLogo": "No logo"
+    "noLogo": "No logo",
+    "yearlyWinners": "Yearly Champions",
+    "year": "Year",
+    "rank1": "🥇 Winner",
+    "rank2": "🥈 2nd Place",
+    "rank3": "🥉 3rd Place",
+    "lastPlace": "Last Place",
+    "noWinnersData": "No results available."
   },
   "contactList": {
     "title": "Contact List",

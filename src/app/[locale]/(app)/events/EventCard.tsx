@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Comments from '@/components/Comments';
 import type { EventData } from './EventForm';
@@ -26,6 +27,7 @@ export default function EventCard({
 }: EventCardProps) {
   const t = useTranslations('events');
   const tc = useTranslations('common');
+  const locale = useLocale();
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpError, setRsvpError] = useState('');
 
@@ -92,7 +94,9 @@ export default function EventCard({
         {/* Content */}
         <div className="flex-1 space-y-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-lg font-semibold">{event.subject}</h2>
+            <Link href={`/${locale}/events/${event.id}`} className="hover:underline">
+              <h2 className="text-lg font-semibold">{event.subject}</h2>
+            </Link>
             {event.recurrenceRuleId && (
               <span
                 className="hidden sm:inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded"

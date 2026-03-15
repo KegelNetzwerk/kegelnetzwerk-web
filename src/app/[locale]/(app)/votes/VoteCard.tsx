@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Comments, { type CommentData } from '@/components/Comments';
 import { Check, Pencil, Trash2, Lock, LockOpen } from 'lucide-react';
@@ -54,6 +55,7 @@ export default function VoteCard({
 }: VoteCardProps) {
   const t = useTranslations('votes');
   const tc = useTranslations('common');
+  const locale = useLocale();
 
   const [selections, setSelections] = useState<Record<number, 'yes' | 'maybe' | null>>(() => {
     const init: Record<number, 'yes' | 'maybe' | null> = {};
@@ -109,7 +111,9 @@ export default function VoteCard({
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between">
-        <h2 className="text-lg font-semibold">{vote.title}</h2>
+        <Link href={`/${locale}/votes/${vote.id}`} className="hover:underline">
+          <h2 className="text-lg font-semibold">{vote.title}</h2>
+        </Link>
         {vote.closed && (
           <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">
             {t('closed')}

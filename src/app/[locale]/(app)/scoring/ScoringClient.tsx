@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Filter, ChevronDown, ChevronUp, ArrowUpDown, ArrowUp, ArrowDown, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -26,7 +26,7 @@ interface MemberScore {
   nickname: string;
   total: number;
   rawTotal: number;
-  sessions: { sessionGroup: number; value: number }[];
+  sessions: { sessionGroup: number; value: number; excluded: boolean; missed: boolean }[];
 }
 
 interface PartBreakdown {
@@ -145,13 +145,77 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
   }
 
   function applyYear(year: number) {
-    const newFrom = `${year}-01-01`;
-    const newTo = `${year}-12-31`;
+    applyRange(`${year}-01-01`, `${year}-12-31`);
+  }
+
+  const hasElimination = parseInt(eliLowest) > 0 || parseInt(eliHighest) > 0;
+
+  // Top 3 individual session scores across all members
+  const top3Cells = new Set<string>();
+  if (data) {
+    const allCells: { key: string; value: number }[] = [];
+    for (const m of data.members) {
+      for (const s of m.sessions) {
+        if (!s.missed && !s.excluded) {
+          allCells.push({ key: `${m.id}:${s.sessionGroup}`, value: s.value });
+        }
+      }
+    }
+    allCells.sort((a, b) => b.value - a.value).slice(0, 3).forEach((c) => top3Cells.add(c.key));
+  }
+
+  // Local table sort (client-side, independent of API sort)
+  type TableSortKey = 'nickname' | 'total' | 'rawTotal' | `session:${number}`;
+  const [tableSort, setTableSort] = useState<{ key: TableSortKey; asc: boolean } | null>(null);
+
+  function toggleTableSort(key: TableSortKey) {
+    setTableSort((prev) =>
+      prev?.key === key ? { key, asc: !prev.asc } : { key, asc: false }
+    );
+  }
+
+  function sortedMembers(members: MemberScore[]) {
+    if (!tableSort) return members;
+    const { key, asc } = tableSort;
+    return [...members].sort((a, b) => {
+      let va: number | string;
+      let vb: number | string;
+      if (key === 'nickname') {
+        va = a.nickname;
+        vb = b.nickname;
+      } else if (key === 'total') {
+        va = a.total;
+        vb = b.total;
+      } else if (key === 'rawTotal') {
+        va = a.rawTotal;
+        vb = b.rawTotal;
+      } else {
+        const sg = parseInt(key.split(':')[1], 10);
+        va = a.sessions.find((s) => s.sessionGroup === sg)?.value ?? -Infinity;
+        vb = b.sessions.find((s) => s.sessionGroup === sg)?.value ?? -Infinity;
+      }
+      if (typeof va === 'string') return asc ? va.localeCompare(vb as string) : (vb as string).localeCompare(va);
+      return asc ? (va as number) - (vb as number) : (vb as number) - (va as number);
+    });
+  }
+
+  function SortIcon({ colKey }: { colKey: TableSortKey }) {
+    if (tableSort?.key !== colKey) return <ArrowUpDown size={11} className="inline ml-1 opacity-40" />;
+    return tableSort.asc
+      ? <ArrowUp size={11} className="inline ml-1" />
+      : <ArrowDown size={11} className="inline ml-1" />;
+  }
+
+  const unitLabel = unit === 'EURO' ? '€' : t('unitPoints');
+
+  const currentYear = today.getFullYear();
+  const yearButtons = Array.from({ length: 15 }, (_, i) => currentYear - i);
+
+  function applyRange(newFrom: string, newTo: string) {
     setFrom(newFrom);
     setTo(newTo);
     const params = buildParams({ from: newFrom, to: newTo });
     router.replace(`?${params.toString()}`, { scroll: false });
-    // Fetch directly with the new dates
     setLoading(true);
     const apiParams = new URLSearchParams({
       from: new Date(newFrom).toISOString(),
@@ -167,25 +231,6 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
       setLoading(false);
     });
   }
-
-  // Build chart data
-  const chartData: { date: string; [nickname: string]: number | string }[] = data
-    ? data.sessions.map((s) => {
-        const point: { date: string; [nickname: string]: number | string } = {
-          date: new Date(s.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
-        };
-        for (const m of data.members) {
-          const session = m.sessions.find((ms) => ms.sessionGroup === s.sessionGroup);
-          point[m.nickname] = session?.value ?? 0;
-        }
-        return point;
-      })
-    : [];
-
-  const unitLabel = unit === 'EURO' ? '€' : t('unitPoints');
-
-  const currentYear = today.getFullYear();
-  const yearButtons = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
   return (
     <div className="space-y-6">
@@ -222,6 +267,23 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
               {year}
             </Button>
           ))}
+          {(() => {
+            const fAll = '2000-01-01';
+            const todayStr = toDateInput(today);
+            const isAll = from === fAll && to === todayStr;
+            return (
+              <Button
+                type="button"
+                size="sm"
+                variant={isAll ? 'default' : 'outline'}
+                onClick={() => applyRange(fAll, todayStr)}
+                style={isAll ? { background: 'var(--kn-primary, #005982)' } : {}}
+                disabled={loading}
+              >
+                {t('quickAllTime')}
+              </Button>
+            );
+          })()}
         </div>
 
         {/* Collapsible body */}
@@ -291,37 +353,103 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
       {data && (
         <>
           {/* Summary table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
+          <div className="overflow-x-auto rounded-xl border shadow-sm">
+            <table className="w-full text-sm border-separate border-spacing-0" style={{ tableLayout: 'fixed' }}>
+              <colgroup>
+                <col style={{ width: '5rem' }} />
+                {data.sessions.map((s) => (
+                  <col key={s.sessionGroup} style={{ width: '3.5rem' }} />
+                ))}
+                {hasElimination ? (
+                  <><col style={{ width: '4.5rem' }} /><col style={{ width: '4.5rem' }} /></>
+                ) : (
+                  <col style={{ width: '4.5rem' }} />
+                )}
+              </colgroup>
               <thead>
                 <tr style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
-                  <th className="px-3 py-2 text-left">{t('name')}</th>
-                  {data.sessions.map((s) => (
-                    <th key={s.sessionGroup} className="px-2 py-2 text-center text-xs">
-                      {new Date(s.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                  <th
+                    className="px-2 py-2 text-left cursor-pointer select-none rounded-tl-xl"
+                    onClick={() => toggleTableSort('nickname')}
+                  >
+                    {t('name')}<SortIcon colKey="nickname" />
+                  </th>
+                  {data.sessions.map((s) => {
+                    const d = new Date(s.date);
+                    const day = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
+                    const year = d.toLocaleDateString('de-DE', { year: '2-digit' });
+                    return (
+                      <th
+                        key={s.sessionGroup}
+                        className="px-1 py-2 text-center cursor-pointer select-none leading-tight"
+                        onClick={() => toggleTableSort(`session:${s.sessionGroup}`)}
+                      >
+                        <div>{day}</div>
+                        <div className="opacity-75">{year}</div>
+                        <SortIcon colKey={`session:${s.sessionGroup}`} />
+                      </th>
+                    );
+                  })}
+                  {hasElimination ? (
+                    <>
+                      <th
+                        className="px-1 py-2 text-right cursor-pointer select-none leading-tight"
+                        onClick={() => toggleTableSort('rawTotal')}
+                      >
+                        <div>{t('totalAll')}</div><SortIcon colKey="rawTotal" />
+                      </th>
+                      <th
+                        className="px-1 py-2 text-right cursor-pointer select-none leading-tight rounded-tr-xl"
+                        onClick={() => toggleTableSort('total')}
+                      >
+                        <div>{t('totalFiltered')}</div><SortIcon colKey="total" />
+                      </th>
+                    </>
+                  ) : (
+                    <th
+                      className="px-1 py-2 text-right cursor-pointer select-none rounded-tr-xl"
+                      onClick={() => toggleTableSort('total')}
+                    >
+                      {t('total')}<SortIcon colKey="total" />
                     </th>
-                  ))}
-                  <th className="px-3 py-2 text-right">{t('total')}</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {data.members.map((m, i) => (
-                  <tr key={m.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-3 py-2 font-medium">{m.nickname}</td>
+                {sortedMembers(data.members).map((m, i) => (
+                  <tr key={m.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                    <td className="px-2 py-1.5 font-medium truncate border-t border-gray-100">{m.nickname}</td>
                     {data.sessions.map((s) => {
                       const session = m.sessions.find((ms) => ms.sessionGroup === s.sessionGroup);
+                      const isExcluded = session?.excluded ?? false;
+                      const isMissed = session?.missed ?? false;
+                      const style = isExcluded
+                        ? { color: '#dc2626', textDecoration: 'line-through' }
+                        : isMissed
+                        ? { color: '#9ca3af' }
+                        : undefined;
+                      const cellKey = `${m.id}:${s.sessionGroup}`;
+                      const isTop3 = top3Cells.has(cellKey);
+                      const display = !session || isMissed ? '' : `${parseFloat(session.value.toFixed(2))}${unit === 'EURO' ? '€' : ''}`;
                       return (
-                        <td key={s.sessionGroup} className="px-2 py-2 text-center text-xs">
-                          {session ? `${session.value.toFixed(2)}${unit === 'EURO' ? '€' : ''}` : ''}
+                        <td
+                          key={s.sessionGroup}
+                          className="px-1 py-1.5 text-center font-mono border-t border-gray-100"
+                          style={style}
+                        >
+                          {isTop3 && <Star size={8} className="inline mr-0.5 fill-yellow-400 text-yellow-400" />}
+                          {display}
                         </td>
                       );
                     })}
-                    <td className="px-3 py-2 text-right font-bold">
-                      {m.total.toFixed(2)} {unitLabel}
-                      {(parseInt(eliLowest) > 0 || parseInt(eliHighest) > 0) && m.rawTotal !== m.total && (
-                        <span className="text-xs text-gray-400 ml-1">({m.rawTotal.toFixed(2)})</span>
-                      )}
-                    </td>
+                    {hasElimination ? (
+                      <>
+                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{parseFloat(m.rawTotal.toFixed(2))}</td>
+                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100">{parseFloat(m.total.toFixed(2))}</td>
+                      </>
+                    ) : (
+                      <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{parseFloat(m.total.toFixed(2))}</td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -329,10 +457,10 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
           </div>
 
           {/* Chart */}
-          {data.members.length > 0 && data.sessions.length > 1 && (
+          {data.members.length > 0 && (
             <div>
               <h2 className="font-semibold mb-2">{t('chartTitle')} ({unitLabel})</h2>
-              <ScoreChart data={chartData} members={data.members.map((m) => m.nickname)} />
+              <ScoreChart members={data.members} sessions={data.sessions} />
             </div>
           )}
 
@@ -342,17 +470,21 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
               <h2 className="font-semibold mb-3">{t('partsBreakdown')}</h2>
               <div className="flex gap-4 flex-wrap">
                 {data.partsBreakdown.map((part) => (
-                  <div key={part.id} className="border rounded overflow-hidden min-w-[150px]">
-                    <div className="px-3 py-2 text-sm font-semibold text-white" style={{ backgroundColor: 'var(--color-primary)' }}>
-                      {part.name}
-                    </div>
-                    <table className="text-sm">
+                  <div key={part.id} className="rounded-xl border shadow-sm overflow-hidden min-w-[150px]">
+                    <table className="text-sm border-separate border-spacing-0 w-full">
+                      <thead>
+                        <tr style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+                          <th className="px-3 py-2 text-left font-semibold rounded-tl-xl" colSpan={2}>
+                            {part.name}
+                          </th>
+                        </tr>
+                      </thead>
                       <tbody>
-                        {part.members.map((m) => (
-                          <tr key={m.nickname} className="border-t">
-                            <td className="px-3 py-1">{m.nickname}</td>
-                            <td className="px-3 py-1 text-right font-mono">
-                              {m.total.toFixed(2)}{part.unit === 'EURO' ? '€' : ''}
+                        {part.members.map((m, i) => (
+                          <tr key={m.nickname} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                            <td className="px-3 py-1.5 border-t border-gray-100">{m.nickname}</td>
+                            <td className="px-3 py-1.5 text-right font-mono border-t border-gray-100 border-l border-l-gray-200">
+                              {parseFloat(m.total.toFixed(2))}{part.unit === 'EURO' ? '€' : ''}
                             </td>
                           </tr>
                         ))}

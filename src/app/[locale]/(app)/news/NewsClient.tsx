@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +39,7 @@ export default function NewsClient({
 }: NewsClientProps) {
   const t = useTranslations('news');
   const tc = useTranslations('common');
+  const locale = useLocale();
 
   const [items, setItems] = useState<NewsItem[]>(initialItems);
   const [total, setTotal] = useState(initialTotal);
@@ -192,9 +194,11 @@ export default function NewsClient({
             <div key={item.id} className="space-y-2">
               {idx > 0 && <hr />}
               <div>
-                <h2 className="text-lg font-semibold">{item.title}</h2>
+                <Link href={`/${locale}/news/${item.id}`} className="hover:underline">
+                  <h2 className="text-lg font-semibold">{item.title}</h2>
+                </Link>
                 <div
-                  className="prose prose-sm mt-2"
+                  className="prose prose-sm max-w-none mt-2"
                   dangerouslySetInnerHTML={{ __html: item.content }}
                 />
                 <div className="flex items-center justify-between mt-2">

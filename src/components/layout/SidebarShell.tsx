@@ -14,9 +14,11 @@ interface SidebarShellProps {
   memberCount: number;
   nextBirthday: string | null;
   santaPartner: string | null;
+  latestNewsId: number | null;
   latestNews: string | null;
+  nextEventId: number | null;
   nextEvent: string | null;
-  openVoteTitles: string[];
+  openVotes: { id: number; title: string }[];
   labelMembers: string;
   labelBirthday: string;
   labelSanta: string;
@@ -46,9 +48,11 @@ export default function SidebarShell({
   memberCount,
   nextBirthday,
   santaPartner,
+  latestNewsId,
   latestNews,
+  nextEventId,
   nextEvent,
-  openVoteTitles,
+  openVotes,
   labelMembers,
   labelBirthday,
   labelSanta,
@@ -143,17 +147,35 @@ export default function SidebarShell({
 
           {/* Activity summary */}
           <div className="flex flex-col gap-3">
-            {latestNews && <InfoRow label={labelLatestNews} value={latestNews} />}
-            {nextEvent && <InfoRow label={labelNextEvent} value={nextEvent} />}
-            {openVoteTitles.length > 0 && (
+            {latestNews && (
+              latestNewsId ? (
+                <Link href={`/${locale}/news/${latestNewsId}`} className="no-underline">
+                  <InfoRow label={labelLatestNews} value={latestNews} />
+                </Link>
+              ) : (
+                <InfoRow label={labelLatestNews} value={latestNews} />
+              )
+            )}
+            {nextEvent && (
+              nextEventId ? (
+                <Link href={`/${locale}/events/${nextEventId}`} className="no-underline">
+                  <InfoRow label={labelNextEvent} value={nextEvent} />
+                </Link>
+              ) : (
+                <InfoRow label={labelNextEvent} value={nextEvent} />
+              )
+            )}
+            {openVotes.length > 0 && (
               <div className="flex flex-col gap-0.5">
                 <span style={{ color: 'rgba(0,0,0,0.45)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                   {labelOpenVotes}
                 </span>
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {openVoteTitles.map((title, i) => (
-                    <li key={i} style={{ color: 'rgba(0,0,0,0.8)', fontSize: 12, paddingLeft: 8, borderLeft: '2px solid rgba(0,0,0,0.15)' }}>
-                      {title}
+                  {openVotes.map((vote) => (
+                    <li key={vote.id} style={{ fontSize: 12, paddingLeft: 8, borderLeft: '2px solid rgba(0,0,0,0.15)' }}>
+                      <Link href={`/${locale}/votes/${vote.id}`} style={{ color: 'rgba(0,0,0,0.8)', textDecoration: 'none' }}>
+                        {vote.title}
+                      </Link>
                     </li>
                   ))}
                 </ul>

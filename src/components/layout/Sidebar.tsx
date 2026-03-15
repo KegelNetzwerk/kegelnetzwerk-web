@@ -30,16 +30,16 @@ export default async function Sidebar({ member, locale }: SidebarProps) {
     prisma.news.findFirst({
       where: { clubId: member.clubId },
       orderBy: { createdAt: 'desc' },
-      select: { title: true },
+      select: { id: true, title: true },
     }),
     prisma.event.findFirst({
       where: { clubId: member.clubId, date: { gte: new Date() } },
       orderBy: { date: 'asc' },
-      select: { subject: true, date: true },
+      select: { id: true, subject: true, date: true },
     }),
     prisma.vote.findMany({
       where: { clubId: member.clubId, closed: false },
-      select: { title: true },
+      select: { id: true, title: true },
       orderBy: { createdAt: 'desc' },
     }),
   ]);
@@ -59,9 +59,11 @@ export default async function Sidebar({ member, locale }: SidebarProps) {
       memberCount={members.length}
       nextBirthday={nextBirthday}
       santaPartner={santaPartner?.nickname ?? null}
+      latestNewsId={latestNews?.id ?? null}
       latestNews={latestNews?.title ?? null}
+      nextEventId={nextEvent?.id ?? null}
       nextEvent={nextEventLabel}
-      openVoteTitles={openVotes.map((v) => v.title)}
+      openVotes={openVotes.map((v) => ({ id: v.id, title: v.title }))}
       labelMembers={t('sidebar.members')}
       labelBirthday={t('sidebar.nextBirthday')}
       labelSanta={t('sidebar.secretSantaPartner')}

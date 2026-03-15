@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 
 interface Part {
@@ -12,6 +12,7 @@ interface Part {
   bonus: number;
   variable: boolean;
   once: boolean;
+  description: string;
 }
 
 interface Game {
@@ -35,9 +36,9 @@ interface GamesOverviewProps {
 }
 
 function formatFormula(part: Part): string {
-  const val = part.variable ? '~' : part.value.toFixed(2);
-  const factor = part.factor.toFixed(2);
-  const bonus = part.bonus.toFixed(2);
+  const val = part.variable ? '~' : String(parseFloat(part.value.toFixed(2)));
+  const factor = String(parseFloat(part.factor.toFixed(2)));
+  const bonus = String(parseFloat(part.bonus.toFixed(2)));
   // Simplify: omit factor if 1.0, omit bonus if 0.0
   const hasFactor = part.factor !== 1.0;
   const hasBonus = part.bonus !== 0.0;
@@ -62,9 +63,9 @@ export default function GamesOverview({ games, title, labels }: GamesOverviewPro
       </button>
 
       {open && (
-        <div className="p-4 flex flex-wrap gap-4">
+        <div className="p-4 space-y-4">
           {games.map((game) => (
-            <div key={game.id} className="border rounded-lg overflow-hidden min-w-[220px] flex-1">
+            <div key={game.id} className="border rounded-lg overflow-hidden">
               <div
                 className="px-4 py-2 font-semibold text-sm text-white"
                 style={{ backgroundColor: 'var(--kn-primary, #005982)' }}
@@ -84,21 +85,33 @@ export default function GamesOverview({ games, title, labels }: GamesOverviewPro
                   </thead>
                   <tbody>
                     {game.parts.map((part) => (
-                      <tr key={part.id} className="border-t">
-                        <td className="px-3 py-1.5">{part.name}</td>
-                        <td className="px-3 py-1.5 text-muted-foreground text-xs">
-                          {part.unit === 'EURO' ? labels.unitEuro : labels.unitPoints}
-                        </td>
-                        <td className="px-3 py-1.5 text-right font-mono text-xs whitespace-nowrap">
-                          {formatFormula(part)}
-                        </td>
-                        <td className="px-3 py-1.5 text-center">
-                          {part.variable && <Check size={13} className="mx-auto text-green-600" />}
-                        </td>
-                        <td className="px-3 py-1.5 text-center">
-                          {part.once && <Check size={13} className="mx-auto text-green-600" />}
-                        </td>
-                      </tr>
+                      <React.Fragment key={part.id}>
+                        <tr className="border-t">
+                          <td className="px-3 py-1.5 font-medium">{part.name}</td>
+                          <td className="px-3 py-1.5 text-muted-foreground text-xs">
+                            {part.unit === 'EURO' ? labels.unitEuro : labels.unitPoints}
+                          </td>
+                          <td className="px-3 py-1.5 text-right font-mono text-xs whitespace-nowrap">
+                            {formatFormula(part)}
+                          </td>
+                          <td className="px-3 py-1.5 text-center">
+                            {part.variable && <Check size={13} className="mx-auto text-green-600" />}
+                          </td>
+                          <td className="px-3 py-1.5 text-center">
+                            {part.once && <Check size={13} className="mx-auto text-green-600" />}
+                          </td>
+                        </tr>
+                        {part.description && (
+                          <tr className="border-t bg-muted/30">
+                            <td colSpan={5} className="px-3 py-2">
+                              <div
+                                className="prose prose-sm max-w-none text-muted-foreground"
+                                dangerouslySetInnerHTML={{ __html: part.description }}
+                              />
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
