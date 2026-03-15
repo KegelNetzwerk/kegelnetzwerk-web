@@ -39,9 +39,10 @@ export default async function AppShell({ children }: { children: React.ReactNode
             borderBottomRightRadius: 30,
           }}
         >
-          <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            KegelNetzwerk
-          </span>
+          <a href="https://KegelNetzwerk.de" target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/splash.png" alt="KegelNetzwerk" style={{ height: 22, opacity: 0.6 }} />
+          </a>
         </div>
       </div>
     </div>
