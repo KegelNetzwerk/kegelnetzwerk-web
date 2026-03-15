@@ -9,6 +9,14 @@ If you are upgrading from the original PHP/MySQL version of KegelNetzwerk, a mig
 
 ## Running the migration
 
+First, clear the target database so there are no conflicts:
+
+```bash
+npx prisma migrate reset --force
+```
+
+Then run the migration script:
+
 ```bash
 npm run db:migrate-legacy
 ```
@@ -49,6 +57,22 @@ The following legacy tables have no corresponding model in the new schema and ar
 | `balance` | Financial ledger not yet modelled in kegelnetzwerk2 |
 | `chat` | Chat feature not yet implemented |
 | `counter` | Page-view analytics, not required |
+
+## Orphaned records
+
+The legacy database contains records whose foreign-key targets were deleted at some point (e.g. parts belonging to a deleted game, comments on a deleted news item, results for a pseudo-member with `memid ≤ 0`). The script handles these gracefully: each upsert has a `.catch()` that skips the row and increments a counter rather than aborting. A summary of skipped rows is printed at the end.
+
+From the actual migration of `dump-kegelnetzwerk1-202603141411.sql` (2026-03-15):
+
+| Situation | Skipped |
+|---|---|
+| `parts` referencing a deleted `gamesandpenalties` row (id 6) | ~6 |
+| `comments` referencing deleted news/vote/event records | 29 |
+| `results` with `memid ≤ 0` (legacy pseudo-member / club account) | 3,702 |
+| Other orphaned FK rows (votings, cancellations, etc.) | remainder |
+| **Total skipped** | **4,160** |
+
+These skipped rows represent genuinely deleted or invalid legacy data and do not need to be recovered.
 
 ## Passwords
 

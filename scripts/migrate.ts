@@ -314,9 +314,9 @@ async function migrateParts(rows: Row[]) {
         description: str(desc),
         pic: str(pic) || 'none',
       },
-    });
+    }).catch(() => skip(`part ${id}: gameOrPenaltyId ${gameorpenalty} not found`));
   }
-  console.log(`  ✓ ${rows.length} parts`);
+  console.log(`  ✓ ${rows.length} parts (orphaned FK rows skipped)`);
 }
 
 async function migrateNews(rows: Row[]) {
@@ -340,7 +340,7 @@ async function migrateNews(rows: Row[]) {
         createdAt: toDate(int(created)),
         updatedAt: toDate(int(updated)),
       },
-    });
+    }).catch(() => skip(`news ${id}: FK missing`));
   }
   console.log(`  ✓ ${rows.length} news items`);
 }
@@ -371,7 +371,7 @@ async function migrateVotes(rows: Row[]) {
         createdAt: toDate(int(updated)),
         updatedAt: toDate(int(updated)),
       },
-    });
+    }).catch(() => skip(`vote ${id}: FK missing`));
   }
   console.log(`  ✓ ${rows.length} votes`);
 }
@@ -397,7 +397,7 @@ async function migrateVoteOptions(rows: Row[]) {
         text: str(option),
         position: pos,
       },
-    });
+    }).catch(() => skip(`voteOption ${id}: FK missing`));
   }
   console.log(`  ✓ ${rows.length} vote options`);
 }
@@ -447,7 +447,7 @@ async function migrateEvents(rows: Row[]) {
         createdAt: toDate(int(updated)),
         updatedAt: toDate(int(updated)),
       },
-    });
+    }).catch(() => skip(`event ${id}: FK missing`));
   }
   console.log(`  ✓ ${rows.length} events`);
 }
