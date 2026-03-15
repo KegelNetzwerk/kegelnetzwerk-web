@@ -66,8 +66,33 @@ function bool(v: string | null | undefined): boolean {
   return v === '1';
 }
 
+// Named HTML entities → characters (common subset + all German-relevant ones)
+const HTML_ENTITIES: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: '\u00A0',
+  euro: '€', cent: '¢', pound: '£', yen: '¥', copy: '©', reg: '®',
+  trade: '™', mdash: '—', ndash: '–', hellip: '…', laquo: '«', raquo: '»',
+  // German umlauts & eszett
+  auml: 'ä', ouml: 'ö', uuml: 'ü', Auml: 'Ä', Ouml: 'Ö', Uuml: 'Ü', szlig: 'ß',
+  // French/other Latin
+  eacute: 'é', egrave: 'è', ecirc: 'ê', aacute: 'á', agrave: 'à', acirc: 'â',
+  oacute: 'ó', ograve: 'ò', ocirc: 'ô', uacute: 'ú', ugrave: 'ù', ucirc: 'û',
+  iacute: 'í', igrave: 'ì', icirc: 'î', ccedil: 'ç', ntilde: 'ñ',
+};
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&([a-zA-Z]+);/g, (match, name) => HTML_ENTITIES[name] ?? match);
+}
+
 function str(v: string | null | undefined): string {
   return v ?? '';
+}
+
+/** str() with HTML entity decoding — use for plain-text fields (titles, names, subjects). */
+function txt(v: string | null | undefined): string {
+  return decodeEntities(str(v));
 }
 
 let skipped = 0;
@@ -206,12 +231,12 @@ async function migrateClubs(rows: Row[]) {
       update: {},
       create: {
         id: int(id),
-        name: str(name),
+        name: txt(name),
         regCode: str(regcode),
         regDate: toDate(int(regdate)),
         pic: str(pic) || 'none',
         header: str(header) || 'none',
-        aboutUs: str(ueberuns),
+        aboutUs: txt(ueberuns),
         farbe1: str(farbe1) || '005982',
         farbe2: str(farbe2) || '3089AC',
         farbe3: str(farbe3) || 'A91A1A',
@@ -219,7 +244,7 @@ async function migrateClubs(rows: Row[]) {
         bg1: int(bg1),
         bg2: int(bg2),
         bgColor: str(bgfarbe) || 'FFFFFF',
-        accountHolder: str(kontoinhaber),
+        accountHolder: txt(kontoinhaber),
         accountNumber: str(kontonummer),
         bankCode: str(blz),
         iban: str(iban),
@@ -249,9 +274,9 @@ async function migrateMembers(rows: Row[]) {
         clubId: int(clubid),
         role: rechte === 'Admin' ? Role.ADMIN : Role.MEMBER,
         passwordHash: str(pw), // MD5 kept as-is; auth layer handles legacy login
-        nickname: str(spitzname),
-        firstName: str(vorname),
-        lastName: str(nachname),
+        nickname: txt(spitzname),
+        firstName: txt(vorname),
+        lastName: txt(nachname),
         birthday: toDateOrNull(int(gtag)),
         pic: str(pic) || 'none',
         phone: str(handynr),
@@ -293,7 +318,7 @@ async function migrateGamesAndPenalties(rows: Row[]) {
       create: {
         id: int(id),
         clubId: int(clubid),
-        name: str(name),
+        name: txt(name),
       },
     });
   }
@@ -315,14 +340,14 @@ async function migrateParts(rows: Row[]) {
         id: int(id),
         clubId: int(clubid),
         gameOrPenaltyId: int(gameorpenalty),
-        name: str(name),
+        name: txt(name),
         value: float(value),
         variable: bool(variable),
         factor: float(factor),
         bonus: float(bonus),
         unit: int(unit) === 1 ? Unit.EURO : Unit.POINTS,
         once: bool(once),
-        description: str(desc),
+        description: txt(desc),
         pic: str(pic) || 'none',
       },
     }).catch(() => skip(`part ${id}: gameOrPenaltyId ${gameorpenalty} not found`));
@@ -343,8 +368,8 @@ async function migrateNews(rows: Row[]) {
         id: int(id),
         clubId: int(clubid),
         authorId: int(userid),
-        title: str(title),
-        content: str(msg),
+        title: txt(title),
+        content: txt(msg),
         internal: bool(intern),
         editorIds: str(editid),
         emailNotified: false,
@@ -371,8 +396,8 @@ async function migrateVotes(rows: Row[]) {
         id: int(id),
         clubId: int(clubid),
         authorId: int(userid),
-        title: str(title),
-        description: str(beschr),
+        title: txt(title),
+        description: txt(beschr),
         maxVoices: int(voices),
         anonymous: bool(anonym),
         maybe: bool(maybe),
@@ -405,7 +430,7 @@ async function migrateVoteOptions(rows: Row[]) {
       create: {
         id: int(id),
         voteId: vId,
-        text: str(option),
+        text: txt(option),
         position: pos,
       },
     }).catch(() => skip(`voteOption ${id}: FK missing`));
@@ -452,9 +477,9 @@ async function migrateEvents(rows: Row[]) {
         clubId: int(clubid),
         authorId: int(memid),
         date: toDate(int(date)),
-        location: str(location),
-        subject: str(subject),
-        description: str(desc),
+        location: txt(location),
+        subject: txt(subject),
+        description: txt(desc),
         createdAt: toDate(int(updated)),
         updatedAt: toDate(int(updated)),
       },
@@ -524,7 +549,7 @@ async function migrateComments(
       create: {
         id: int(id),
         authorId: int(memid),
-        content: str(msg),
+        content: txt(msg),
         type: commentType,
         referenceId: iid,
         newsId,
