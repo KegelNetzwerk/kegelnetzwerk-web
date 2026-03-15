@@ -6,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { getCurrentMember } from '@/lib/auth';
 import { buildThemeVars } from '@/lib/theme';
+import { Toaster } from '@/components/ui/sonner';
 import '../globals.css';
 
 const dmSans = DM_Sans({
@@ -46,6 +47,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
