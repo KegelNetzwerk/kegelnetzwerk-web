@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { BG1_IMAGES, BG2_STYLES, getBg2Value } from '@/lib/theme';
+import { Save, Trash2 } from 'lucide-react';
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false });
 
@@ -133,6 +134,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
                   size="sm"
                   onClick={() => { setDeleteLogo(true); setLogoFile(null); }}
                 >
+                  <Trash2 size={13} />
                   {t('deleteLogo')}
                 </Button>
               </div>
@@ -159,6 +161,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
                   size="sm"
                   onClick={() => { setDeleteHeader(true); setHeaderFile(null); }}
                 >
+                  <Trash2 size={13} />
                   {t('deleteHeader')}
                 </Button>
               </div>
@@ -363,6 +366,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
             style={{ background: 'var(--kn-primary, #005982)' }}
             className="text-white min-w-28"
           >
+            <Save size={15} />
             {status === 'saving' ? t('saving') : t('submit')}
           </Button>
 

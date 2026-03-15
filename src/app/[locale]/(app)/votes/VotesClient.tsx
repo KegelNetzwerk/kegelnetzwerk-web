@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import VoteCard, { type VoteData } from './VoteCard';
 import VoteForm from './VoteForm';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface VotesClientProps {
   initialItems: VoteData[];
@@ -83,7 +84,10 @@ export default function VotesClient({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <Button onClick={handleCreate}>{t('newVote')}</Button>
+        <Button onClick={handleCreate} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+          <Plus size={15} />
+          {t('newVote')}
+        </Button>
       </div>
 
       {formOpen && (
@@ -118,13 +122,17 @@ export default function VotesClient({
       {totalPages > 1 && (
         <div className="flex items-center gap-2 justify-center mt-4 flex-wrap">
           <Button variant="outline" size="sm" disabled={currentPage === 0}
-            onClick={() => fetchPage(Math.max(0, offset - pageSize))}>&#8249;</Button>
+            onClick={() => fetchPage(Math.max(0, offset - pageSize))}>
+            <ChevronLeft size={15} />
+          </Button>
           {Array.from({ length: totalPages }, (_, i) => (
             <Button key={i} variant={i === currentPage ? 'default' : 'outline'} size="sm"
               onClick={() => fetchPage(i * pageSize)}>{i + 1}</Button>
           ))}
           <Button variant="outline" size="sm" disabled={currentPage === totalPages - 1}
-            onClick={() => fetchPage(offset + pageSize)}>&#8250;</Button>
+            onClick={() => fetchPage(offset + pageSize)}>
+            <ChevronRight size={15} />
+          </Button>
         </div>
       )}
     </div>

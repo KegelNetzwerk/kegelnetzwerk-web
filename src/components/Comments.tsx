@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Send, Trash2 } from 'lucide-react';
 
 export interface CommentData {
   id: number;
@@ -68,13 +69,15 @@ export default function Comments({ referenceId, type, initialComments }: Comment
                 {new Date(comment.createdAt).toLocaleDateString('de-DE')}
               </span>
               {comment.isOwn && (
-                <button
+                <Button
+                  size="sm"
+                  variant="ghost"
                   onClick={() => handleDelete(comment.id)}
-                  className="text-red-400 hover:text-red-600 text-xs"
+                  className="h-6 w-6 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
                   title="Delete"
                 >
-                  ✕
-                </button>
+                  <Trash2 size={12} />
+                </Button>
               )}
             </div>
           </div>
@@ -91,7 +94,14 @@ export default function Comments({ referenceId, type, initialComments }: Comment
           className="text-sm"
         />
         {error && <p className="text-red-500 text-xs">{error}</p>}
-        <Button type="submit" size="sm" disabled={submitting || !newComment.trim()}>
+        <Button
+          type="submit"
+          size="sm"
+          disabled={submitting || !newComment.trim()}
+          style={{ background: 'var(--kn-primary, #005982)' }}
+          className="text-white"
+        >
+          <Send size={13} />
           {t('submit')}
         </Button>
       </form>

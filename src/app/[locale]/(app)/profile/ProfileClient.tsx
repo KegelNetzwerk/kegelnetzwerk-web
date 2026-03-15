@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { Save } from 'lucide-react';
 
 interface ProfileData {
   id: number;
@@ -186,9 +187,10 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
         <Button
           type="submit"
           disabled={saving}
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--kn-primary, #005982)' }}
           className="text-white"
         >
+          <Save size={15} />
           {saving ? tCommon('loading') : tCommon('save')}
         </Button>
       </form>

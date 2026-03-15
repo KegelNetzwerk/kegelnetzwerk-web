@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import Comments, { type CommentData } from '@/components/Comments';
+import { Check, Pencil, Trash2, Lock, LockOpen } from 'lucide-react';
 
 interface VoteOption {
   id: number;
@@ -54,7 +55,6 @@ export default function VoteCard({
   const t = useTranslations('votes');
   const tc = useTranslations('common');
 
-  // selections: optionId -> 'yes' | 'maybe' | null
   const [selections, setSelections] = useState<Record<number, 'yes' | 'maybe' | null>>(() => {
     const init: Record<number, 'yes' | 'maybe' | null> = {};
     for (const opt of vote.options) {
@@ -89,7 +89,6 @@ export default function VoteCard({
     });
 
     if (res.ok) {
-      // Refresh vote data
       const refreshed = await fetch(`/api/votes?id=${vote.id}`);
       if (refreshed.ok) {
         const data = await refreshed.json();
@@ -103,6 +102,9 @@ export default function VoteCard({
   }
 
   const totalVoters = vote.options[0]?.totalVoters ?? 0;
+
+  // Suppress unused variable warning — currentMemberId used by parent to pass isOwn
+  void currentMemberId;
 
   return (
     <div className="space-y-3">
@@ -185,7 +187,7 @@ export default function VoteCard({
                         style={{
                           width: `${Math.max(yesPercent, 8)}px`,
                           minWidth: '24px',
-                          backgroundColor: 'var(--color-primary)',
+                          backgroundColor: 'var(--kn-primary, #005982)',
                         }}
                       >
                         {yesPercent}%
@@ -223,7 +225,14 @@ export default function VoteCard({
       {canVote && (
         <div>
           {voteError && <p className="text-red-500 text-xs mb-1">{voteError}</p>}
-          <Button size="sm" onClick={handleVote} disabled={submitting}>
+          <Button
+            size="sm"
+            onClick={handleVote}
+            disabled={submitting}
+            style={{ background: 'var(--kn-primary, #005982)' }}
+            className="text-white"
+          >
+            <Check size={13} />
             {t('vote')}
           </Button>
         </div>
@@ -235,25 +244,30 @@ export default function VoteCard({
           {t('postedBy')} {vote.author.nickname}
         </span>
         <div className="flex gap-2">
-          <button
+          <Button
+            size="sm"
+            variant="outline"
             onClick={() =>
               confirm(vote.closed ? t('reopenConfirm') : t('closeConfirm')) &&
               onClose(vote.id, !vote.closed)
             }
-            className="text-orange-500 hover:underline text-xs"
           >
+            {vote.closed ? <LockOpen size={13} /> : <Lock size={13} />}
             {vote.closed ? t('reopen') : t('close')}
-          </button>
-          <button onClick={() => onEdit(vote)} className="text-blue-500 hover:underline text-xs">
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => onEdit(vote)}>
+            <Pencil size={13} />
             {tc('edit')}
-          </button>
+          </Button>
           {isAdmin && (
-            <button
+            <Button
+              size="sm"
+              variant="destructive"
               onClick={() => confirm(t('deleteConfirm')) && onDelete(vote.id)}
-              className="text-red-500 hover:underline text-xs"
             >
+              <Trash2 size={13} />
               {tc('delete')}
-            </button>
+            </Button>
           )}
         </div>
       </div>

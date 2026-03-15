@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/RichTextEditor';
 import Comments, { type CommentData } from '@/components/Comments';
+import { Plus, Pencil, Trash2, Save, X, Lock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface NewsItem {
   id: number;
@@ -43,7 +44,6 @@ export default function NewsClient({
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Form state
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [title, setTitle] = useState('');
@@ -129,7 +129,10 @@ export default function NewsClient({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
-        <Button onClick={openCreate}>{t('newPost')}</Button>
+        <Button onClick={openCreate} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+          <Plus size={15} />
+          {t('newPost')}
+        </Button>
       </div>
 
       {/* Create/Edit Form */}
@@ -167,10 +170,12 @@ export default function NewsClient({
               </label>
             )}
             <div className="flex gap-2">
-              <Button type="submit" disabled={formLoading}>
+              <Button type="submit" disabled={formLoading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+                <Save size={15} />
                 {editingId ? t('update') : t('submit')}
               </Button>
               <Button type="button" variant="outline" onClick={() => setFormOpen(false)}>
+                <X size={15} />
                 {tc('cancel')}
               </Button>
             </div>
@@ -193,26 +198,22 @@ export default function NewsClient({
                   dangerouslySetInnerHTML={{ __html: item.content }}
                 />
                 <div className="flex items-center justify-between mt-2">
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-400 flex items-center gap-1">
                     {t('postedBy')} {item.author.nickname}
                     {item.internal && (
-                      <span className="ml-2 text-orange-500">🔒</span>
+                      <Lock size={12} className="text-orange-500 ml-1" />
                     )}
                   </span>
-                  <div className="flex gap-3 text-sm">
-                    <button
-                      onClick={() => openEdit(item)}
-                      className="text-blue-500 hover:underline"
-                    >
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => openEdit(item)}>
+                      <Pencil size={13} />
                       {tc('edit')}
-                    </button>
-                    {(isAdmin) && (
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="text-red-500 hover:underline"
-                      >
+                    </Button>
+                    {isAdmin && (
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>
+                        <Trash2 size={13} />
                         {tc('delete')}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -233,31 +234,19 @@ export default function NewsClient({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center gap-2 justify-center mt-4 flex-wrap">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={currentPage === 0}
-            onClick={() => fetchPage(Math.max(0, offset - pageSize))}
-          >
-            ‹
+          <Button variant="outline" size="sm" disabled={currentPage === 0}
+            onClick={() => fetchPage(Math.max(0, offset - pageSize))}>
+            <ChevronLeft size={15} />
           </Button>
           {Array.from({ length: totalPages }, (_, i) => (
-            <Button
-              key={i}
-              variant={i === currentPage ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => fetchPage(i * pageSize)}
-            >
+            <Button key={i} variant={i === currentPage ? 'default' : 'outline'} size="sm"
+              onClick={() => fetchPage(i * pageSize)}>
               {i + 1}
             </Button>
           ))}
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={currentPage === totalPages - 1}
-            onClick={() => fetchPage(offset + pageSize)}
-          >
-            ›
+          <Button variant="outline" size="sm" disabled={currentPage === totalPages - 1}
+            onClick={() => fetchPage(offset + pageSize)}>
+            <ChevronRight size={15} />
           </Button>
         </div>
       )}

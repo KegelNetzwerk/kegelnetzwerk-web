@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
+import { Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -158,7 +159,8 @@ export default function ScoringClient({ games }: ScoringClientProps) {
             </select>
           </div>
         </div>
-        <Button onClick={fetchData} disabled={loading}>
+        <Button onClick={fetchData} disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+          <Filter size={15} />
           {loading ? '...' : t('applyFilter')}
         </Button>
       </div>

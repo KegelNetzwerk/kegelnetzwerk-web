@@ -41,7 +41,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
         >
           <a href="https://KegelNetzwerk.de" target="_blank" rel="noopener noreferrer">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/splash.png" alt="KegelNetzwerk" style={{ height: 22, opacity: 0.6 }} />
+            <img src="/images/splash.png" alt="KegelNetzwerk" style={{ height: 22 }} />
           </a>
         </div>
       </div>

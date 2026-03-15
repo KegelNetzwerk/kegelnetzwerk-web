@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { Shuffle } from 'lucide-react';
 
 interface Partner {
   id: number;
@@ -77,9 +78,10 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
           <Button
             onClick={handleAssign}
             disabled={assigning}
-            style={{ background: 'var(--color-primary)' }}
+            style={{ background: 'var(--kn-primary, #005982)' }}
             className="text-white"
           >
+            <Shuffle size={15} />
             {assigning ? '...' : t('assign')}
           </Button>
         </div>

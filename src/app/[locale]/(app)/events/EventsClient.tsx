@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import EventCard from './EventCard';
 import EventForm, { type EventData } from './EventForm';
+import { Plus, CalendarDays, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface EventsClientProps {
   initialItems: EventData[];
@@ -64,7 +65,6 @@ export default function EventsClient({
     setItems((prev) =>
       prev.map((ev) => {
         if (ev.id !== eventId) return ev;
-        // Optimistically update hasCancelled
         return { ...ev, hasCancelled: cancel };
       })
     );
@@ -85,9 +85,14 @@ export default function EventsClient({
         <h1 className="text-2xl font-bold">{t('title')}</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={togglePast}>
-            {showPast ? `📅 ${t('viewUpcoming')}` : `🕐 ${t('viewPast')}`}
+            {showPast ? <><CalendarDays size={14} /> {t('viewUpcoming')}</> : <><Clock size={14} /> {t('viewPast')}</>}
           </Button>
-          <Button onClick={() => { setEditingEvent(null); setFormOpen(true); }}>
+          <Button
+            onClick={() => { setEditingEvent(null); setFormOpen(true); }}
+            style={{ background: 'var(--kn-primary, #005982)' }}
+            className="text-white"
+          >
+            <Plus size={15} />
             {t('newEvent')}
           </Button>
         </div>
@@ -127,24 +132,20 @@ export default function EventsClient({
 
       {totalPages > 1 && (
         <div className="flex items-center gap-2 justify-center mt-4 flex-wrap">
-          <Button
-            variant="outline" size="sm"
-            disabled={currentPage === 0}
-            onClick={() => fetchPage(Math.max(0, offset - pageSize), showPast)}
-          >‹</Button>
+          <Button variant="outline" size="sm" disabled={currentPage === 0}
+            onClick={() => fetchPage(Math.max(0, offset - pageSize), showPast)}>
+            <ChevronLeft size={15} />
+          </Button>
           {Array.from({ length: totalPages }, (_, i) => (
-            <Button
-              key={i}
-              variant={i === currentPage ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => fetchPage(i * pageSize, showPast)}
-            >{i + 1}</Button>
+            <Button key={i} variant={i === currentPage ? 'default' : 'outline'} size="sm"
+              onClick={() => fetchPage(i * pageSize, showPast)}>
+              {i + 1}
+            </Button>
           ))}
-          <Button
-            variant="outline" size="sm"
-            disabled={currentPage === totalPages - 1}
-            onClick={() => fetchPage(offset + pageSize, showPast)}
-          >›</Button>
+          <Button variant="outline" size="sm" disabled={currentPage === totalPages - 1}
+            onClick={() => fetchPage(offset + pageSize, showPast)}>
+            <ChevronRight size={15} />
+          </Button>
         </div>
       )}
     </div>

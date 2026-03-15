@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/RichTextEditor';
+import { Plus, Pencil, Trash2, Save, X } from 'lucide-react';
 
 interface Part {
   id: number;
@@ -38,7 +39,6 @@ export default function GamesClient({ initialGames }: GamesClientProps) {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryError, setCategoryError] = useState('');
 
-  // Part form state
   const [editingGameId, setEditingGameId] = useState<number | null>(null);
   const [editingPartId, setEditingPartId] = useState<number | null>(null);
   const [partForm, setPartForm] = useState({
@@ -164,7 +164,10 @@ export default function GamesClient({ initialGames }: GamesClientProps) {
             required
           />
         </div>
-        <Button type="submit">{t('submitCategory')}</Button>
+        <Button type="submit" style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+          <Plus size={15} />
+          {t('submitCategory')}
+        </Button>
       </form>
       {categoryError && <p className="text-red-500 text-sm">{categoryError}</p>}
 
@@ -220,10 +223,12 @@ export default function GamesClient({ initialGames }: GamesClientProps) {
               <RichTextEditor value={partForm.description} onChange={(v) => setPartForm((f) => ({ ...f, description: v }))} minHeight="60px" />
             </div>
             <div className="flex gap-2">
-              <Button type="submit" disabled={partLoading}>
+              <Button type="submit" disabled={partLoading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+                <Save size={15} />
                 {editingPartId ? t('updatePart') : t('submitPart')}
               </Button>
               <Button type="button" variant="outline" onClick={() => { setEditingGameId(null); setEditingPartId(null); }}>
+                <X size={15} />
                 {tc('cancel')}
               </Button>
             </div>
@@ -234,15 +239,27 @@ export default function GamesClient({ initialGames }: GamesClientProps) {
       {/* Categories list */}
       {games.map((game) => (
         <div key={game.id} className="border rounded-lg overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: 'var(--color-primary)', color: 'white' }}>
+          <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: 'var(--kn-primary, #005982)', color: 'white' }}>
             <h2 className="font-semibold">{game.name}</h2>
-            <div className="flex gap-3 text-sm">
-              <button onClick={() => openPartForm(game.id)} className="text-white/80 hover:text-white">
-                + {t('newPart')}
-              </button>
-              <button onClick={() => handleDeleteCategory(game.id)} className="text-red-300 hover:text-red-100">
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openPartForm(game.id)}
+                className="text-white border-white/40 hover:bg-white/10 hover:text-white"
+                style={{ background: 'rgba(255,255,255,0.1)' }}
+              >
+                <Plus size={14} />
+                {t('newPart')}
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleDeleteCategory(game.id)}
+              >
+                <Trash2 size={14} />
                 {tc('delete')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -272,8 +289,14 @@ export default function GamesClient({ initialGames }: GamesClientProps) {
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex gap-2">
-                        <button onClick={() => openPartForm(game.id, part)} className="text-blue-500 hover:underline">{tc('edit')}</button>
-                        <button onClick={() => handleDeletePart(game.id, part.id)} className="text-red-500 hover:underline">{tc('delete')}</button>
+                        <Button size="sm" variant="outline" onClick={() => openPartForm(game.id, part)}>
+                          <Pencil size={13} />
+                          {tc('edit')}
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeletePart(game.id, part.id)}>
+                          <Trash2 size={13} />
+                          {tc('delete')}
+                        </Button>
                       </div>
                     </td>
                   </tr>

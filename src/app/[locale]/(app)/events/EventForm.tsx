@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/RichTextEditor';
+import { Save, X } from 'lucide-react';
 
 export interface EventData {
   id: number;
@@ -125,10 +126,12 @@ export default function EventForm({ initial, onSaved, onCancel }: EventFormProps
         </div>
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+            <Save size={15} />
             {initial ? t('update') : t('submit')}
           </Button>
           <Button type="button" variant="outline" onClick={onCancel}>
+            <X size={15} />
             {tc('cancel')}
           </Button>
         </div>

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import Comments from '@/components/Comments';
 import type { EventData } from './EventForm';
+import { ThumbsUp, ThumbsDown, Pencil, Trash2 } from 'lucide-react';
 
 interface EventCardProps {
   event: EventData;
@@ -67,7 +68,7 @@ export default function EventCard({
         {/* Date column */}
         <div
           className="flex-shrink-0 w-24 text-center font-bold text-sm py-2 rounded"
-          style={{ backgroundColor: 'var(--color-primary)', color: 'white', transform: 'rotate(-5deg)' }}
+          style={{ backgroundColor: 'var(--kn-primary, #005982)', color: 'white', transform: 'rotate(-5deg)' }}
         >
           <div>{dateStr.split(', ')[1]?.split('.').slice(0, 2).join('.')}</div>
           <div className="text-xs font-normal">{timeStr}</div>
@@ -115,36 +116,31 @@ export default function EventCard({
 
           {!event.pastDeadline && (
             event.hasCancelled ? (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleRsvp(false)}
-                disabled={rsvpLoading}
-              >
-                👍 {t('reattend')}
+              <Button size="sm" variant="outline" onClick={() => handleRsvp(false)} disabled={rsvpLoading}>
+                <ThumbsUp size={13} />
+                {t('reattend')}
               </Button>
             ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleRsvp(true)}
-                disabled={rsvpLoading}
-              >
-                👎 {t('cancel')}
+              <Button size="sm" variant="outline" onClick={() => handleRsvp(true)} disabled={rsvpLoading}>
+                <ThumbsDown size={13} />
+                {t('cancel')}
               </Button>
             )
           )}
 
-          <button onClick={() => onEdit(event)} className="text-blue-500 hover:underline text-xs">
+          <Button size="sm" variant="outline" onClick={() => onEdit(event)}>
+            <Pencil size={13} />
             {tc('edit')}
-          </button>
+          </Button>
           {isAdmin && (
-            <button
+            <Button
+              size="sm"
+              variant="destructive"
               onClick={() => confirm(t('deleteConfirm')) && onDelete(event.id)}
-              className="text-red-500 hover:underline text-xs"
             >
+              <Trash2 size={13} />
               {tc('delete')}
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/RichTextEditor';
 import type { VoteData } from './VoteCard';
+import { Save, X, Plus } from 'lucide-react';
 
 interface VoteFormProps {
   initial?: VoteData | null;
@@ -109,13 +110,10 @@ export default function VoteForm({ initial, onSaved, onCancel }: VoteFormProps) 
               placeholder={`${i + 1}.`}
             />
           ))}
-          <button
-            type="button"
-            onClick={addOption}
-            className="text-sm text-blue-500 hover:underline"
-          >
+          <Button type="button" variant="outline" size="sm" onClick={addOption}>
+            <Plus size={13} />
             {t('addOption')}
-          </button>
+          </Button>
           <p className="text-xs text-gray-400">{t('optionHint')}</p>
         </div>
 
@@ -160,10 +158,12 @@ export default function VoteForm({ initial, onSaved, onCancel }: VoteFormProps) 
         </div>
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+            <Save size={15} />
             {initial ? t('update') : t('submit')}
           </Button>
           <Button type="button" variant="outline" onClick={onCancel}>
+            <X size={15} />
             {tc('cancel')}
           </Button>
         </div>

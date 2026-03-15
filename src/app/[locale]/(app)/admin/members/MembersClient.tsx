@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { Plus, Pencil, Trash2, Save, X } from 'lucide-react';
 
 interface MemberRow {
   id: number;
@@ -119,9 +120,10 @@ export default function MembersClient({ initialMembers, currentMemberId }: Membe
         <h1 className="text-2xl font-bold">{t('title')}</h1>
         <Button
           onClick={openCreate}
-          style={{ background: 'var(--color-primary)' }}
+          style={{ background: 'var(--kn-primary, #005982)' }}
           className="text-white"
         >
+          <Plus size={15} />
           {t('newMember')}
         </Button>
       </div>
@@ -223,16 +225,14 @@ export default function MembersClient({ initialMembers, currentMemberId }: Membe
               <Button
                 type="submit"
                 disabled={saving}
-                style={{ background: 'var(--color-primary)' }}
+                style={{ background: 'var(--kn-primary, #005982)' }}
                 className="text-white"
               >
-                {saving
-                  ? tCommon('loading')
-                  : editingId
-                  ? t('submitEdit')
-                  : t('submitAdd')}
+                <Save size={15} />
+                {saving ? tCommon('loading') : editingId ? t('submitEdit') : t('submitAdd')}
               </Button>
               <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                <X size={15} />
                 {tCommon('cancel')}
               </Button>
             </div>
@@ -275,14 +275,12 @@ export default function MembersClient({ initialMembers, currentMemberId }: Membe
                 <td className="px-4 py-2">
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => openEdit(m)}>
+                      <Pencil size={13} />
                       {tCommon('edit')}
                     </Button>
                     {m.id !== currentMemberId && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(m.id)}
-                      >
+                      <Button size="sm" variant="destructive" onClick={() => handleDelete(m.id)}>
+                        <Trash2 size={13} />
                         {tCommon('delete')}
                       </Button>
                     )}
