@@ -9,6 +9,7 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 import { BG1_IMAGES, BG2_STYLES, getBg2Value } from '@/lib/theme';
 import { Save, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false });
 
@@ -70,7 +71,7 @@ interface ClubSettings {
   defaultScoringFilter: string;
 }
 
-type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
+type SaveStatus = 'idle' | 'saving';
 
 export default function SettingsClient({ club }: { club: ClubSettings }) {
   const t = useTranslations('clubSettings');
@@ -130,8 +131,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
 
       const res = await fetch('/api/club/settings', { method: 'PUT', body: fd });
       if (!res.ok) {
-        setStatus('error');
-        setTimeout(() => setStatus('idle'), 3000);
+        toast.error(t('errorDetail'));
         return;
       }
       const updated = await res.json();
@@ -143,11 +143,9 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
       setHeaderFile(null);
 
       applyThemeToPage({ farbe1, farbe2, farbe3, bg1, bg2, bgColor });
-      setStatus('success');
-      setTimeout(() => setStatus('idle'), 3000);
+      toast.success(t('successDetail'));
     } catch {
-      setStatus('error');
-      setTimeout(() => setStatus('idle'), 3000);
+      toast.error(t('errorDetail'));
     }
   }
 
@@ -408,44 +406,16 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
           </div>
         </section>
 
-        {/* Submit + status */}
-        <div className="flex items-center gap-4">
-          <Button
-            type="submit"
-            disabled={status === 'saving'}
-            style={{ background: 'var(--kn-primary, #005982)' }}
-            className="text-white min-w-28"
-          >
-            <Save size={15} />
-            {status === 'saving' ? t('saving') : t('submit')}
-          </Button>
-
-          {status === 'success' && (
-            <span
-              className="flex items-center gap-1.5 text-sm font-medium"
-              style={{ color: '#16a34a' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" fill="#16a34a" />
-                <path d="M4.5 8l2.5 2.5 4.5-5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {t('successDetail')}
-            </span>
-          )}
-
-          {status === 'error' && (
-            <span
-              className="flex items-center gap-1.5 text-sm font-medium"
-              style={{ color: '#dc2626' }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" fill="#dc2626" />
-                <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              {t('errorDetail')}
-            </span>
-          )}
-        </div>
+        {/* Submit */}
+        <Button
+          type="submit"
+          disabled={status === 'saving'}
+          style={{ background: 'var(--kn-primary, #005982)' }}
+          className="text-white min-w-28"
+        >
+          <Save size={15} />
+          {status === 'saving' ? t('saving') : t('submit')}
+        </Button>
       </form>
     </div>
   );
