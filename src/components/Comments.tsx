@@ -4,13 +4,13 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Trash2 } from 'lucide-react';
+import { Send, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 
 export interface CommentData {
   id: number;
   content: string;
   createdAt: string;
-  author: { nickname: string };
+  author: { nickname: string; pic: string };
   isOwn: boolean;
 }
 
@@ -23,9 +23,12 @@ interface CommentsProps {
 export default function Comments({ referenceId, type, initialComments }: CommentsProps) {
   const t = useTranslations('comments');
   const [comments, setComments] = useState<CommentData[]>(initialComments);
+  const [expanded, setExpanded] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  const latest = comments[0];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,7 +44,7 @@ export default function Comments({ referenceId, type, initialComments }: Comment
 
     if (res.ok) {
       const comment: CommentData = await res.json();
-      setComments((prev) => [...prev, comment]);
+      setComments((prev) => [comment, ...prev]);
       setNewComment('');
     } else {
       setError(t('error.saveFailed'));
@@ -57,54 +60,103 @@ export default function Comments({ referenceId, type, initialComments }: Comment
   }
 
   return (
-    <div className="mt-4 space-y-3">
-      <h3 className="text-sm font-semibold text-gray-700">{t('title')}</h3>
+    <div className="mt-3 rounded-lg p-2" style={{ background: '#f0f0f0' }}>
+      {/* Collapsed header — always visible */}
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center gap-2 w-full text-left"
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}
+      >
+        <MessageSquare size={13} style={{ color: 'rgba(0,0,0,0.4)', flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.5)', fontWeight: 600 }}>
+          {t('title')} ({comments.length})
+        </span>
+        {!expanded && latest && (
+          <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.4)', marginLeft: 4, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            — {latest.author.nickname},{' '}
+            {new Date(latest.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+            {': '}
+            <span style={{ fontStyle: 'italic' }}>{latest.content.slice(0, 60)}{latest.content.length > 60 ? '…' : ''}</span>
+          </span>
+        )}
+        {!expanded && comments.length === 0 && (
+          <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.3)', marginLeft: 4 }}>
+            — {t('noComments')}
+          </span>
+        )}
+        <span style={{ marginLeft: 'auto', color: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
+          {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </span>
+      </button>
 
-      {comments.map((comment) => (
-        <div key={comment.id} className="bg-gray-50 rounded p-3 text-sm">
-          <div className="flex justify-between items-start">
-            <span className="font-medium text-gray-800">{comment.author.nickname}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-400 text-xs">
-                {new Date(comment.createdAt).toLocaleDateString('de-DE')}
-              </span>
-              {comment.isOwn && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleDelete(comment.id)}
-                  className="h-6 w-6 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
-                  title="Delete"
-                >
-                  <Trash2 size={12} />
-                </Button>
-              )}
+      {/* Expanded content */}
+      {expanded && (
+        <div className="mt-2 space-y-3">
+          {comments.length === 0 && (
+            <p style={{ fontSize: 12, color: 'rgba(0,0,0,0.35)', fontStyle: 'italic' }}>{t('noComments')}</p>
+          )}
+
+          {comments.map((comment) => (
+            <div key={comment.id} className="rounded p-2.5 text-sm" style={{ background: 'rgba(0,0,0,0.06)' }}>
+              <div className="flex justify-between items-start">
+                <div className="flex items-center gap-1.5">
+                  {comment.author.pic && comment.author.pic !== 'none' ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={comment.author.pic}
+                      alt=""
+                      style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--kn-primary, #005982)', opacity: 0.35, flexShrink: 0 }} />
+                  )}
+                  <span className="font-medium text-gray-800">{comment.author.nickname}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 text-xs">
+                    {new Date(comment.createdAt).toLocaleDateString('de-DE')}{' '}
+                    {new Date(comment.createdAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                  {comment.isOwn && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(comment.id)}
+                      className="h-6 w-6 p-0 text-red-400 hover:text-red-600 hover:bg-red-50"
+                      title="Delete"
+                    >
+                      <Trash2 size={12} />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <p className="text-gray-700 mt-1 whitespace-pre-wrap">{comment.content}</p>
             </div>
-          </div>
-          <p className="text-gray-700 mt-1 whitespace-pre-wrap">{comment.content}</p>
-        </div>
-      ))}
+          ))}
 
-      <form onSubmit={handleSubmit} className="space-y-2">
-        <Textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder={t('placeholder')}
-          rows={2}
-          className="text-sm"
-        />
-        {error && <p className="text-red-500 text-xs">{error}</p>}
-        <Button
-          type="submit"
-          size="sm"
-          disabled={submitting || !newComment.trim()}
-          style={{ background: 'var(--kn-primary, #005982)' }}
-          className="text-white"
-        >
-          <Send size={13} />
-          {t('submit')}
-        </Button>
-      </form>
+          <form onSubmit={handleSubmit} className="space-y-2">
+            <Textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder={t('placeholder')}
+              rows={2}
+              className="text-sm"
+              style={{ background: '#ffffff' }}
+            />
+            {error && <p className="text-red-500 text-xs">{error}</p>}
+            <Button
+              type="submit"
+              size="sm"
+              disabled={submitting || !newComment.trim()}
+              style={{ background: 'var(--kn-primary, #005982)' }}
+              className="text-white"
+            >
+              <Send size={13} />
+              {t('submit')}
+            </Button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

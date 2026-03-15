@@ -18,11 +18,11 @@ export default async function EventsPage() {
       include: {
         author: { select: { id: true, nickname: true } },
         cancellations: {
-          include: { member: { select: { id: true, nickname: true } } },
+          include: { member: { select: { id: true, nickname: true, pic: true } } },
         },
         comments: {
-          include: { author: { select: { nickname: true } } },
-          orderBy: { createdAt: 'asc' },
+          include: { author: { select: { nickname: true, pic: true } } },
+          orderBy: { createdAt: 'desc' },
         },
       },
       orderBy: { date: 'asc' },
@@ -46,9 +46,11 @@ export default async function EventsPage() {
       author: event.author,
       hasCancelled: !!myCancellation,
       pastDeadline,
+      recurrenceRuleId: event.recurrenceRuleId,
       cancellations: event.cancellations.map((c) => ({
         memberId: c.memberId,
         nickname: c.member.nickname,
+        pic: c.member.pic,
       })),
       comments: event.comments.map((c) => ({
         id: c.id,
@@ -66,6 +68,7 @@ export default async function EventsPage() {
       initialTotal={total}
       pageSize={PAGE_SIZE}
       isAdmin={member.role === 'ADMIN'}
+      currentMember={{ id: member.id, nickname: member.nickname, pic: member.pic }}
     />
   );
 }

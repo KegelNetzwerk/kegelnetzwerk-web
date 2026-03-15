@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import type { Member, Club } from '@prisma/client';
 import SidebarShell from './SidebarShell';
@@ -12,30 +13,61 @@ export default async function Sidebar({ member, locale }: SidebarProps) {
   const t = await getTranslations('profile');
   if (!member) return null;
 
-  const members = await prisma.member.findMany({
-    where: { clubId: member.clubId },
-    select: { nickname: true, birthday: true },
-  });
+  const cookieStore = await cookies();
+  const initialCollapsed = cookieStore.get('kn-sidebar-collapsed')?.value === 'true';
+
+  const [members, santaPartner, latestNews, nextEvent, openVotes] = await Promise.all([
+    prisma.member.findMany({
+      where: { clubId: member.clubId },
+      select: { nickname: true, birthday: true },
+    }),
+    member.secretSantaPartnerId
+      ? prisma.member.findUnique({
+          where: { id: member.secretSantaPartnerId },
+          select: { nickname: true },
+        })
+      : Promise.resolve(null),
+    prisma.news.findFirst({
+      where: { clubId: member.clubId },
+      orderBy: { createdAt: 'desc' },
+      select: { title: true },
+    }),
+    prisma.event.findFirst({
+      where: { clubId: member.clubId, date: { gte: new Date() } },
+      orderBy: { date: 'asc' },
+      select: { subject: true, date: true },
+    }),
+    prisma.vote.findMany({
+      where: { clubId: member.clubId, closed: false },
+      select: { title: true },
+      orderBy: { createdAt: 'desc' },
+    }),
+  ]);
 
   const nextBirthday = getNextBirthday(members, new Date());
-  const santaPartner = member.secretSantaPartnerId
-    ? await prisma.member.findUnique({
-        where: { id: member.secretSantaPartnerId },
-        select: { nickname: true },
-      })
+
+  const nextEventLabel = nextEvent
+    ? `${nextEvent.subject} (${nextEvent.date.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-GB', { day: '2-digit', month: '2-digit' })})`
     : null;
 
   return (
     <SidebarShell
+      initialCollapsed={initialCollapsed}
       locale={locale}
       clubName={member.club.name}
       clubPic={member.club.pic}
       memberCount={members.length}
       nextBirthday={nextBirthday}
       santaPartner={santaPartner?.nickname ?? null}
+      latestNews={latestNews?.title ?? null}
+      nextEvent={nextEventLabel}
+      openVoteTitles={openVotes.map((v) => v.title)}
       labelMembers={t('sidebar.members')}
       labelBirthday={t('sidebar.nextBirthday')}
       labelSanta={t('sidebar.secretSantaPartner')}
+      labelLatestNews={t('sidebar.latestNews')}
+      labelNextEvent={t('sidebar.nextEvent')}
+      labelOpenVotes={t('sidebar.openVotes')}
     />
   );
 }

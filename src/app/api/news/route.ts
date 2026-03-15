@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
       include: {
         author: { select: { nickname: true } },
         comments: {
-          include: { author: { select: { nickname: true } } },
-          orderBy: { createdAt: 'asc' as const },
+          include: { author: { select: { nickname: true, pic: true } } },
+          orderBy: { createdAt: 'desc' as const },
         },
       },
       orderBy: { createdAt: 'desc' as const },
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       internal: !!internal,
       emailNotified: !!sendNotification,
     },
-    include: { author: { select: { nickname: true } } },
+    include: { author: { select: { nickname: true, pic: true } } },
   });
 
   // Send email notification if requested

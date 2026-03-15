@@ -74,7 +74,9 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic 
         <Link href={`/${locale}/club`} style={linkStyle(`/${locale}/club`)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
           {hasClubPic ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={clubPic} alt="" style={{ width: 20, height: 20, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: 'var(--kn-primary, #3089ac)', flexShrink: 0, overflow: 'hidden' }}>
+              <img src={clubPic} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+            </span>
           ) : (
             <Building2 size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
           )}
@@ -85,7 +87,9 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic 
         <Link href={`/${locale}/profile`} style={linkStyle(`/${locale}/profile`)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
           {hasMemberPic ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={memberPic} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: 'var(--kn-primary, #3089ac)', flexShrink: 0, overflow: 'hidden' }}>
+              <img src={memberPic} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+            </span>
           ) : (
             <User size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
           )}

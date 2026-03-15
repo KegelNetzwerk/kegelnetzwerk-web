@@ -15,8 +15,8 @@ export default async function NewsPage() {
       include: {
         author: { select: { nickname: true } },
         comments: {
-          include: { author: { select: { nickname: true } } },
-          orderBy: { createdAt: 'asc' },
+          include: { author: { select: { nickname: true, pic: true } } },
+          orderBy: { createdAt: 'desc' },
         },
       },
       orderBy: { createdAt: 'desc' },

@@ -58,11 +58,12 @@ model Club {
   createdAt      DateTime @default(now())
 
   // Relations
-  members          Member[]
-  news             News[]
-  votes            Vote[]
-  events           Event[]
-  gamesOrPenalties GameOrPenalty[]
+  members              Member[]
+  news                 News[]
+  votes                Vote[]
+  events               Event[]
+  eventRecurrenceRules EventRecurrenceRule[]
+  gamesOrPenalties     GameOrPenalty[]
   parts            Part[]
   results          Result[]
 }
@@ -95,9 +96,10 @@ model Member {
   // Relations
   sessions             Session[]
   passwordResetTokens  PasswordResetToken[]
-  authoredNews         News[]               @relation("NewsAuthor")
-  authoredVotes        Vote[]               @relation("VoteAuthor")
-  authoredEvents       Event[]              @relation("EventAuthor")
+  authoredNews             News[]               @relation("NewsAuthor")
+  authoredVotes            Vote[]               @relation("VoteAuthor")
+  authoredEvents           Event[]              @relation("EventAuthor")
+  authoredRecurrenceRules  EventRecurrenceRule[] @relation("RecurrenceRuleAuthor")
   votings              Voting[]
   eventCancellations   EventCancellation[]
   comments             Comment[]
@@ -198,18 +200,38 @@ model Voting {
 
 // ─── Events ───────────────────────────────────────────────────────────────────
 
+model EventRecurrenceRule {
+  id            Int      @id @default(autoincrement())
+  clubId        Int
+  club          Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId      Int
+  author        Member   @relation("RecurrenceRuleAuthor", fields: [authorId], references: [id])
+  subject       String
+  location      String   @default("")
+  description   String   @default("") // rich text
+  // "EVERY_N_WEEKS" | "MONTHLY" | "YEARLY"
+  type          String
+  intervalWeeks Int?     // only for EVERY_N_WEEKS
+  startDate     DateTime
+  createdAt     DateTime @default(now())
+
+  events        Event[]
+}
+
 model Event {
-  id          Int      @id @default(autoincrement())
-  clubId      Int
-  club        Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  authorId    Int
-  author      Member   @relation("EventAuthor", fields: [authorId], references: [id])
-  date        DateTime
-  subject     String
-  location    String   @default("")
-  description String   @default("") // rich text
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 Int                  @id @default(autoincrement())
+  clubId             Int
+  club               Club                 @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorId           Int
+  author             Member               @relation("EventAuthor", fields: [authorId], references: [id])
+  date               DateTime
+  subject            String
+  location           String               @default("")
+  description        String               @default("") // rich text
+  recurrenceRuleId   Int?
+  recurrenceRule     EventRecurrenceRule? @relation(fields: [recurrenceRuleId], references: [id], onDelete: SetNull)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
 
   cancellations EventCancellation[]
   comments      Comment[]

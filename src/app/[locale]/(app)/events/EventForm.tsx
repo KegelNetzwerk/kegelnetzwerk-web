@@ -18,7 +18,8 @@ export interface EventData {
   author: { id: number; nickname: string };
   hasCancelled: boolean;
   pastDeadline: boolean;
-  cancellations: { memberId: number; nickname: string }[];
+  recurrenceRuleId: number | null;
+  cancellations: { memberId: number; nickname: string; pic: string }[];
   comments: {
     id: number;
     content: string;
@@ -50,6 +51,8 @@ export default function EventForm({ initial, onSaved, onCancel }: EventFormProps
   const [description, setDescription] = useState(initial?.description ?? '');
   const [dateStr, setDateStr] = useState(toDateStr(initDate));
   const [timeStr, setTimeStr] = useState(initial ? toTimeStr(initDate) : '20:00');
+  const [recurrenceType, setRecurrenceType] = useState('NONE');
+  const [intervalWeeks, setIntervalWeeks] = useState(4);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -64,12 +67,16 @@ export default function EventForm({ initial, onSaved, onCancel }: EventFormProps
     }
 
     setLoading(true);
-    const body = {
+    const body: Record<string, unknown> = {
       subject,
       location,
       description,
       date: combinedDate.toISOString(),
     };
+    if (!initial && recurrenceType !== 'NONE') {
+      body.recurrenceType = recurrenceType;
+      if (recurrenceType === 'EVERY_N_WEEKS') body.intervalWeeks = intervalWeeks;
+    }
 
     const res = initial
       ? await fetch(`/api/events/${initial.id}`, {
@@ -86,8 +93,12 @@ export default function EventForm({ initial, onSaved, onCancel }: EventFormProps
     if (res.ok) {
       onSaved();
     } else {
-      const data = await res.json();
-      setError(data.error || t('error.saveFailed'));
+      try {
+        const data = await res.json();
+        setError(data.error || t('error.saveFailed'));
+      } catch {
+        setError(t('error.saveFailed'));
+      }
     }
     setLoading(false);
   }
@@ -119,6 +130,40 @@ export default function EventForm({ initial, onSaved, onCancel }: EventFormProps
             <Input value={location} onChange={(e) => setLocation(e.target.value)} />
           </div>
         </div>
+
+        {/* Recurrence — only shown when creating a new event */}
+        {!initial && (
+          <div className="space-y-2">
+            <Label>{t('recurrence')}</Label>
+            <div className="flex flex-wrap gap-2">
+              {(['NONE', 'EVERY_N_WEEKS', 'MONTHLY', 'YEARLY'] as const).map((type) => (
+                <label key={type} className="flex items-center gap-1.5 cursor-pointer text-sm">
+                  <input
+                    type="radio"
+                    name="recurrenceType"
+                    value={type}
+                    checked={recurrenceType === type}
+                    onChange={() => setRecurrenceType(type)}
+                  />
+                  {t(`recurrenceType.${type}`)}
+                </label>
+              ))}
+            </div>
+            {recurrenceType === 'EVERY_N_WEEKS' && (
+              <div className="flex items-center gap-2 text-sm">
+                <Label className="whitespace-nowrap">{t('intervalWeeks')}</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={52}
+                  value={intervalWeeks}
+                  onChange={(e) => setIntervalWeeks(parseInt(e.target.value, 10) || 1)}
+                  className="w-20"
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="space-y-1">
           <Label>{t('description')}</Label>

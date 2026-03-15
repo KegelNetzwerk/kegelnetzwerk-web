@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import Comments from '@/components/Comments';
 import type { EventData } from './EventForm';
-import { ThumbsUp, ThumbsDown, Pencil, Trash2 } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Pencil, Trash2, Repeat2 } from 'lucide-react';
 
 interface EventCardProps {
   event: EventData;
@@ -28,8 +28,8 @@ export default function EventCard({
   const [rsvpError, setRsvpError] = useState('');
 
   const eventDate = new Date(event.date);
+  const weekday = eventDate.toLocaleDateString('de-DE', { weekday: 'long' });
   const dateStr = eventDate.toLocaleDateString('de-DE', {
-    weekday: 'short',
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -70,13 +70,26 @@ export default function EventCard({
           className="flex-shrink-0 w-24 text-center font-bold text-sm py-2 rounded"
           style={{ backgroundColor: 'var(--kn-primary, #005982)', color: 'white', transform: 'rotate(-5deg)' }}
         >
-          <div>{dateStr.split(', ')[1]?.split('.').slice(0, 2).join('.')}</div>
+          <div className="text-xs font-normal opacity-90">{weekday}</div>
+          <div>{dateStr}</div>
           <div className="text-xs font-normal">{timeStr}</div>
         </div>
 
         {/* Content */}
         <div className="flex-1 space-y-1">
-          <h2 className="text-lg font-semibold">{event.subject}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-semibold">{event.subject}</h2>
+            {event.recurrenceRuleId && (
+              <span
+                className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded"
+                style={{ background: 'var(--kn-primary, #005982)', color: 'white', opacity: 0.85 }}
+                title={t('recurring')}
+              >
+                <Repeat2 size={11} />
+                {t('recurring')}
+              </span>
+            )}
+          </div>
           {event.description && (
             <div
               className="prose prose-sm text-gray-700"
@@ -98,10 +111,30 @@ export default function EventCard({
             <span className="font-semibold">
               {t('cancelled')} ({event.cancellations.length}):
             </span>
-            <br />
-            {event.cancellations.length === 0
-              ? '–'
-              : event.cancellations.map((c) => c.nickname).join(', ')}
+            {event.cancellations.length === 0 ? (
+              <div className="text-gray-400">–</div>
+            ) : (
+              <div className="flex flex-col gap-1 mt-1">
+                {event.cancellations.map((c) => (
+                  <div key={c.memberId} className="flex items-center gap-1.5">
+                    {c.pic && c.pic !== 'none' ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={c.pic}
+                        alt=""
+                        style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                      />
+                    ) : (
+                      <div style={{
+                        width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+                        background: 'var(--kn-primary, #005982)', opacity: 0.4,
+                      }} />
+                    )}
+                    <span>{c.nickname}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

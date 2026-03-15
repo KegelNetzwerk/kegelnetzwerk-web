@@ -19,8 +19,8 @@ export default async function VotesPage() {
           include: { member: { select: { id: true, nickname: true } } },
         },
         comments: {
-          include: { author: { select: { nickname: true } } },
-          orderBy: { createdAt: 'asc' },
+          include: { author: { select: { nickname: true, pic: true } } },
+          orderBy: { createdAt: 'desc' },
         },
       },
       orderBy: { id: 'desc' },

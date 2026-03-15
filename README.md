@@ -134,10 +134,11 @@ npm run start      # Start production server
 ### Database helpers
 
 ```bash
-npm run db:migrate  # Create a new migration after schema changes
-npm run db:push     # Push schema changes without a migration file (dev only)
-npm run db:studio   # Open Prisma Studio (database GUI) at http://localhost:5555
-npm run db:seed     # Re-run the seed script
+npm run db:migrate          # Create a new migration after schema changes
+npm run db:push             # Push schema changes without a migration file (dev only)
+npm run db:studio           # Open Prisma Studio (database GUI) at http://localhost:5555
+npm run db:seed             # Re-run the seed script
+npm run db:migrate-legacy   # Migrate data from the legacy PHP/MySQL database (see below)
 ```
 
 ### Adding more registration codes
@@ -147,6 +148,16 @@ To allow another club to register, insert an additional code via Prisma Studio o
 ```sql
 INSERT INTO "RegistrationCode" (code, "createdAt")
 VALUES (encode(sha256('another-secret-code'), 'hex'), now());
+```
+
+---
+
+## Migrating data from the legacy PHP application
+
+See **[docs/migration.md](docs/migration.md)** for the full guide, including what is migrated, password handling, and how to run the script.
+
+```bash
+npm run db:migrate-legacy
 ```
 
 ---
@@ -199,4 +210,8 @@ prisma/
 ├── schema.prisma           # Full database schema
 ├── migrations/             # Migration history
 └── seed.ts                 # Registration code seeder
+scripts/
+└── migrate.ts              # Legacy PHP/MySQL → PostgreSQL data migration
+docs/
+└── migration.md            # Migration guide
 ```

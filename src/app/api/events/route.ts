@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentMember } from '@/lib/auth';
+import { ensureRecurringEvents, generateOccurrences } from '@/lib/recurrence';
 
 const PAGE_SIZE = 5;
 
 export async function GET(req: NextRequest) {
   const member = await getCurrentMember();
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  // Auto-expand recurring events before querying
+  await ensureRecurringEvents(member.clubId);
 
   const { searchParams } = new URL(req.url);
   const offset = parseInt(searchParams.get('offset') ?? '0', 10);
@@ -27,11 +31,11 @@ export async function GET(req: NextRequest) {
       include: {
         author: { select: { id: true, nickname: true } },
         cancellations: {
-          include: { member: { select: { id: true, nickname: true } } },
+          include: { member: { select: { id: true, nickname: true, pic: true } } },
         },
         comments: {
-          include: { author: { select: { nickname: true } } },
-          orderBy: { createdAt: 'asc' },
+          include: { author: { select: { nickname: true, pic: true } } },
+          orderBy: { createdAt: 'desc' },
         },
       },
       orderBy: { date: past ? 'desc' : 'asc' },
@@ -58,9 +62,11 @@ export async function GET(req: NextRequest) {
       author: event.author,
       hasCancelled: !!myCancellation,
       pastDeadline,
+      recurrenceRuleId: event.recurrenceRuleId,
       cancellations: event.cancellations.map((c) => ({
         memberId: c.memberId,
         nickname: c.member.nickname,
+        pic: c.member.pic,
       })),
       comments: event.comments.map((c) => ({
         id: c.id,
@@ -76,31 +82,68 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const member = await getCurrentMember();
-  if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const member = await getCurrentMember();
+    if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { subject, location, description, date } = await req.json();
+    const { subject, location, description, date, recurrenceType, intervalWeeks } = await req.json();
 
-  if (!subject || subject.length < 3) {
-    return NextResponse.json({ error: 'Subject too short.' }, { status: 400 });
+    if (!subject || subject.length < 3) {
+      return NextResponse.json({ error: 'Subject too short.' }, { status: 400 });
+    }
+
+    const parsedDate = new Date(date);
+    if (isNaN(parsedDate.getTime())) {
+      return NextResponse.json({ error: 'Invalid date.' }, { status: 400 });
+    }
+
+    // Non-recurring: create single event
+    if (!recurrenceType || recurrenceType === 'NONE') {
+      const event = await prisma.event.create({
+        data: {
+          clubId: member.clubId,
+          authorId: member.id,
+          subject,
+          location: location ?? '',
+          description: description ?? '',
+          date: parsedDate,
+        },
+        include: { author: { select: { id: true, nickname: true } } },
+      });
+      return NextResponse.json(event, { status: 201 });
+    }
+
+    // Recurring: create rule then generate all instances up to 12 months
+    const rule = await prisma.eventRecurrenceRule.create({
+      data: {
+        clubId: member.clubId,
+        authorId: member.id,
+        subject,
+        location: location ?? '',
+        description: description ?? '',
+        type: recurrenceType,
+        intervalWeeks: recurrenceType === 'EVERY_N_WEEKS' ? (intervalWeeks ?? 1) : null,
+        startDate: parsedDate,
+      },
+    });
+
+    const dates = generateOccurrences(parsedDate, recurrenceType, intervalWeeks ?? null);
+    await prisma.event.createMany({
+      data: dates.map((d) => ({
+        clubId: member.clubId,
+        authorId: member.id,
+        subject,
+        location: location ?? '',
+        description: description ?? '',
+        date: d,
+        recurrenceRuleId: rule.id,
+      })),
+    });
+
+    return NextResponse.json({ ok: true, ruleId: rule.id }, { status: 201 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('POST /api/events error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const parsedDate = new Date(date);
-  if (isNaN(parsedDate.getTime())) {
-    return NextResponse.json({ error: 'Invalid date.' }, { status: 400 });
-  }
-
-  const event = await prisma.event.create({
-    data: {
-      clubId: member.clubId,
-      authorId: member.id,
-      subject,
-      location: location ?? '',
-      description: description ?? '',
-      date: parsedDate,
-    },
-    include: { author: { select: { id: true, nickname: true } } },
-  });
-
-  return NextResponse.json(event, { status: 201 });
 }

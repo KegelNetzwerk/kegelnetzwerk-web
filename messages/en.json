@@ -119,7 +119,10 @@
     "sidebar": {
       "members": "Members",
       "nextBirthday": "Next birthday",
-      "secretSantaPartner": "Secret Santa partner"
+      "secretSantaPartner": "Secret Santa partner",
+      "latestNews": "Latest news",
+      "nextEvent": "Next event",
+      "openVotes": "Open votes"
     },
     "error": {
       "nicknameTaken": "This nickname is already taken.",
@@ -205,6 +208,15 @@
     "subject": "Subject",
     "location": "Location",
     "description": "Description",
+    "recurrence": "Recurrence",
+    "recurrenceType": {
+      "NONE": "One-time",
+      "EVERY_N_WEEKS": "Every N weeks",
+      "MONTHLY": "Monthly",
+      "YEARLY": "Yearly"
+    },
+    "intervalWeeks": "Interval (weeks)",
+    "recurring": "Recurring",
     "submit": "Create",
     "update": "Update",
     "collapse": "Collapse",
@@ -380,6 +392,7 @@
   },
   "comments": {
     "title": "Comments",
+    "noComments": "No comments yet",
     "addComment": "Add a comment",
     "placeholder": "Write a comment...",
     "submit": "Comment",

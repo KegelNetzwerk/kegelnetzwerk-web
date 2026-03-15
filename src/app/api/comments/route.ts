@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   const comment = await prisma.comment.create({
     data,
-    include: { author: { select: { nickname: true } } },
+    include: { author: { select: { nickname: true, pic: true } } },
   });
 
   return NextResponse.json({

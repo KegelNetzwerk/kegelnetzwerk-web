@@ -12,6 +12,7 @@ interface EventsClientProps {
   initialTotal: number;
   pageSize: number;
   isAdmin: boolean;
+  currentMember: { id: number; nickname: string; pic: string };
 }
 
 export default function EventsClient({
@@ -19,6 +20,7 @@ export default function EventsClient({
   initialTotal,
   pageSize,
   isAdmin,
+  currentMember,
 }: EventsClientProps) {
   const t = useTranslations('events');
 
@@ -65,7 +67,10 @@ export default function EventsClient({
     setItems((prev) =>
       prev.map((ev) => {
         if (ev.id !== eventId) return ev;
-        return { ...ev, hasCancelled: cancel };
+        const cancellations = cancel
+          ? [...ev.cancellations, { memberId: currentMember.id, nickname: currentMember.nickname, pic: currentMember.pic }]
+          : ev.cancellations.filter((c) => c.memberId !== currentMember.id);
+        return { ...ev, hasCancelled: cancel, cancellations };
       })
     );
   }
