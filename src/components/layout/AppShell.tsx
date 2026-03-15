@@ -1,12 +1,12 @@
 import { getCurrentMember } from '@/lib/auth';
+import { getLocale } from 'next-intl/server';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MainNav from './MainNav';
 import CreditLine from './CreditLine';
 
 export default async function AppShell({ children }: { children: React.ReactNode }) {
-  const member = await getCurrentMember();
-  const locale = 'de';
+  const [member, locale] = await Promise.all([getCurrentMember(), getLocale()]);
   const isAdmin = member?.role === 'ADMIN';
 
   return (
