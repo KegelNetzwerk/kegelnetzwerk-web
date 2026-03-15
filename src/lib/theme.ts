@@ -5,9 +5,9 @@ export const BG1_IMAGES = [
 ];
 
 export const BG2_STYLES = [
-  "url('/images/bg.png') center/cover",
-  "url('/images/bg_alt.png') center/cover",
-  "url('/images/bg_light.png') center/cover",
+  "url('/images/bg.png')",
+  "url('/images/bg_alt.png')",
+  "url('/images/bg_light.png')",
 ];
 
 export function getBg2Value(bg2: number, bgColor: string): string {
