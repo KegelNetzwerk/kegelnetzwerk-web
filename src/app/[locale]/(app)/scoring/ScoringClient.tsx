@@ -85,7 +85,21 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
   const [sortAsc, setSortAsc] = useState(getParam('sortAsc') === 'true');
   const [data, setData] = useState<ScoringData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(!hasUrlParams && !defaultScoringFilter);
+  const [filterOpen, setFilterOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem('scoring-filter-open');
+      if (stored !== null) return stored === 'true';
+    } catch {}
+    return !hasUrlParams && !defaultScoringFilter;
+  });
+
+  function toggleFilter() {
+    setFilterOpen((o) => {
+      const next = !o;
+      try { localStorage.setItem('scoring-filter-open', String(next)); } catch {}
+      return next;
+    });
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -127,6 +141,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
 
   function applyFilter() {
     router.replace(`?${buildParams().toString()}`, { scroll: false });
+    try { localStorage.setItem('scoring-filter-open', 'false'); } catch {}
     setFilterOpen(false);
     fetchData();
   }
@@ -184,7 +199,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
         <button
           type="button"
           className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold"
-          onClick={() => setFilterOpen((o) => !o)}
+          onClick={toggleFilter}
         >
           <div className="flex items-center gap-2">
             <Filter size={14} />
