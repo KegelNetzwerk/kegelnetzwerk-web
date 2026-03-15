@@ -196,7 +196,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
         {/* Header row — always visible */}
         <button
           type="button"
-          className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold"
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold cursor-pointer"
           onClick={toggleFilter}
         >
           <div className="flex items-center gap-2">

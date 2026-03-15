@@ -25,7 +25,7 @@ export default function ContactList({ members, title, nicknameLabel, emailLabel,
     <div className="border rounded-lg overflow-hidden">
       <button
         type="button"
-        className="w-full flex items-center justify-between px-4 py-3 text-left font-semibold text-lg bg-muted/40 hover:bg-muted/60 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 text-left font-semibold text-lg bg-muted/40 hover:bg-muted/60 transition-colors cursor-pointer"
         onClick={() => setOpen((o) => !o)}
       >
         {title}
