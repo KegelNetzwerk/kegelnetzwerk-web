@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentMember } from '@/lib/auth';
-import { Trophy, Users, Settings } from 'lucide-react';
+import { Trophy, Users, Settings, Gift } from 'lucide-react';
 
 const CARDS = [
   { href: '/admin/games', icon: Trophy, label: 'Games & Penalties' },
   { href: '/admin/members', icon: Users, label: 'Members' },
   { href: '/admin/settings', icon: Settings, label: 'Club Settings' },
+  { href: '/secret-santa', icon: Gift, label: 'Secret Santa' },
 ];
 
 export default async function AdminPage() {
