@@ -227,7 +227,7 @@
     "reattend": "Doch teilnehmen",
     "cancelTooLate": "Es ist bereits zu spät um abzusagen!",
     "reattendTooLate": "Es ist bereits zu spät für eine erneute Zusage!",
-    "cancelDeadlinePassed": "Die Abmeldefrist für diesen Termin ist abgelaufen.",
+    "cancelDeadlinePassed": "Die Abmeldefrist ist seit dem {date} um {time} Uhr abgelaufen.",
     "postedBy": "Erstellt von",
     "editedBy": "Bearbeitet von",
     "cancelConfirm": "Möchten Sie diesen Termin wirklich absagen?",

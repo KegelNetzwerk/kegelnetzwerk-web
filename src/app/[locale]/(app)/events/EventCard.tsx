@@ -174,7 +174,14 @@ export default function EventCard({
       {event.pastDeadline && !event.hasCancelled && new Date(event.date) > new Date() && (
         <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded px-3 py-2">
           <AlertTriangle size={13} className="shrink-0" />
-          {t('cancelDeadlinePassed')}
+          {t('cancelDeadlinePassed', {
+            date: new Date(event.cancelDeadline).toLocaleDateString('de-DE', {
+              day: '2-digit', month: '2-digit', year: 'numeric',
+            }),
+            time: new Date(event.cancelDeadline).toLocaleTimeString('de-DE', {
+              hour: '2-digit', minute: '2-digit',
+            }),
+          })}
         </div>
       )}
 

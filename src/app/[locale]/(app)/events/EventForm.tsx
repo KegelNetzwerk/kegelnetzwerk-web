@@ -18,6 +18,7 @@ export interface EventData {
   author: { id: number; nickname: string };
   hasCancelled: boolean;
   pastDeadline: boolean;
+  cancelDeadline: string;
   recurrenceRuleId: number | null;
   cancellations: { memberId: number; nickname: string; pic: string }[];
   comments: {

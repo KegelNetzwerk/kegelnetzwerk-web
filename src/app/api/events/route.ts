@@ -64,6 +64,7 @@ export async function GET(req: NextRequest) {
       author: event.author,
       hasCancelled: !!myCancellation,
       pastDeadline,
+      cancelDeadline: new Date(deadlineTs).toISOString(),
       recurrenceRuleId: event.recurrenceRuleId,
       cancellations: event.cancellations.map((c) => ({
         memberId: c.memberId,

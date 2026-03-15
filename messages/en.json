@@ -227,7 +227,7 @@
     "reattend": "Attend after all",
     "cancelTooLate": "It is too late to cancel attendance!",
     "reattendTooLate": "It is too late to confirm attendance again!",
-    "cancelDeadlinePassed": "The cancellation deadline for this event has passed.",
+    "cancelDeadlinePassed": "The cancellation deadline passed on {date} at {time}.",
     "postedBy": "Created by",
     "editedBy": "Edited by",
     "cancelConfirm": "Are you sure you want to cancel your attendance?",
