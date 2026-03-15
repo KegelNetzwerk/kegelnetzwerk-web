@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
 import ContactList from './ContactList';
+import GamesOverview from './GamesOverview';
 
 export default async function ClubProfilePage() {
   const member = await getCurrentMember();
@@ -117,49 +118,34 @@ export default async function ClubProfilePage() {
         phoneLabel={tc('phone')}
       />
 
-      {/* Games & Penalties overview */}
+      {/* Games & Penalties overview — collapsible */}
       {games.length > 0 && (
-        <div>
-          <h2 className="mb-4 text-xl font-semibold">{tg('title')}</h2>
-          <div className="flex flex-wrap gap-4">
-            {games.map((game) => (
-              <div key={game.id} className="border rounded-lg overflow-hidden min-w-[200px] flex-1">
-                <div
-                  className="px-4 py-2 font-semibold text-sm text-white"
-                  style={{ backgroundColor: 'var(--kn-primary, #005982)' }}
-                >
-                  {game.name}
-                </div>
-                {game.parts.length > 0 ? (
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted">
-                      <tr>
-                        <th className="px-3 py-1.5 text-left font-medium text-xs">{tg('partName')}</th>
-                        <th className="px-3 py-1.5 text-left font-medium text-xs">{tg('unit')}</th>
-                        <th className="px-3 py-1.5 text-right font-medium text-xs">{tg('value')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {game.parts.map((part) => (
-                        <tr key={part.id} className="border-t">
-                          <td className="px-3 py-1.5">{part.name}</td>
-                          <td className="px-3 py-1.5 text-muted-foreground text-xs">
-                            {part.unit === 'EURO' ? tg('unitEuro') : tg('unitPoints')}
-                          </td>
-                          <td className="px-3 py-1.5 text-right font-mono text-xs">
-                            {part.variable ? '~' : part.value.toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <p className="px-4 py-3 text-sm text-muted-foreground">—</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <GamesOverview
+          games={games.map((g) => ({
+            id: g.id,
+            name: g.name,
+            parts: g.parts.map((p) => ({
+              id: p.id,
+              name: p.name,
+              unit: p.unit,
+              value: p.value,
+              factor: p.factor,
+              bonus: p.bonus,
+              variable: p.variable,
+              once: p.once,
+            })),
+          }))}
+          title={tg('title')}
+          labels={{
+            partName: tg('partName'),
+            unit: tg('unit'),
+            value: tg('value'),
+            variable: tg('variable'),
+            once: tg('once'),
+            unitPoints: tg('unitPoints'),
+            unitEuro: tg('unitEuro'),
+          }}
+        />
       )}
     </div>
   );
