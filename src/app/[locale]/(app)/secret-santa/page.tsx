@@ -8,6 +8,7 @@ import SecretSantaClient from './SecretSantaClient';
 export default async function SecretSantaPage() {
   const member = await getCurrentMember();
   if (!member) redirect('/login');
+  if (member.role !== Role.ADMIN) redirect('/news');
 
   const t = await getTranslations('secretSanta');
 

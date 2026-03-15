@@ -21,8 +21,10 @@ export default function MainNav({ isAdmin, locale, nickname }: MainNavProps) {
     { href: `/${locale}/scoring`, label: t('scoring') },
     { href: `/${locale}/club`, label: t('clubProfile') },
     { href: `/${locale}/contact`, label: t('contactList') },
-    { href: `/${locale}/secret-santa`, label: t('secretSanta') },
-    ...(isAdmin ? [{ href: `/${locale}/admin`, label: t('admin') }] : []),
+    ...(isAdmin ? [
+      { href: `/${locale}/secret-santa`, label: t('secretSanta') },
+      { href: `/${locale}/admin`, label: t('admin') },
+    ] : []),
   ];
 
   const linkStyle = (href: string): React.CSSProperties => ({
