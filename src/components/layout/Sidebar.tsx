@@ -1,7 +1,7 @@
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import type { Member, Club } from '@prisma/client';
+import SidebarShell from './SidebarShell';
 
 interface SidebarProps {
   member: (Member & { club: Club }) | null;
@@ -26,57 +26,17 @@ export default async function Sidebar({ member, locale }: SidebarProps) {
     : null;
 
   return (
-    <aside
-      className="flex flex-col gap-3 p-4 shrink-0"
-      style={{
-        width: 210,
-        background: 'linear-gradient(to bottom, var(--kn-primary, #005982) 0%, #003d5c 100%)',
-      }}
-    >
-      {/* Club logo + name */}
-      <Link href={`/${locale}/club`} className="flex flex-col items-center gap-2 no-underline">
-        {member.club.pic !== 'none' ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={member.club.pic}
-            alt="Club logo"
-            style={{ width: 100, height: 100, objectFit: 'contain', borderRadius: 8, background: 'rgba(255,255,255,0.1)' }}
-          />
-        ) : (
-          <div style={{
-            width: 100, height: 100, borderRadius: 8,
-            background: 'rgba(255,255,255,0.12)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'rgba(255,255,255,0.45)', fontSize: 32, fontWeight: 700,
-          }}>
-            {member.club.name.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <span style={{ color: '#ffffff', fontWeight: 700, fontSize: 13, textAlign: 'center' }}>
-          {member.club.name}
-        </span>
-      </Link>
-
-      <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.18)', margin: '4px 0' }} />
-
-      {/* Info widgets */}
-      <div className="flex flex-col gap-3">
-        <InfoRow label={t('sidebar.members')} value={String(members.length)} />
-        {nextBirthday && <InfoRow label={t('sidebar.nextBirthday')} value={nextBirthday} />}
-        {santaPartner && <InfoRow label={t('sidebar.secretSantaPartner')} value={santaPartner.nickname} />}
-      </div>
-    </aside>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-        {label}
-      </span>
-      <span style={{ color: 'rgba(255,255,255,0.88)', fontSize: 12 }}>{value}</span>
-    </div>
+    <SidebarShell
+      locale={locale}
+      clubName={member.club.name}
+      clubPic={member.club.pic}
+      memberCount={members.length}
+      nextBirthday={nextBirthday}
+      santaPartner={santaPartner?.nickname ?? null}
+      labelMembers={t('sidebar.members')}
+      labelBirthday={t('sidebar.nextBirthday')}
+      labelSanta={t('sidebar.secretSantaPartner')}
+    />
   );
 }
 

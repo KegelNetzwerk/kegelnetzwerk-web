@@ -10,7 +10,7 @@ export default function Header({ member }: { member: (Member & { club: Club }) |
       className="overflow-hidden"
       style={{
         background: 'var(--kn-bg2)',
-        height: 120,
+        height: 160,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         position: 'relative',
@@ -33,7 +33,7 @@ export default function Header({ member }: { member: (Member & { club: Club }) |
           <img
             src="/images/splash.png"
             alt="KegelNetzwerk"
-            style={{ height: 82, objectFit: 'contain' }}
+            style={{ height: 110, objectFit: 'contain' }}
           />
         </Link>
       )}
