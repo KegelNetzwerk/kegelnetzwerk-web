@@ -217,18 +217,18 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">{t('from')}</Label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="bg-white" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t('to')}</Label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="bg-white" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t('unit')}</Label>
             <select
               value={unit}
               onChange={(e) => setUnit(e.target.value as 'POINTS' | 'EURO')}
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm bg-white"
             >
               <option value="POINTS">{t('unitPoints')}</option>
               <option value="EURO">{t('unitEuro')}</option>
@@ -239,7 +239,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
             <select
               value={gopId}
               onChange={(e) => setGopId(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm bg-white"
             >
               <option value="">{t('all')}</option>
               {games.map((g) => (
@@ -249,18 +249,18 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t('eliminateLowest')}</Label>
-            <Input type="number" min="0" value={eliLowest} onChange={(e) => setEliLowest(e.target.value)} />
+            <Input type="number" min="0" value={eliLowest} onChange={(e) => setEliLowest(e.target.value)} className="bg-white" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t('eliminateHighest')}</Label>
-            <Input type="number" min="0" value={eliHighest} onChange={(e) => setEliHighest(e.target.value)} />
+            <Input type="number" min="0" value={eliHighest} onChange={(e) => setEliHighest(e.target.value)} className="bg-white" />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{t('sortOrder')}</Label>
             <select
               value={sortAsc ? 'asc' : 'desc'}
               onChange={(e) => setSortAsc(e.target.value === 'asc')}
-              className="w-full border rounded px-3 py-2 text-sm"
+              className="w-full border rounded px-3 py-2 text-sm bg-white"
             >
               <option value="desc">{t('sortDesc')}</option>
               <option value="asc">{t('sortAsc')}</option>
