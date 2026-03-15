@@ -8,24 +8,33 @@ export default async function AdminSettingsPage() {
   const member = await getCurrentMember();
   if (!member || member.role !== Role.ADMIN) redirect('/');
 
-  const club = await prisma.club.findUnique({
-    where: { id: member.clubId },
-    select: {
-      name: true,
-      pic: true,
-      header: true,
-      aboutUs: true,
-      farbe1: true,
-      farbe2: true,
-      farbe3: true,
-      mono: true,
-      bg1: true,
-      bg2: true,
-      bgColor: true,
-    },
-  });
+  const [club, games] = await Promise.all([
+    prisma.club.findUnique({
+      where: { id: member.clubId },
+      select: {
+        name: true,
+        pic: true,
+        header: true,
+        aboutUs: true,
+        farbe1: true,
+        farbe2: true,
+        farbe3: true,
+        mono: true,
+        bg1: true,
+        bg2: true,
+        bgColor: true,
+        cancelDaysBeforeEvent: true,
+        defaultGopId: true,
+      },
+    }),
+    prisma.gameOrPenalty.findMany({
+      where: { clubId: member.clubId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+  ]);
 
   if (!club) redirect('/');
 
-  return <SettingsClient club={club} />;
+  return <SettingsClient club={club} games={games} />;
 }

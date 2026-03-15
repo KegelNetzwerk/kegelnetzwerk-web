@@ -121,6 +121,7 @@ export default function EventsClient({
               <EventCard
                 event={event}
                 isAdmin={isAdmin}
+                currentMemberId={currentMember.id}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onRsvpChange={handleRsvpChange}

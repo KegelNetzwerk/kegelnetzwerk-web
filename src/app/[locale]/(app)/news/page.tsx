@@ -13,7 +13,7 @@ export default async function NewsPage() {
     prisma.news.findMany({
       where: { clubId: member.clubId },
       include: {
-        author: { select: { nickname: true } },
+        author: { select: { id: true, nickname: true } },
         comments: {
           include: { author: { select: { nickname: true, pic: true } } },
           orderBy: { createdAt: 'desc' },

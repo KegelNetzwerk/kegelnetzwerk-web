@@ -26,6 +26,9 @@ export async function PUT(req: NextRequest) {
 
   const formData = await req.formData();
 
+  const cancelDaysBeforeEvent = parseInt((formData.get('cancelDaysBeforeEvent') as string) ?? '5') || 5;
+  const defaultGopIdRaw = (formData.get('defaultGopId') as string) ?? '';
+  const defaultGopId = defaultGopIdRaw ? parseInt(defaultGopIdRaw) : null;
   const aboutUs = (formData.get('aboutUs') as string) ?? '';
   const farbe1 = ((formData.get('farbe1') as string) ?? '').replace('#', '');
   const farbe2 = ((formData.get('farbe2') as string) ?? '').replace('#', '');
@@ -59,6 +62,8 @@ export async function PUT(req: NextRequest) {
   const updated = await prisma.club.update({
     where: { id: current.clubId },
     data: {
+      cancelDaysBeforeEvent,
+      defaultGopId,
       aboutUs,
       farbe1: farbe1 || current_club.farbe1,
       farbe2: farbe2 || current_club.farbe2,

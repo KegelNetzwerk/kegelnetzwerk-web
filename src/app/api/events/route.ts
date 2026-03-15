@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     ...(eventId ? { id: parseInt(eventId, 10) } : {}),
   };
 
-  const [events, total] = await Promise.all([
+  const [events, total, club] = await Promise.all([
     prisma.event.findMany({
       where,
       include: {
@@ -43,9 +43,11 @@ export async function GET(req: NextRequest) {
       skip: eventId ? 0 : offset,
     }),
     eventId ? Promise.resolve(1) : prisma.event.count({ where }),
+    prisma.club.findUnique({ where: { id: member.clubId }, select: { cancelDaysBeforeEvent: true } }),
   ]);
 
-  const CANCEL_DEADLINE_SECONDS = 432000; // 5 days
+  const cancelDays = club?.cancelDaysBeforeEvent ?? 5;
+  const CANCEL_DEADLINE_SECONDS = cancelDays * 24 * 60 * 60;
 
   const serialized = events.map((event) => {
     const myCancellation = event.cancellations.find((c) => c.memberId === member.id);

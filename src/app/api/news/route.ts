@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     prisma.news.findMany({
       where,
       include: {
-        author: { select: { nickname: true } },
+        author: { select: { id: true, nickname: true } },
         comments: {
           include: { author: { select: { nickname: true, pic: true } } },
           orderBy: { createdAt: 'desc' as const },

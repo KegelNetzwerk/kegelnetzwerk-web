@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
@@ -44,9 +44,10 @@ interface ScoringData {
 
 interface ScoringClientProps {
   games: GameOption[];
+  defaultGopId: number | null;
 }
 
-export default function ScoringClient({ games }: ScoringClientProps) {
+export default function ScoringClient({ games, defaultGopId }: ScoringClientProps) {
   const t = useTranslations('scoring');
 
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -58,7 +59,7 @@ export default function ScoringClient({ games }: ScoringClientProps) {
   const [from, setFrom] = useState(toDateInput(monthAgo));
   const [to, setTo] = useState(toDateInput(today));
   const [unit, setUnit] = useState<'POINTS' | 'EURO'>('POINTS');
-  const [gopId, setGopId] = useState('');
+  const [gopId, setGopId] = useState(defaultGopId ? String(defaultGopId) : '');
   const [eliLowest, setEliLowest] = useState('0');
   const [eliHighest, setEliHighest] = useState('0');
   const [sortAsc, setSortAsc] = useState(false);
@@ -83,6 +84,14 @@ export default function ScoringClient({ games }: ScoringClientProps) {
     setLoading(false);
   }, [from, to, unit, gopId, eliLowest, eliHighest, sortAsc]);
 
+  // Auto-fetch on mount when a default game/penalty is configured
+  useEffect(() => {
+    if (defaultGopId) {
+      fetchData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Build chart data
   const chartData: { date: string; [nickname: string]: number | string }[] = data
     ? data.sessions.map((s) => {
@@ -99,6 +108,14 @@ export default function ScoringClient({ games }: ScoringClientProps) {
 
   const unitLabel = unit === 'EURO' ? '€' : t('unitPoints');
 
+  const currentYear = today.getFullYear();
+  const yearButtons = Array.from({ length: 5 }, (_, i) => currentYear - i);
+
+  function applyYear(year: number) {
+    setFrom(`${year}-01-01`);
+    setTo(`${year}-12-31`);
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t('title')}</h1>
@@ -106,6 +123,24 @@ export default function ScoringClient({ games }: ScoringClientProps) {
       {/* Filter bar */}
       <div className="border rounded-lg p-4 space-y-4 bg-gray-50">
         <h2 className="font-semibold text-sm">{t('filter')}</h2>
+
+        {/* Year quickfilters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs text-gray-500">{t('quickYear')}:</span>
+          {yearButtons.map((year) => (
+            <Button
+              key={year}
+              type="button"
+              size="sm"
+              variant={from === `${year}-01-01` && to === `${year}-12-31` ? 'default' : 'outline'}
+              onClick={() => applyYear(year)}
+              style={from === `${year}-01-01` && to === `${year}-12-31` ? { background: 'var(--kn-primary, #005982)' } : {}}
+            >
+              {year}
+            </Button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">{t('from')}</Label>

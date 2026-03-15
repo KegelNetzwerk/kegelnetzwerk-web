@@ -5,11 +5,12 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import Comments from '@/components/Comments';
 import type { EventData } from './EventForm';
-import { ThumbsUp, ThumbsDown, Pencil, Trash2, Repeat2 } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Pencil, Trash2, Repeat2, AlertTriangle } from 'lucide-react';
 
 interface EventCardProps {
   event: EventData;
   isAdmin: boolean;
+  currentMemberId: number;
   onEdit: (event: EventData) => void;
   onDelete: (id: number) => void;
   onRsvpChange: (eventId: number, cancel: boolean) => void;
@@ -18,6 +19,7 @@ interface EventCardProps {
 export default function EventCard({
   event,
   isAdmin,
+  currentMemberId,
   onEdit,
   onDelete,
   onRsvpChange,
@@ -119,31 +121,33 @@ export default function EventCard({
               {event.cancellations.length === 0 ? (
                 <span className="text-gray-400 ml-1">–</span>
               ) : (
-                <span className="ml-1">{event.cancellations.map(c => c.nickname).join(', ')}</span>
+                <span className="ml-1">{[...event.cancellations].sort((a, b) => a.nickname.localeCompare(b.nickname)).map(c => c.nickname).join(', ')}</span>
               )}
             </div>
           </div>
         </div>
 
         {/* Location + cancellations column (desktop only) */}
-        <div className="hidden sm:block flex-shrink-0 w-40 text-sm text-gray-600 space-y-2">
+        <div className="hidden sm:flex flex-shrink-0 w-[50%] gap-4 text-sm text-gray-600">
+          {/* Location */}
           {event.location && (
-            <div>
+            <div className="flex-shrink-0 w-1/5 min-w-0">
               <span className="font-semibold">{t('location')}:</span>
               <br />
               {event.location}
             </div>
           )}
-          <div>
+          {/* Cancellations */}
+          <div className="flex-1 min-w-0">
             <span className="font-semibold">
               {t('cancelled')} ({event.cancellations.length}):
             </span>
             {event.cancellations.length === 0 ? (
               <div className="text-gray-400">–</div>
             ) : (
-              <div className="flex flex-col gap-1 mt-1">
-                {event.cancellations.map((c) => (
-                  <div key={c.memberId} className="flex items-center gap-1.5">
+              <div className="flex flex-row flex-wrap gap-1 mt-1">
+                {[...event.cancellations].sort((a, b) => a.nickname.localeCompare(b.nickname)).map((c, i, arr) => (
+                  <div key={c.memberId} className="flex items-center gap-1">
                     {c.pic && c.pic !== 'none' ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -157,7 +161,7 @@ export default function EventCard({
                         background: 'var(--kn-primary, #005982)', opacity: 0.4,
                       }} />
                     )}
-                    <span>{c.nickname}</span>
+                    <span>{c.nickname}{i < arr.length - 1 ? ',' : ''}</span>
                   </div>
                 ))}
               </div>
@@ -165,6 +169,14 @@ export default function EventCard({
           </div>
         </div>
       </div>
+
+      {/* Cancellation deadline warning */}
+      {event.pastDeadline && !event.hasCancelled && new Date(event.date) > new Date() && (
+        <div className="flex items-center gap-2 text-xs text-orange-600 bg-orange-50 border border-orange-200 rounded px-3 py-2">
+          <AlertTriangle size={13} className="shrink-0" />
+          {t('cancelDeadlinePassed')}
+        </div>
+      )}
 
       {/* RSVP + actions */}
       <div className="flex items-center justify-between text-sm">
@@ -188,11 +200,13 @@ export default function EventCard({
             )
           )}
 
+          {(isAdmin || event.author.id === currentMemberId) && (
           <Button size="sm" variant="outline" onClick={() => onEdit(event)}>
             <Pencil size={13} />
             {tc('edit')}
           </Button>
-          {isAdmin && (
+          )}
+          {(isAdmin || event.author.id === currentMemberId) && (
             <Button
               size="sm"
               variant="destructive"

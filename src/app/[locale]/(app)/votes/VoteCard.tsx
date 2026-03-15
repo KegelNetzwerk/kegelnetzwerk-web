@@ -255,11 +255,13 @@ export default function VoteCard({
             {vote.closed ? <LockOpen size={13} /> : <Lock size={13} />}
             {vote.closed ? t('reopen') : t('close')}
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onEdit(vote)}>
-            <Pencil size={13} />
-            {tc('edit')}
-          </Button>
-          {isAdmin && (
+          {(isAdmin || vote.author.id === currentMemberId) && (
+            <Button size="sm" variant="outline" onClick={() => onEdit(vote)}>
+              <Pencil size={13} />
+              {tc('edit')}
+            </Button>
+          )}
+          {(isAdmin || vote.author.id === currentMemberId) && (
             <Button
               size="sm"
               variant="destructive"

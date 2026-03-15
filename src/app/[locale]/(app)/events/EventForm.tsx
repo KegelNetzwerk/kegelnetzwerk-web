@@ -24,7 +24,7 @@ export interface EventData {
     id: number;
     content: string;
     createdAt: string;
-    author: { nickname: string };
+    author: { nickname: string; pic: string };
     isOwn: boolean;
   }[];
 }

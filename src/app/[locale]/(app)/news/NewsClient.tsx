@@ -17,7 +17,7 @@ interface NewsItem {
   createdAt: string;
   updatedAt: string;
   editorIds: string;
-  author: { nickname: string };
+  author: { id: number; nickname: string };
   comments: (CommentData & { isOwn?: boolean })[];
 }
 
@@ -205,11 +205,13 @@ export default function NewsClient({
                     )}
                   </span>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openEdit(item)}>
-                      <Pencil size={13} />
-                      {tc('edit')}
-                    </Button>
-                    {isAdmin && (
+                    {(isAdmin || item.author.id === currentMemberId) && (
+                      <Button size="sm" variant="outline" onClick={() => openEdit(item)}>
+                        <Pencil size={13} />
+                        {tc('edit')}
+                      </Button>
+                    )}
+                    {(isAdmin || item.author.id === currentMemberId) && (
                       <Button size="sm" variant="destructive" onClick={() => handleDelete(item.id)}>
                         <Trash2 size={13} />
                         {tc('delete')}

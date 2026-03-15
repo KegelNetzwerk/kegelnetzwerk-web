@@ -66,13 +66,22 @@ interface ClubSettings {
   bg1: number;
   bg2: number;
   bgColor: string;
+  cancelDaysBeforeEvent: number;
+  defaultGopId: number | null;
+}
+
+interface GameOption {
+  id: number;
+  name: string;
 }
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
-export default function SettingsClient({ club }: { club: ClubSettings }) {
+export default function SettingsClient({ club, games }: { club: ClubSettings; games: GameOption[] }) {
   const t = useTranslations('clubSettings');
 
+  const [cancelDaysBeforeEvent, setCancelDaysBeforeEvent] = useState(club.cancelDaysBeforeEvent);
+  const [defaultGopId, setDefaultGopId] = useState<string>(club.defaultGopId ? String(club.defaultGopId) : '');
   const [aboutUs, setAboutUs] = useState(club.aboutUs);
   const [farbe1, setFarbe1] = useState(`#${club.farbe1}`);
   const [farbe2, setFarbe2] = useState(`#${club.farbe2}`);
@@ -109,6 +118,8 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
     setStatus('saving');
     try {
       const fd = new FormData();
+      fd.append('cancelDaysBeforeEvent', String(cancelDaysBeforeEvent));
+      fd.append('defaultGopId', defaultGopId);
       fd.append('aboutUs', aboutUs);
       fd.append('farbe1', farbe1);
       fd.append('farbe2', farbe2);
@@ -157,6 +168,43 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">{t('aboutUs')}</h2>
           <RichTextEditor value={aboutUs} onChange={setAboutUs} placeholder={t('aboutUs')} />
+        </section>
+
+        {/* Feature settings */}
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold">{t('featureSettings')}</h2>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="cancelDays">{t('cancelDaysBeforeEvent')}</Label>
+              <p className="text-xs text-gray-500">{t('cancelDaysHint')}</p>
+              <Input
+                id="cancelDays"
+                type="number"
+                min="0"
+                max="365"
+                value={cancelDaysBeforeEvent}
+                onChange={(e) => setCancelDaysBeforeEvent(parseInt(e.target.value) || 0)}
+                className="max-w-[120px]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label htmlFor="defaultGop">{t('defaultScoringFilter')}</Label>
+              <p className="text-xs text-gray-500">{t('defaultScoringFilterHint')}</p>
+              <select
+                id="defaultGop"
+                value={defaultGopId}
+                onChange={(e) => setDefaultGopId(e.target.value)}
+                className="border rounded px-3 py-2 text-sm w-full max-w-[260px]"
+              >
+                <option value="">{t('noDefault')}</option>
+                {games.map((g) => (
+                  <option key={g.id} value={String(g.id)}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </section>
 
         {/* Appearance: Logo & Header */}
