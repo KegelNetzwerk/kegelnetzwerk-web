@@ -90,6 +90,22 @@ function str(v: string | null | undefined): string {
   return v ?? '';
 }
 
+/**
+ * Normalize a legacy image path to a root-relative URL compatible with the
+ * new project's public/ directory structure:
+ *   - 'none' / empty → 'none'
+ *   - already starts with '/' → as-is
+ *   - 'style/images/foo.png' → '/images/foo.png'  (legacy theme assets)
+ *   - 'uploads/...' → '/uploads/...'
+ */
+function imgPath(v: string | null | undefined): string {
+  const s = str(v);
+  if (!s || s === 'none') return 'none';
+  if (s.startsWith('/')) return s;
+  if (s.startsWith('style/images/')) return s.replace('style/images/', '/images/');
+  return `/${s}`;
+}
+
 /** str() with HTML entity decoding — use for plain-text fields (titles, names, subjects). */
 function txt(v: string | null | undefined): string {
   return decodeEntities(str(v));
@@ -234,8 +250,8 @@ async function migrateClubs(rows: Row[]) {
         name: txt(name),
         regCode: str(regcode),
         regDate: toDate(int(regdate)),
-        pic: str(pic) || 'none',
-        header: str(header) || 'none',
+        pic: imgPath(pic),
+        header: imgPath(header),
         aboutUs: txt(ueberuns),
         farbe1: str(farbe1) || '005982',
         farbe2: str(farbe2) || '3089AC',
@@ -278,7 +294,7 @@ async function migrateMembers(rows: Row[]) {
         firstName: txt(vorname),
         lastName: txt(nachname),
         birthday: toDateOrNull(int(gtag)),
-        pic: str(pic) || 'none',
+        pic: imgPath(pic),
         phone: str(handynr),
         email: str(email),
         createdAt: toDate(int(updated)),
@@ -348,7 +364,7 @@ async function migrateParts(rows: Row[]) {
         unit: int(unit) === 1 ? Unit.EURO : Unit.POINTS,
         once: bool(once),
         description: txt(desc),
-        pic: str(pic) || 'none',
+        pic: imgPath(pic),
       },
     }).catch(() => skip(`part ${id}: gameOrPenaltyId ${gameorpenalty} not found`));
   }
