@@ -66,7 +66,7 @@ export default function SidebarShell({
 
   return (
     <aside
-      className="shrink-0 flex flex-col"
+      className="shrink-0 flex-col hidden md:flex"
       style={{
         width: collapsed ? 36 : 220,
         minWidth: collapsed ? 36 : 220,

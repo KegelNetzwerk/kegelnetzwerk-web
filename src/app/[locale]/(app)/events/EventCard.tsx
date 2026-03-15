@@ -64,10 +64,22 @@ export default function EventCard({
 
   return (
     <div className="space-y-3">
+      {/* Mobile: compact date strip */}
+      <div
+        className="flex sm:hidden items-center gap-2 text-xs font-semibold px-2 py-1 rounded"
+        style={{ background: 'var(--kn-primary, #005982)', color: 'white' }}
+      >
+        <span>{weekday},</span>
+        <span>{dateStr}</span>
+        <span className="opacity-75">·</span>
+        <span>{timeStr}</span>
+        {event.recurrenceRuleId && <Repeat2 size={12} className="ml-auto opacity-80" />}
+      </div>
+
       <div className="flex gap-4">
-        {/* Date column */}
+        {/* Desktop: tilted date box (hidden on mobile) */}
         <div
-          className="flex-shrink-0 w-24 text-center font-bold text-sm py-2 rounded"
+          className="hidden sm:flex flex-shrink-0 w-24 flex-col items-center justify-center text-center font-bold text-sm py-2 rounded"
           style={{ backgroundColor: 'var(--kn-primary, #005982)', color: 'white', transform: 'rotate(-5deg)' }}
         >
           <div className="text-xs font-normal opacity-90">{weekday}</div>
@@ -76,12 +88,12 @@ export default function EventCard({
         </div>
 
         {/* Content */}
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-2">
+        <div className="flex-1 space-y-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-lg font-semibold">{event.subject}</h2>
             {event.recurrenceRuleId && (
               <span
-                className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded"
+                className="hidden sm:inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded"
                 style={{ background: 'var(--kn-primary, #005982)', color: 'white', opacity: 0.85 }}
                 title={t('recurring')}
               >
@@ -96,10 +108,25 @@ export default function EventCard({
               dangerouslySetInnerHTML={{ __html: event.description }}
             />
           )}
+
+          {/* Location + cancellations inline on mobile */}
+          <div className="sm:hidden text-sm text-gray-600 space-y-1 pt-1">
+            {event.location && (
+              <div><span className="font-semibold">{t('location')}:</span> {event.location}</div>
+            )}
+            <div>
+              <span className="font-semibold">{t('cancelled')} ({event.cancellations.length}):</span>
+              {event.cancellations.length === 0 ? (
+                <span className="text-gray-400 ml-1">–</span>
+              ) : (
+                <span className="ml-1">{event.cancellations.map(c => c.nickname).join(', ')}</span>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Location + cancellations */}
-        <div className="flex-shrink-0 w-40 text-sm text-gray-600 space-y-2">
+        {/* Location + cancellations column (desktop only) */}
+        <div className="hidden sm:block flex-shrink-0 w-40 text-sm text-gray-600 space-y-2">
           {event.location && (
             <div>
               <span className="font-semibold">{t('location')}:</span>

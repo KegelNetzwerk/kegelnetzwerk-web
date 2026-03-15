@@ -11,7 +11,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
 
   return (
     <div
-      className="min-h-screen py-6 px-4"
+      className="min-h-screen py-1 px-1 sm:py-4 sm:px-3 lg:py-6 lg:px-4"
       style={{
         backgroundImage: 'var(--kn-bg1-url)',
         backgroundSize: 'cover',
@@ -34,7 +34,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
         />
         <div className="flex" style={{ background: '#ffffff', minHeight: 420 }}>
           <Sidebar member={member} locale={locale} />
-          <main className="flex-1 p-7 min-w-0">
+          <main className="flex-1 p-3 sm:p-5 lg:p-7 min-w-0">
             {children}
           </main>
         </div>

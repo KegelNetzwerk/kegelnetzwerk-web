@@ -7,10 +7,9 @@ export default function Header({ member }: { member: (Member & { club: Club }) |
 
   return (
     <header
-      className="overflow-hidden"
+      className="overflow-hidden h-[110px] sm:h-[160px] lg:h-[210px]"
       style={{
         background: 'var(--kn-bg2)',
-        height: 210,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         position: 'relative',
