@@ -1,12 +1,7 @@
 import Link from 'next/link';
 import type { Member, Club } from '@prisma/client';
 
-interface HeaderProps {
-  member: (Member & { club: Club }) | null;
-  innerBg: string;
-}
-
-export default function Header({ member, innerBg }: HeaderProps) {
+export default function Header({ member }: { member: (Member & { club: Club }) | null }) {
   const logoSrc =
     member?.club?.header && member.club.header !== 'none'
       ? member.club.header
@@ -16,7 +11,7 @@ export default function Header({ member, innerBg }: HeaderProps) {
     <header
       className="flex items-center justify-center overflow-hidden"
       style={{
-        background: innerBg,
+        background: 'var(--kn-bg2)',
         height: 120,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,

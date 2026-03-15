@@ -5,9 +5,9 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { BG1_IMAGES, BG2_STYLES, getBg2Value } from '@/lib/theme';
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false });
 
@@ -25,9 +25,10 @@ interface ClubSettings {
   bgColor: string;
 }
 
+type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
+
 export default function SettingsClient({ club }: { club: ClubSettings }) {
   const t = useTranslations('clubSettings');
-  const tCommon = useTranslations('common');
 
   const [aboutUs, setAboutUs] = useState(club.aboutUs);
   const [farbe1, setFarbe1] = useState(`#${club.farbe1}`);
@@ -43,11 +44,26 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
   const [currentHeader, setCurrentHeader] = useState(club.header);
   const [deleteLogo, setDeleteLogo] = useState(false);
   const [deleteHeader, setDeleteHeader] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<SaveStatus>('idle');
+
+  function applyThemeToPage(opts: {
+    farbe1: string; farbe2: string; farbe3: string;
+    bg1: number; bg2: number; bgColor: string;
+  }) {
+    const root = document.body;
+    root.style.setProperty('--kn-primary', opts.farbe1);
+    root.style.setProperty('--kn-secondary', opts.farbe2);
+    root.style.setProperty('--kn-accent', opts.farbe3);
+    root.style.setProperty('--color-primary', opts.farbe1);
+    root.style.setProperty('--color-secondary', opts.farbe2);
+    root.style.setProperty('--color-accent', opts.farbe3);
+    root.style.setProperty('--kn-bg1-url', `url('${BG1_IMAGES[opts.bg1] ?? BG1_IMAGES[0]}')`);
+    root.style.setProperty('--kn-bg2', getBg2Value(opts.bg2, opts.bgColor.replace('#', '')));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
+    setStatus('saving');
     try {
       const fd = new FormData();
       fd.append('aboutUs', aboutUs);
@@ -65,7 +81,8 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
 
       const res = await fetch('/api/club/settings', { method: 'PUT', body: fd });
       if (!res.ok) {
-        toast.error(tCommon('unknownError'));
+        setStatus('error');
+        setTimeout(() => setStatus('idle'), 3000);
         return;
       }
       const updated = await res.json();
@@ -75,23 +92,17 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
       setDeleteHeader(false);
       setLogoFile(null);
       setHeaderFile(null);
-      toast.success(t('success'));
 
-      // Apply new theme colors immediately
-      const root = document.body;
-      root.style.setProperty('--kn-primary', farbe1);
-      root.style.setProperty('--kn-secondary', farbe2);
-      root.style.setProperty('--kn-accent', farbe3);
-      root.style.setProperty('--color-primary', farbe1);
-      root.style.setProperty('--color-secondary', farbe2);
-      root.style.setProperty('--color-accent', farbe3);
-    } finally {
-      setSaving(false);
+      applyThemeToPage({ farbe1, farbe2, farbe3, bg1, bg2, bgColor });
+      setStatus('success');
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch {
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 3000);
     }
   }
 
-  const BG_LABELS = ['1', '2', '3'];
-  const INNER_BG_LABELS = ['1', '2', '3', '4'];
+  const BG2_LABELS = [t('bg2Option0'), t('bg2Option1'), t('bg2Option2'), t('bg2Option3')];
 
   return (
     <div className="space-y-8">
@@ -162,53 +173,127 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
           </div>
         </section>
 
-        {/* Background presets */}
-        <section className="space-y-4">
+        {/* Outer background (bg1) */}
+        <section className="space-y-3">
           <h2 className="text-lg font-semibold">{t('background')}</h2>
-          <div className="flex flex-wrap gap-2">
-            {BG_LABELS.map((_, i) => (
+          <p className="text-sm text-gray-500">{t('backgroundHint')}</p>
+          <div className="flex flex-wrap gap-3">
+            {BG1_IMAGES.map((src, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => setBg1(i)}
-                className={`h-12 w-16 rounded border-2 bg-muted text-xs font-medium transition-colors ${
-                  bg1 === i ? 'border-[var(--color-primary)]' : 'border-transparent'
-                }`}
+                className="overflow-hidden rounded-lg transition-all"
+                style={{
+                  width: 130,
+                  height: 80,
+                  position: 'relative',
+                  outline: bg1 === i ? '3px solid var(--kn-primary, #005982)' : '2px solid transparent',
+                  outlineOffset: 2,
+                  boxShadow: bg1 === i ? '0 0 0 1px rgba(0,0,0,0.15)' : 'none',
+                }}
+                title={`${t('background')} ${i + 1}`}
               >
-                {i + 1}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`Background ${i + 1}`}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+                <span
+                  style={{
+                    position: 'absolute', bottom: 4, right: 6,
+                    fontSize: 11, fontWeight: 700,
+                    color: '#fff',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                  }}
+                >
+                  {i + 1}
+                </span>
+                {bg1 === i && (
+                  <span
+                    style={{
+                      position: 'absolute', top: 4, left: 4,
+                      background: 'var(--kn-primary, #005982)',
+                      color: '#fff', fontSize: 10, fontWeight: 700,
+                      borderRadius: 4, padding: '1px 5px',
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
               </button>
             ))}
           </div>
+        </section>
 
+        {/* Inner background (bg2) */}
+        <section className="space-y-3">
           <h2 className="text-lg font-semibold">{t('innerBackground')}</h2>
-          <div className="flex flex-wrap gap-2">
-            {INNER_BG_LABELS.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setBg2(i)}
-                className={`h-12 w-16 rounded border-2 bg-muted text-xs font-medium transition-colors ${
-                  bg2 === i ? 'border-[var(--color-primary)]' : 'border-transparent'
-                }`}
-              >
-                {i + 1}
-              </button>
-            ))}
+          <p className="text-sm text-gray-500">{t('innerBackgroundHint')}</p>
+          <div className="flex flex-wrap gap-3">
+            {BG2_LABELS.map((label, i) => {
+              const previewBg = i === 3 ? bgColor : BG2_STYLES[i];
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setBg2(i)}
+                  style={{
+                    width: 96,
+                    height: 64,
+                    borderRadius: 8,
+                    background: previewBg,
+                    outline: bg2 === i ? '3px solid var(--kn-primary, #005982)' : '2px solid #ddd',
+                    outlineOffset: 2,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    transition: 'outline 0.15s',
+                  }}
+                  title={label}
+                >
+                  <span style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                    paddingBottom: 5, fontSize: 10, fontWeight: 600,
+                    color: 'rgba(255,255,255,0.85)',
+                    textShadow: '0 1px 2px rgba(0,0,0,0.7)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.45) 0%, transparent 60%)',
+                  }}>
+                    {label}
+                  </span>
+                  {bg2 === i && (
+                    <span style={{
+                      position: 'absolute', top: 4, left: 4,
+                      background: 'var(--kn-primary, #005982)',
+                      color: '#fff', fontSize: 10, fontWeight: 700,
+                      borderRadius: 4, padding: '1px 5px',
+                    }}>
+                      ✓
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="space-y-1 max-w-xs">
-            <Label htmlFor="bgColor">{t('customColor')}</Label>
-            <div className="flex items-center gap-2">
-              <input
-                id="bgColor"
-                type="color"
-                value={bgColor}
-                onChange={(e) => setBgColor(e.target.value)}
-                className="h-9 w-14 cursor-pointer rounded border p-1"
-              />
-              <span className="text-sm font-mono">{bgColor}</span>
+          {/* Custom color for bg2=3 */}
+          {bg2 === 3 && (
+            <div className="space-y-1 max-w-xs mt-2">
+              <Label htmlFor="bgColor">{t('customColor')}</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  id="bgColor"
+                  type="color"
+                  value={bgColor}
+                  onChange={(e) => setBgColor(e.target.value)}
+                  className="h-9 w-14 cursor-pointer rounded border p-1"
+                />
+                <span className="text-sm font-mono">{bgColor}</span>
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* Color scheme */}
@@ -270,14 +355,43 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
           </div>
         </section>
 
-        <Button
-          type="submit"
-          disabled={saving}
-          style={{ background: 'var(--color-primary)' }}
-          className="text-white"
-        >
-          {saving ? tCommon('loading') : t('submit')}
-        </Button>
+        {/* Submit + status */}
+        <div className="flex items-center gap-4">
+          <Button
+            type="submit"
+            disabled={status === 'saving'}
+            style={{ background: 'var(--kn-primary, #005982)' }}
+            className="text-white min-w-28"
+          >
+            {status === 'saving' ? t('saving') : t('submit')}
+          </Button>
+
+          {status === 'success' && (
+            <span
+              className="flex items-center gap-1.5 text-sm font-medium"
+              style={{ color: '#16a34a' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" fill="#16a34a" />
+                <path d="M4.5 8l2.5 2.5 4.5-5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              {t('successDetail')}
+            </span>
+          )}
+
+          {status === 'error' && (
+            <span
+              className="flex items-center gap-1.5 text-sm font-medium"
+              style={{ color: '#dc2626' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" fill="#dc2626" />
+                <path d="M5.5 5.5l5 5M10.5 5.5l-5 5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              {t('errorDetail')}
+            </span>
+          )}
+        </div>
       </form>
     </div>
   );
