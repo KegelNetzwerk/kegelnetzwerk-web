@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,9 +21,17 @@ interface ProfileData {
   pic: string;
 }
 
+const LOCALES = [
+  { value: 'de', label: 'Deutsch' },
+  { value: 'en', label: 'English' },
+];
+
 export default function ProfileClient({ member }: { member: ProfileData }) {
   const t = useTranslations('profile');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
 
   const [nickname, setNickname] = useState(member.nickname);
   const [firstName, setFirstName] = useState(member.firstName);
@@ -43,6 +52,13 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
     if (!file) return;
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
+  }
+
+  function changeLocale(newLocale: string) {
+    if (newLocale === locale) return;
+    // pathname includes the locale prefix, e.g. /de/profile → /en/profile
+    const newPath = '/' + newLocale + pathname.slice(1 + locale.length);
+    router.push(newPath);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -182,6 +198,20 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="language">{t('language')}</Label>
+          <select
+            id="language"
+            value={locale}
+            onChange={(e) => changeLocale(e.target.value)}
+            className="border rounded px-3 py-2 text-sm w-full"
+          >
+            {LOCALES.map((l) => (
+              <option key={l.value} value={l.value}>{l.label}</option>
+            ))}
+          </select>
         </div>
 
         <Button

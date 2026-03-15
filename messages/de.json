@@ -113,6 +113,7 @@
     "phone": "Handynummer",
     "password": "Neues Passwort",
     "confirmPassword": "Passwort bestätigen",
+    "language": "Sprache",
     "passwordHint": "Leer lassen, um das Passwort nicht zu ändern.",
     "avatar": "Profilbild",
     "success": "Profil erfolgreich gespeichert.",
