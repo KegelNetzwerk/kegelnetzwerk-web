@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { Filter } from 'lucide-react';
+import { Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -85,6 +85,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
   const [sortAsc, setSortAsc] = useState(getParam('sortAsc') === 'true');
   const [data, setData] = useState<ScoringData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(!hasUrlParams && !defaultScoringFilter);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -112,17 +113,46 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function applyFilter() {
+  function buildParams(overrides: Partial<{ from: string; to: string }> = {}) {
     const params = new URLSearchParams();
-    params.set('from', from);
-    params.set('to', to);
+    params.set('from', overrides.from ?? from);
+    params.set('to', overrides.to ?? to);
     params.set('unit', unit);
     if (gopId) params.set('gopId', gopId);
     params.set('eliLowest', eliLowest);
     params.set('eliHighest', eliHighest);
     params.set('sortAsc', String(sortAsc));
-    router.replace(`?${params.toString()}`, { scroll: false });
+    return params;
+  }
+
+  function applyFilter() {
+    router.replace(`?${buildParams().toString()}`, { scroll: false });
+    setFilterOpen(false);
     fetchData();
+  }
+
+  function applyYear(year: number) {
+    const newFrom = `${year}-01-01`;
+    const newTo = `${year}-12-31`;
+    setFrom(newFrom);
+    setTo(newTo);
+    const params = buildParams({ from: newFrom, to: newTo });
+    router.replace(`?${params.toString()}`, { scroll: false });
+    // Fetch directly with the new dates
+    setLoading(true);
+    const apiParams = new URLSearchParams({
+      from: new Date(newFrom).toISOString(),
+      to: new Date(newTo + 'T23:59:59').toISOString(),
+      unit,
+      eliLowest,
+      eliHighest,
+      sort: sortAsc ? 'asc' : 'desc',
+      ...(gopId ? { gopId } : {}),
+    });
+    fetch(`/api/scoring?${apiParams}`).then(async (res) => {
+      if (res.ok) setData(await res.json());
+      setLoading(false);
+    });
   }
 
   // Build chart data
@@ -144,21 +174,27 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
   const currentYear = today.getFullYear();
   const yearButtons = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
-  function applyYear(year: number) {
-    setFrom(`${year}-01-01`);
-    setTo(`${year}-12-31`);
-  }
-
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t('title')}</h1>
 
       {/* Filter bar */}
-      <div className="border rounded-lg p-4 space-y-4 bg-gray-50">
-        <h2 className="font-semibold text-sm">{t('filter')}</h2>
+      <div className="border rounded-lg bg-gray-50">
+        {/* Header row — always visible */}
+        <button
+          type="button"
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-semibold"
+          onClick={() => setFilterOpen((o) => !o)}
+        >
+          <div className="flex items-center gap-2">
+            <Filter size={14} />
+            {t('filter')}
+          </div>
+          {filterOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+        </button>
 
-        {/* Year quickfilters */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Year quickfilters — always visible */}
+        <div className="flex items-center gap-2 flex-wrap px-4 pb-3">
           <span className="text-xs text-gray-500">{t('quickYear')}:</span>
           {yearButtons.map((year) => (
             <Button
@@ -168,12 +204,16 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
               variant={from === `${year}-01-01` && to === `${year}-12-31` ? 'default' : 'outline'}
               onClick={() => applyYear(year)}
               style={from === `${year}-01-01` && to === `${year}-12-31` ? { background: 'var(--kn-primary, #005982)' } : {}}
+              disabled={loading}
             >
               {year}
             </Button>
           ))}
         </div>
 
+        {/* Collapsible body */}
+        {filterOpen && (
+        <div className="px-4 pb-4 space-y-4 border-t pt-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="space-y-1">
             <Label className="text-xs">{t('from')}</Label>
@@ -227,10 +267,12 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
             </select>
           </div>
         </div>
-        <Button onClick={applyFilter} disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
-          <Filter size={15} />
-          {loading ? '...' : t('applyFilter')}
-        </Button>
+          <Button onClick={applyFilter} disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+            <Filter size={15} />
+            {loading ? '...' : t('applyFilter')}
+          </Button>
+        </div>
+        )}
       </div>
 
       {data && (
