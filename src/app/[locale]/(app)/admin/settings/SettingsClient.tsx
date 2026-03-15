@@ -125,7 +125,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
             <Label>{t('logo')}</Label>
             {!deleteLogo && currentLogo !== 'none' && (
               <div className="flex items-center gap-3">
-                <div className="relative h-16 w-16 overflow-hidden rounded border">
+                <div className="relative h-28 w-28 overflow-hidden rounded border">
                   <Image src={currentLogo} alt="logo" fill className="object-contain" />
                 </div>
                 <Button
@@ -152,7 +152,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
             <Label>{t('header')}</Label>
             {!deleteHeader && currentHeader !== 'none' && (
               <div className="space-y-2">
-                <div className="relative h-16 w-full overflow-hidden rounded border">
+                <div className="relative h-32 w-full overflow-hidden rounded border">
                   <Image src={currentHeader} alt="header" fill className="object-cover" />
                 </div>
                 <Button
