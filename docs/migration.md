@@ -78,6 +78,16 @@ These skipped rows represent genuinely deleted or invalid legacy data and do not
 
 Legacy passwords are stored as plain **MD5 hashes**. These are migrated as-is into the `passwordHash` field. The authentication layer detects non-bcrypt hashes (they do not start with `$2`) and falls back to MD5 verification. On the first successful login, the password is automatically re-hashed with bcrypt and the MD5 hash is replaced.
 
+### Admin password reset
+
+Because the legacy MD5 hash for member id 1 (the primary admin) may not be known, the script automatically sets a fresh bcrypt password for that account at the end of the migration. The default password is `lolipop`. Override it before running:
+
+```bash
+ADMIN_PASSWORD="yourpassword" npm run db:migrate-legacy
+```
+
+Change this password immediately after your first login.
+
 ## After migration
 
 PostgreSQL auto-increment sequences are reset automatically at the end of the script so that new records created after migration do not collide with migrated IDs.

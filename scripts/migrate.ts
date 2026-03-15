@@ -14,6 +14,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import bcrypt from 'bcryptjs';
 import { PrismaClient, CommentType, Unit, Role } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import * as dotenv from 'dotenv';
@@ -31,6 +32,10 @@ const LEGACY_UPLOADS_DIR =
   'E:\\2026_Projects\\kegelnetzwerk\\uploads';
 
 const NEW_PUBLIC_DIR = path.join(__dirname, '..', 'public');
+
+// Initial password set for member id 1 after migration.
+// Override via ADMIN_PASSWORD env var before running the script.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'lolipop';
 
 // ─── Prisma client ────────────────────────────────────────────────────────────
 
@@ -663,6 +668,16 @@ function copyImages() {
   console.log(`\nImage copy: ${copied} files copied, ${skippedExisting} already existed (skipped).`);
 }
 
+// ─── Admin password reset ─────────────────────────────────────────────────────
+
+/** Bcrypt-hash ADMIN_PASSWORD and write it to member id 1. */
+async function resetAdminPassword() {
+  console.log('\nResetting admin password (member id 1)...');
+  const hash = await bcrypt.hash(ADMIN_PASSWORD, 12);
+  await prisma.member.update({ where: { id: 1 }, data: { passwordHash: hash } });
+  console.log('  ✓ Password set (bcrypt)');
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -701,6 +716,7 @@ async function main() {
   await migrateVotings(get('votings'));
   await migrateResults(get('results'));
   await patchMemberSecretSanta(get('member'));
+  await resetAdminPassword();
 
   await resetSequences();
   copyImages();
