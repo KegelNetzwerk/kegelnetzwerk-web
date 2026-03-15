@@ -12,6 +12,48 @@ import { Save, Trash2 } from 'lucide-react';
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false });
 
+/** Colour swatch + editable hex text input, kept in sync bidirectionally. */
+function ColorPicker({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
+  const [text, setText] = useState(value);
+
+  function handleTextChange(raw: string) {
+    setText(raw);
+    const norm = raw.startsWith('#') ? raw : `#${raw}`;
+    if (/^#[0-9a-fA-F]{6}$/.test(norm)) onChange(norm);
+  }
+
+  function handleColorChange(v: string) {
+    onChange(v);
+    setText(v);
+  }
+
+  // Keep text in sync when value changes externally (e.g. reset)
+  if (text !== value && /^#[0-9a-fA-F]{6}$/.test(value) && text === value) {
+    setText(value);
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        id={id}
+        type="color"
+        value={value}
+        onChange={(e) => handleColorChange(e.target.value)}
+        className="h-9 w-12 cursor-pointer rounded border p-1 shrink-0"
+      />
+      <input
+        type="text"
+        value={text}
+        onChange={(e) => handleTextChange(e.target.value)}
+        maxLength={7}
+        spellCheck={false}
+        className="h-9 w-28 rounded border px-2 text-sm font-mono"
+        placeholder="#000000"
+      />
+    </div>
+  );
+}
+
 interface ClubSettings {
   name: string;
   pic: string;
@@ -285,16 +327,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
           {bg2 === 3 && (
             <div className="space-y-1 max-w-xs mt-2">
               <Label htmlFor="bgColor">{t('customColor')}</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="bgColor"
-                  type="color"
-                  value={bgColor}
-                  onChange={(e) => setBgColor(e.target.value)}
-                  className="h-9 w-14 cursor-pointer rounded border p-1"
-                />
-                <span className="text-sm font-mono">{bgColor}</span>
-              </div>
+              <ColorPicker id="bgColor" value={bgColor} onChange={setBgColor} />
             </div>
           )}
         </section>
@@ -306,44 +339,17 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="space-y-1">
               <Label htmlFor="farbe1">{t('color1')}</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="farbe1"
-                  type="color"
-                  value={farbe1}
-                  onChange={(e) => setFarbe1(e.target.value)}
-                  className="h-9 w-14 cursor-pointer rounded border p-1"
-                />
-                <span className="text-sm font-mono">{farbe1}</span>
-              </div>
+              <ColorPicker id="farbe1" value={farbe1} onChange={setFarbe1} />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="farbe2">{t('color2')}</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="farbe2"
-                  type="color"
-                  value={farbe2}
-                  onChange={(e) => setFarbe2(e.target.value)}
-                  className="h-9 w-14 cursor-pointer rounded border p-1"
-                />
-                <span className="text-sm font-mono">{farbe2}</span>
-              </div>
+              <ColorPicker id="farbe2" value={farbe2} onChange={setFarbe2} />
             </div>
 
             <div className="space-y-1">
               <Label htmlFor="farbe3">{t('accentColor')}</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  id="farbe3"
-                  type="color"
-                  value={farbe3}
-                  onChange={(e) => setFarbe3(e.target.value)}
-                  className="h-9 w-14 cursor-pointer rounded border p-1"
-                />
-                <span className="text-sm font-mono">{farbe3}</span>
-              </div>
+              <ColorPicker id="farbe3" value={farbe3} onChange={setFarbe3} />
             </div>
           </div>
 
