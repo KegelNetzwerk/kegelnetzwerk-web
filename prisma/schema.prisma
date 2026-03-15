@@ -48,8 +48,8 @@ model Club {
   bgColor        String   @default("FFFFFF") // custom background color hex
 
   // Configurable settings
-  cancelDaysBeforeEvent Int  @default(5)  // days before event after which cancellation is no longer possible
-  defaultGopId          Int? // default game/penalty filter for scoring page
+  cancelDaysBeforeEvent Int    @default(5)  // days before event after which cancellation is no longer possible
+  defaultScoringFilter  String @default("") // query string for default scoring page filter
 
   // Banking info (displayed on cash overview)
   accountHolder  String   @default("")

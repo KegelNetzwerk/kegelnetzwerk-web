@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
@@ -44,11 +45,13 @@ interface ScoringData {
 
 interface ScoringClientProps {
   games: GameOption[];
-  defaultGopId: number | null;
+  defaultScoringFilter: string;
 }
 
-export default function ScoringClient({ games, defaultGopId }: ScoringClientProps) {
+export default function ScoringClient({ games, defaultScoringFilter }: ScoringClientProps) {
   const t = useTranslations('scoring');
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   const pad = (n: number) => String(n).padStart(2, '0');
   const today = new Date();
@@ -56,13 +59,30 @@ export default function ScoringClient({ games, defaultGopId }: ScoringClientProp
   const toDateInput = (d: Date) =>
     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-  const [from, setFrom] = useState(toDateInput(monthAgo));
-  const [to, setTo] = useState(toDateInput(today));
-  const [unit, setUnit] = useState<'POINTS' | 'EURO'>('POINTS');
-  const [gopId, setGopId] = useState(defaultGopId ? String(defaultGopId) : '');
-  const [eliLowest, setEliLowest] = useState('0');
-  const [eliHighest, setEliHighest] = useState('0');
-  const [sortAsc, setSortAsc] = useState(false);
+  // URL params take priority, then club default, then hardcoded defaults
+  const hasUrlParams =
+    searchParams.has('from') || searchParams.has('to') ||
+    searchParams.has('unit') || searchParams.has('gopId') ||
+    searchParams.has('eliLowest') || searchParams.has('eliHighest') ||
+    searchParams.has('sortAsc');
+
+  const activeParams = hasUrlParams
+    ? searchParams
+    : new URLSearchParams(defaultScoringFilter);
+
+  const getParam = (key: string) => activeParams.get(key);
+
+  const rawUnit = getParam('unit');
+
+  const [from, setFrom] = useState(getParam('from') ?? toDateInput(monthAgo));
+  const [to, setTo] = useState(getParam('to') ?? toDateInput(today));
+  const [unit, setUnit] = useState<'POINTS' | 'EURO'>(
+    rawUnit === 'POINTS' || rawUnit === 'EURO' ? rawUnit : 'POINTS'
+  );
+  const [gopId, setGopId] = useState(getParam('gopId') ?? '');
+  const [eliLowest, setEliLowest] = useState(getParam('eliLowest') ?? '0');
+  const [eliHighest, setEliHighest] = useState(getParam('eliHighest') ?? '0');
+  const [sortAsc, setSortAsc] = useState(getParam('sortAsc') === 'true');
   const [data, setData] = useState<ScoringData | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -84,13 +104,26 @@ export default function ScoringClient({ games, defaultGopId }: ScoringClientProp
     setLoading(false);
   }, [from, to, unit, gopId, eliLowest, eliHighest, sortAsc]);
 
-  // Auto-fetch on mount when a default game/penalty is configured
+  // Auto-fetch on mount when there are URL params or a club default filter
   useEffect(() => {
-    if (defaultGopId) {
+    if (hasUrlParams || defaultScoringFilter) {
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function applyFilter() {
+    const params = new URLSearchParams();
+    params.set('from', from);
+    params.set('to', to);
+    params.set('unit', unit);
+    if (gopId) params.set('gopId', gopId);
+    params.set('eliLowest', eliLowest);
+    params.set('eliHighest', eliHighest);
+    params.set('sortAsc', String(sortAsc));
+    router.replace(`?${params.toString()}`, { scroll: false });
+    fetchData();
+  }
 
   // Build chart data
   const chartData: { date: string; [nickname: string]: number | string }[] = data
@@ -194,7 +227,7 @@ export default function ScoringClient({ games, defaultGopId }: ScoringClientProp
             </select>
           </div>
         </div>
-        <Button onClick={fetchData} disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
+        <Button onClick={applyFilter} disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
           <Filter size={15} />
           {loading ? '...' : t('applyFilter')}
         </Button>

@@ -67,21 +67,16 @@ interface ClubSettings {
   bg2: number;
   bgColor: string;
   cancelDaysBeforeEvent: number;
-  defaultGopId: number | null;
-}
-
-interface GameOption {
-  id: number;
-  name: string;
+  defaultScoringFilter: string;
 }
 
 type SaveStatus = 'idle' | 'saving' | 'success' | 'error';
 
-export default function SettingsClient({ club, games }: { club: ClubSettings; games: GameOption[] }) {
+export default function SettingsClient({ club }: { club: ClubSettings }) {
   const t = useTranslations('clubSettings');
 
   const [cancelDaysBeforeEvent, setCancelDaysBeforeEvent] = useState(club.cancelDaysBeforeEvent);
-  const [defaultGopId, setDefaultGopId] = useState<string>(club.defaultGopId ? String(club.defaultGopId) : '');
+  const [defaultScoringFilter, setDefaultScoringFilter] = useState(club.defaultScoringFilter);
   const [aboutUs, setAboutUs] = useState(club.aboutUs);
   const [farbe1, setFarbe1] = useState(`#${club.farbe1}`);
   const [farbe2, setFarbe2] = useState(`#${club.farbe2}`);
@@ -119,7 +114,7 @@ export default function SettingsClient({ club, games }: { club: ClubSettings; ga
     try {
       const fd = new FormData();
       fd.append('cancelDaysBeforeEvent', String(cancelDaysBeforeEvent));
-      fd.append('defaultGopId', defaultGopId);
+      fd.append('defaultScoringFilter', defaultScoringFilter);
       fd.append('aboutUs', aboutUs);
       fd.append('farbe1', farbe1);
       fd.append('farbe2', farbe2);
@@ -189,20 +184,21 @@ export default function SettingsClient({ club, games }: { club: ClubSettings; ga
               />
             </div>
 
-            <div className="space-y-1">
-              <Label htmlFor="defaultGop">{t('defaultScoringFilter')}</Label>
+            <div className="space-y-1 sm:col-span-1">
+              <Label htmlFor="defaultScoringFilter">{t('defaultScoringFilter')}</Label>
               <p className="text-xs text-gray-500">{t('defaultScoringFilterHint')}</p>
-              <select
-                id="defaultGop"
-                value={defaultGopId}
-                onChange={(e) => setDefaultGopId(e.target.value)}
-                className="border rounded px-3 py-2 text-sm w-full max-w-[260px]"
-              >
-                <option value="">{t('noDefault')}</option>
-                {games.map((g) => (
-                  <option key={g.id} value={String(g.id)}>{g.name}</option>
-                ))}
-              </select>
+              <Input
+                id="defaultScoringFilter"
+                type="text"
+                placeholder="from=2025-01-01&to=2025-12-31&unit=POINTS&gopId=3"
+                value={defaultScoringFilter}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const qIndex = raw.indexOf('?');
+                  setDefaultScoringFilter(qIndex >= 0 ? raw.slice(qIndex + 1) : raw);
+                }}
+                className="font-mono text-xs"
+              />
             </div>
           </div>
         </section>

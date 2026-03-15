@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -15,9 +16,16 @@ export default async function ScoringPage() {
     }),
     prisma.club.findUnique({
       where: { id: member.clubId },
-      select: { defaultGopId: true },
+      select: { defaultScoringFilter: true },
     }),
   ]);
 
-  return <ScoringClient games={games} defaultGopId={club?.defaultGopId ?? null} />;
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-gray-400">Loading…</div>}>
+      <ScoringClient
+        games={games}
+        defaultScoringFilter={club?.defaultScoringFilter ?? ''}
+      />
+    </Suspense>
+  );
 }
