@@ -109,7 +109,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">{t('title')}</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-10 max-w-2xl">
+      <form onSubmit={handleSubmit} className="space-y-10">
 
         {/* About us */}
         <section className="space-y-3">

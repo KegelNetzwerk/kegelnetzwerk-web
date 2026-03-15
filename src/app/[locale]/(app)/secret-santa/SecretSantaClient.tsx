@@ -51,7 +51,7 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
       <h1 className="text-2xl font-bold">{t('title')}</h1>
 
       {/* Current partner */}
-      <div className="rounded-lg border p-6 max-w-sm">
+      <div className="rounded-lg border p-6">
         <h2 className="text-sm font-medium text-muted-foreground mb-4">{t('yourPartner')}</h2>
         {partner ? (
           <div className="flex items-center gap-4">

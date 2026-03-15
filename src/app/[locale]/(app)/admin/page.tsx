@@ -18,7 +18,7 @@ export default async function AdminPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Administration</h1>
-      <div className="grid grid-cols-2 gap-4 max-w-md">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {CARDS.map(({ href, icon: Icon, label }) => (
           <Link
             key={href}
