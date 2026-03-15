@@ -9,28 +9,40 @@ export default async function ClubProfilePage() {
   const member = await getCurrentMember();
   if (!member) redirect('/login');
 
-  const [t, tc] = await Promise.all([
+  const [t, tc, tg] = await Promise.all([
     getTranslations('clubProfile'),
     getTranslations('contactList'),
+    getTranslations('gameManagement'),
   ]);
 
-  const club = await prisma.club.findUnique({
-    where: { id: member.clubId },
-    include: {
-      members: {
-        select: {
-          id: true,
-          nickname: true,
-          firstName: true,
-          lastName: true,
-          pic: true,
-          email: true,
-          phone: true,
+  const [club, games] = await Promise.all([
+    prisma.club.findUnique({
+      where: { id: member.clubId },
+      include: {
+        members: {
+          select: {
+            id: true,
+            nickname: true,
+            firstName: true,
+            lastName: true,
+            pic: true,
+            email: true,
+            phone: true,
+          },
+          orderBy: { nickname: 'asc' },
         },
-        orderBy: { nickname: 'asc' },
       },
-    },
-  });
+    }),
+    prisma.gameOrPenalty.findMany({
+      where: { clubId: member.clubId },
+      include: {
+        parts: {
+          orderBy: { name: 'asc' },
+        },
+      },
+      orderBy: { name: 'asc' },
+    }),
+  ]);
 
   if (!club) redirect('/login');
 
@@ -39,7 +51,7 @@ export default async function ClubProfilePage() {
       {/* Club header */}
       <div className="flex items-center gap-6">
         {club.pic && club.pic !== 'none' ? (
-          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border">
+          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg">
             <Image src={club.pic} alt={club.name} fill className="object-contain" />
           </div>
         ) : (
@@ -104,6 +116,51 @@ export default async function ClubProfilePage() {
         emailLabel={tc('email')}
         phoneLabel={tc('phone')}
       />
+
+      {/* Games & Penalties overview */}
+      {games.length > 0 && (
+        <div>
+          <h2 className="mb-4 text-xl font-semibold">{tg('title')}</h2>
+          <div className="flex flex-wrap gap-4">
+            {games.map((game) => (
+              <div key={game.id} className="border rounded-lg overflow-hidden min-w-[200px] flex-1">
+                <div
+                  className="px-4 py-2 font-semibold text-sm text-white"
+                  style={{ backgroundColor: 'var(--kn-primary, #005982)' }}
+                >
+                  {game.name}
+                </div>
+                {game.parts.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="px-3 py-1.5 text-left font-medium text-xs">{tg('partName')}</th>
+                        <th className="px-3 py-1.5 text-left font-medium text-xs">{tg('unit')}</th>
+                        <th className="px-3 py-1.5 text-right font-medium text-xs">{tg('value')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {game.parts.map((part) => (
+                        <tr key={part.id} className="border-t">
+                          <td className="px-3 py-1.5">{part.name}</td>
+                          <td className="px-3 py-1.5 text-muted-foreground text-xs">
+                            {part.unit === 'EURO' ? tg('unitEuro') : tg('unitPoints')}
+                          </td>
+                          <td className="px-3 py-1.5 text-right font-mono text-xs">
+                            {part.variable ? '~' : part.value.toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="px-4 py-3 text-sm text-muted-foreground">—</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
