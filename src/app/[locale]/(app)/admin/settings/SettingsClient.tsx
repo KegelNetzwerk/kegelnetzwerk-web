@@ -146,6 +146,8 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
       toast.success(t('successDetail'));
     } catch {
       toast.error(t('errorDetail'));
+    } finally {
+      setStatus('idle');
     }
   }
 
