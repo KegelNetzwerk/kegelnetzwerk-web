@@ -26,6 +26,12 @@ const DUMP_PATH =
   process.env.DUMP_PATH ??
   'E:\\2026_Projects\\kegelnetzwerk\\Database\\dump-kegelnetzwerk1-202603141411.sql';
 
+const LEGACY_UPLOADS_DIR =
+  process.env.LEGACY_UPLOADS_DIR ??
+  'E:\\2026_Projects\\kegelnetzwerk\\uploads';
+
+const NEW_PUBLIC_DIR = path.join(__dirname, '..', 'public');
+
 // ─── Prisma client ────────────────────────────────────────────────────────────
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
@@ -155,7 +161,7 @@ function parseValues(valuesClause: string): Row[] {
  */
 function parseSQLDump(filePath: string): Record<string, Row[]> {
   console.log(`Reading dump from: ${filePath}`);
-  const content = fs.readFileSync(filePath, 'latin1');
+  const content = fs.readFileSync(filePath, 'utf8');
   const tables: Record<string, Row[]> = {};
 
   // Match INSERT INTO `tablename` VALUES (...)...;
@@ -614,6 +620,49 @@ async function resetSequences() {
   }
 }
 
+// ─── Image copy ───────────────────────────────────────────────────────────────
+
+/**
+ * Recursively copies all files from the legacy uploads directory into
+ * public/uploads/ in the new project. Existing files are skipped (not
+ * overwritten) so uploads made after migration are preserved.
+ */
+function copyImages() {
+  if (!fs.existsSync(LEGACY_UPLOADS_DIR)) {
+    console.warn(`\n⚠ Legacy uploads directory not found: ${LEGACY_UPLOADS_DIR}`);
+    console.warn('  Set the LEGACY_UPLOADS_DIR environment variable to override.');
+    console.warn('  Skipping image copy.');
+    return;
+  }
+
+  const destDir = path.join(NEW_PUBLIC_DIR, 'uploads');
+  fs.mkdirSync(destDir, { recursive: true });
+
+  let copied = 0;
+  let skippedExisting = 0;
+
+  function copyDir(src: string, dest: string) {
+    fs.mkdirSync(dest, { recursive: true });
+    for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
+      const srcPath = path.join(src, entry.name);
+      const destPath = path.join(dest, entry.name);
+      if (entry.isDirectory()) {
+        copyDir(srcPath, destPath);
+      } else {
+        if (fs.existsSync(destPath)) {
+          skippedExisting++;
+        } else {
+          fs.copyFileSync(srcPath, destPath);
+          copied++;
+        }
+      }
+    }
+  }
+
+  copyDir(LEGACY_UPLOADS_DIR, destDir);
+  console.log(`\nImage copy: ${copied} files copied, ${skippedExisting} already existed (skipped).`);
+}
+
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -654,6 +703,7 @@ async function main() {
   await patchMemberSecretSanta(get('member'));
 
   await resetSequences();
+  copyImages();
 
   console.log(`\n╔══════════════════════════════════╗`);
   console.log(`║  Migration complete!             ║`);
