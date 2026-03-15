@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { DM_Sans } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -6,6 +7,13 @@ import { routing } from '@/i18n/routing';
 import { getCurrentMember } from '@/lib/auth';
 import { buildThemeVars } from '@/lib/theme';
 import '../globals.css';
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'KegelNetzwerk',
@@ -33,13 +41,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     : {};
 
   return (
-    <html lang={locale}>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
-      </head>
-      <body style={{ fontFamily: "'Open Sans', sans-serif", ...themeVars as React.CSSProperties }}>
+    <html lang={locale} className={dmSans.variable}>
+      <body style={themeVars as React.CSSProperties}>
         <NextIntlClientProvider messages={messages}>
           {children}
         </NextIntlClientProvider>

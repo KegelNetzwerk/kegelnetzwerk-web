@@ -134,8 +134,8 @@ export default function VoteCard({
         />
       )}
 
-      {/* Options table */}
-      <div className="space-y-2">
+      {/* Options */}
+      <div className="space-y-3">
         {vote.options.map((opt) => {
           const yesPercent = totalVoters > 0 ? Math.round((opt.yesCount / totalVoters) * 100) : 0;
           const maybePercent =
@@ -143,10 +143,10 @@ export default function VoteCard({
 
           return (
             <div key={opt.id} className="space-y-1">
-              <div className="flex items-center gap-3">
-                {/* Vote controls */}
+              {/* Option row: controls + label + count */}
+              <div className="flex items-center gap-2">
                 {canVote && (
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 shrink-0">
                     <button
                       type="button"
                       onClick={() => toggleSelection(opt.id, 'yes')}
@@ -175,42 +175,42 @@ export default function VoteCard({
                     )}
                   </div>
                 )}
-
                 <span className="flex-1 text-sm">{opt.text}</span>
-
-                {/* Result bars */}
-                {showResults && totalVoters > 0 && (
-                  <div className="flex gap-1 items-center">
-                    {opt.yesCount > 0 && (
-                      <div
-                        className="h-4 rounded text-white text-xs flex items-center px-1"
-                        style={{
-                          width: `${Math.max(yesPercent, 8)}px`,
-                          minWidth: '24px',
-                          backgroundColor: 'var(--kn-primary, #005982)',
-                        }}
-                      >
-                        {yesPercent}%
-                      </div>
-                    )}
-                    {vote.maybe && opt.maybeCount > 0 && (
-                      <div
-                        className="h-4 rounded text-white text-xs flex items-center px-1 bg-yellow-400"
-                        style={{ minWidth: '24px' }}
-                      >
-                        {maybePercent}%
-                      </div>
-                    )}
-                    <span className="text-xs text-gray-400">
-                      ({opt.yesCount + opt.maybeCount}/{totalVoters})
-                    </span>
-                  </div>
+                {showResults && (
+                  <span className="text-xs text-gray-400 shrink-0">
+                    {opt.yesCount + opt.maybeCount}/{totalVoters}
+                  </span>
                 )}
               </div>
 
+              {/* Full-width progress bar */}
+              {showResults && totalVoters > 0 && (
+                <div className="w-full h-5 rounded overflow-hidden flex" style={{ background: 'rgba(0,0,0,0.07)' }}>
+                  {yesPercent > 0 && (
+                    <div
+                      className="h-full flex items-center justify-end pr-1.5 text-white text-xs font-medium transition-all"
+                      style={{
+                        width: `${yesPercent}%`,
+                        backgroundColor: 'var(--kn-primary, #005982)',
+                      }}
+                    >
+                      {yesPercent}%
+                    </div>
+                  )}
+                  {vote.maybe && maybePercent > 0 && (
+                    <div
+                      className="h-full flex items-center justify-end pr-1.5 text-white text-xs font-medium transition-all bg-yellow-400"
+                      style={{ width: `${maybePercent}%` }}
+                    >
+                      {maybePercent}%
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Voter names */}
               {showResults && !vote.anonymous && opt.voters.length > 0 && (
-                <p className="text-xs text-gray-400 pl-8">
+                <p className="text-xs text-gray-400">
                   {opt.voters
                     .map((v) => (v.maybe ? `(${v.nickname})` : v.nickname))
                     .join(', ')}

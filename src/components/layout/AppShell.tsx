@@ -2,6 +2,7 @@ import { getCurrentMember } from '@/lib/auth';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MainNav from './MainNav';
+import CreditLine from './CreditLine';
 
 export default async function AppShell({ children }: { children: React.ReactNode }) {
   const member = await getCurrentMember();
@@ -47,10 +48,13 @@ export default async function AppShell({ children }: { children: React.ReactNode
         >
           <a href="https://KegelNetzwerk.de" target="_blank" rel="noopener noreferrer">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/splash.png" alt="KegelNetzwerk" style={{ height: 22, opacity: 0.6 }} />
+            <img src="/images/splash.png" alt="KegelNetzwerk" style={{ height: 22 }} />
           </a>
         </div>
       </div>
+
+      {/* Below-page FoelliX credit */}
+      <CreditLine />
     </div>
   );
 }

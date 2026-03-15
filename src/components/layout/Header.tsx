@@ -10,7 +10,7 @@ export default function Header({ member }: { member: (Member & { club: Club }) |
       className="overflow-hidden"
       style={{
         background: 'var(--kn-bg2)',
-        height: 160,
+        height: 210,
         borderTopLeftRadius: 30,
         borderTopRightRadius: 30,
         position: 'relative',

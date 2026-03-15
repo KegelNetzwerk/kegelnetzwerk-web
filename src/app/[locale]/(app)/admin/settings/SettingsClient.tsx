@@ -194,7 +194,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
             <Label>{t('header')}</Label>
             {!deleteHeader && currentHeader !== 'none' && (
               <div className="space-y-2">
-                <div className="relative h-32 w-full overflow-hidden rounded border">
+                <div className="relative h-44 w-full overflow-hidden rounded border">
                   <Image src={currentHeader} alt="header" fill className="object-cover" />
                 </div>
                 <Button
