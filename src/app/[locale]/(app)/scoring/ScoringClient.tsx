@@ -141,8 +141,6 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
 
   function applyFilter() {
     router.replace(`?${buildParams().toString()}`, { scroll: false });
-    try { localStorage.setItem('scoring-filter-open', 'false'); } catch {}
-    setFilterOpen(false);
     fetchData();
   }
 
