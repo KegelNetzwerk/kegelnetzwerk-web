@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import {
-  Newspaper, CheckSquare, CalendarDays, BarChart2, BookUser,
+  Newspaper, CheckSquare, CalendarDays, BarChart2,
   ShieldCheck, LogOut, Building2, User, Menu, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -37,7 +37,6 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic 
     { href: `/${locale}/votes`,   label: t('votes'),       icon: CheckSquare  },
     { href: `/${locale}/events`,  label: t('events'),      icon: CalendarDays },
     { href: `/${locale}/scoring`, label: t('scoring'),     icon: BarChart2    },
-    { href: `/${locale}/contact`, label: t('contactList'), icon: BookUser     },
     ...(isAdmin ? [{ href: `/${locale}/admin`, label: t('admin'), icon: ShieldCheck }] : []),
   ];
 

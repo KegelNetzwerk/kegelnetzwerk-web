@@ -3,12 +3,16 @@ import { prisma } from '@/lib/prisma';
 import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
+import ContactList from './ContactList';
 
 export default async function ClubProfilePage() {
   const member = await getCurrentMember();
   if (!member) redirect('/login');
 
-  const t = await getTranslations('clubProfile');
+  const [t, tc] = await Promise.all([
+    getTranslations('clubProfile'),
+    getTranslations('contactList'),
+  ]);
 
   const club = await prisma.club.findUnique({
     where: { id: member.clubId },
@@ -20,6 +24,8 @@ export default async function ClubProfilePage() {
           firstName: true,
           lastName: true,
           pic: true,
+          email: true,
+          phone: true,
         },
         orderBy: { nickname: 'asc' },
       },
@@ -84,6 +90,20 @@ export default async function ClubProfilePage() {
           ))}
         </div>
       </div>
+
+      {/* Contact list — collapsible, auth-gated by server (member already verified above) */}
+      <ContactList
+        members={club.members.map((m) => ({
+          id: m.id,
+          nickname: m.nickname,
+          email: m.email,
+          phone: m.phone,
+        }))}
+        title={tc('title')}
+        nicknameLabel={tc('nickname')}
+        emailLabel={tc('email')}
+        phoneLabel={tc('phone')}
+      />
     </div>
   );
 }
