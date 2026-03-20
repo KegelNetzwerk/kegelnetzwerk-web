@@ -10,7 +10,7 @@ export default async function AppLayout({
   const member = await getCurrentMember();
 
   if (!member) {
-    redirect('/login');
+    redirect('/');
   }
 
   return <AppShell>{children}</AppShell>;

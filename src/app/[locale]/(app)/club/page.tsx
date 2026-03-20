@@ -1,21 +1,24 @@
 import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getLocale } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import Image from 'next/image';
-import { Unit } from '@prisma/client';
+import Link from 'next/link';
 import ContactList from './ContactList';
 import GamesOverview from './GamesOverview';
 import YearlyWinners from './YearlyWinners';
+import { computeYearlyWinners } from '@/lib/yearly-winners';
+import ClubComments, { ClubCommentData } from '@/components/ClubComments';
 
 export default async function ClubProfilePage() {
   const member = await getCurrentMember();
   if (!member) redirect('/login');
 
-  const [t, tc, tg] = await Promise.all([
+  const [t, tc, tg, locale] = await Promise.all([
     getTranslations('clubProfile'),
     getTranslations('contactList'),
     getTranslations('gameManagement'),
+    getLocale(),
   ]);
 
 
@@ -50,69 +53,26 @@ export default async function ClubProfilePage() {
 
   if (!club) redirect('/login');
 
-  // Compute yearly winners from defaultScoringFilter settings
-  const filterParams = new URLSearchParams(club.defaultScoringFilter ?? '');
-  const filterUnit = (filterParams.get('unit') === 'EURO' ? 'EURO' : 'POINTS') as Unit;
-  const filterGopId = filterParams.get('gopId') ? parseInt(filterParams.get('gopId')!) : null;
-  const filterEliLowest = parseInt(filterParams.get('eliLowest') ?? '0', 10);
-  const filterEliHighest = parseInt(filterParams.get('eliHighest') ?? '0', 10);
-
-  const [clubMembers, allScoringResults] = await Promise.all([
-    prisma.member.findMany({ where: { clubId: member.clubId }, select: { id: true, nickname: true } }),
-    prisma.result.findMany({
-      where: {
-        clubId: member.clubId,
-        part: { unit: filterUnit },
-        ...(filterGopId ? { gopId: filterGopId } : {}),
-      },
-      select: { memberId: true, sessionGroup: true, value: true, date: true },
+  const [yearlyWinners, rawComments] = await Promise.all([
+    computeYearlyWinners(member.clubId, club.defaultScoringFilter ?? ''),
+    prisma.clubComment.findMany({
+      where: { clubId: member.clubId },
+      orderBy: { createdAt: 'desc' },
+      include: { authorMember: { select: { nickname: true, pic: true, club: { select: { name: true, farbe2: true } } } } },
     }),
   ]);
 
-  type YearRanking = { nickname: string; total: number };
-  const yearlyWinners: { year: number; unit: string; rankings: YearRanking[] }[] = [];
-
-  if (allScoringResults.length > 0) {
-    const minYear = Math.min(...allScoringResults.map((r) => r.date.getFullYear()));
-    const maxYear = new Date().getFullYear();
-
-    for (let year = maxYear; year >= minYear; year--) {
-      const yearResults = allScoringResults.filter((r) => r.date.getFullYear() === year);
-      if (yearResults.length === 0) continue;
-
-      const sessionGroups = [...new Set(yearResults.map((r) => r.sessionGroup))];
-      const rankings: YearRanking[] = [];
-
-      for (const m of clubMembers) {
-        const memberResults = yearResults.filter((r) => r.memberId === m.id);
-        const sessionMap = new Map<number, number>();
-        for (const r of memberResults) {
-          sessionMap.set(r.sessionGroup, (sessionMap.get(r.sessionGroup) ?? 0) + r.value);
-        }
-        for (const sg of sessionGroups) {
-          if (!sessionMap.has(sg)) sessionMap.set(sg, 0);
-        }
-
-        let sessionValues = Array.from(sessionMap.entries()).map(([sg, val]) => ({ sg, val }));
-        if (filterEliLowest > 0) {
-          const toExclude = new Set([...sessionValues].sort((a, b) => a.val - b.val).slice(0, filterEliLowest).map((s) => s.sg));
-          sessionValues = sessionValues.filter((s) => !toExclude.has(s.sg));
-        }
-        if (filterEliHighest > 0) {
-          const toExclude = new Set([...sessionValues].sort((a, b) => b.val - a.val).slice(0, filterEliHighest).map((s) => s.sg));
-          sessionValues = sessionValues.filter((s) => !toExclude.has(s.sg));
-        }
-
-        const total = sessionValues.reduce((sum, s) => sum + s.val, 0);
-        if (total > 0) rankings.push({ nickname: m.nickname, total });
-      }
-
-      if (rankings.length > 0) {
-        rankings.sort((a, b) => b.total - a.total);
-        yearlyWinners.push({ year, unit: filterUnit, rankings });
-      }
-    }
-  }
+  const isClubAdmin = member.role === 'ADMIN';
+  const comments: ClubCommentData[] = rawComments.map((c) => ({
+    id: c.id,
+    content: c.content,
+    createdAt: c.createdAt.toISOString(),
+    authorName: c.authorMember?.nickname ?? c.guestName,
+    authorPic: c.authorMember?.pic ?? null,
+    canDelete: member.id === c.authorMemberId || isClubAdmin,
+    authorClubName: c.authorMember?.club.name ?? null,
+    authorClubColor: c.authorMember?.club.farbe2 ?? null,
+  }));
 
   return (
     <div className="space-y-8">
@@ -148,7 +108,11 @@ export default async function ClubProfilePage() {
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {club.members.map((m) => (
-            <div key={m.id} className="flex flex-col items-center gap-2 text-center">
+            <Link
+              key={m.id}
+              href={`/${locale}/members/${m.id}`}
+              className="flex flex-col items-center gap-2 text-center rounded-lg p-2 hover:bg-muted/50 transition-colors cursor-pointer"
+            >
               {m.pic && m.pic !== 'none' ? (
                 <div className="relative h-16 w-16 overflow-hidden rounded-full border">
                   <Image src={m.pic} alt={m.nickname} fill className="object-cover" />
@@ -166,10 +130,17 @@ export default async function ClubProfilePage() {
                   </p>
                 )}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
+
+      {/* Club comments */}
+      <ClubComments
+        clubId={club.id}
+        initialComments={comments}
+        isLoggedIn
+      />
 
       {/* Yearly winners */}
       {yearlyWinners.length > 0 && (

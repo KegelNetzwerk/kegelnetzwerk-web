@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentMember, hashPassword } from '@/lib/auth';
+import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { saveUploadedFile } from '@/lib/upload';
 
-// PUT /api/profile — self-service profile edit
+// PUT /api/profile — self-service profile edit (no password; use /api/profile/password)
 export async function PUT(req: NextRequest) {
   const current = await getCurrentMember();
   if (!current) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -15,7 +15,6 @@ export async function PUT(req: NextRequest) {
   const lastName = (formData.get('lastName') as string)?.trim() ?? '';
   const birthdayStr = (formData.get('birthday') as string)?.trim() ?? '';
   const phone = (formData.get('phone') as string)?.trim() ?? '';
-  const password = (formData.get('password') as string) ?? '';
   const avatarFile = formData.get('avatar') as File | null;
 
   if (nickname.length < 2) {
@@ -44,23 +43,9 @@ export async function PUT(req: NextRequest) {
 
   const birthday = birthdayStr ? new Date(birthdayStr) : null;
 
-  const updateData: Record<string, unknown> = {
-    nickname,
-    email,
-    firstName,
-    lastName,
-    birthday,
-    phone,
-    pic,
-  };
-
-  if (password.length >= 4) {
-    updateData.passwordHash = await hashPassword(password);
-  }
-
   const updated = await prisma.member.update({
     where: { id: current.id },
-    data: updateData,
+    data: { nickname, email, firstName, lastName, birthday, phone, pic },
   });
 
   return NextResponse.json(updated);

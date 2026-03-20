@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { formatPhone } from '@/lib/format';
 
 interface ContactMember {
   id: number;
@@ -58,7 +59,7 @@ export default function ContactList({ members, title, nicknameLabel, emailLabel,
                   <td className="px-4 py-2">
                     {m.phone ? (
                       <a href={`tel:${m.phone}`} className="text-[var(--color-primary)] hover:underline">
-                        {m.phone}
+                        {formatPhone(m.phone)}
                       </a>
                     ) : (
                       <span className="text-muted-foreground">—</span>

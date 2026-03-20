@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Save } from 'lucide-react';
+import Link from 'next/link';
+import { Save, KeyRound, Eye, Gift } from 'lucide-react';
 
 interface ProfileData {
   id: number;
@@ -21,14 +22,22 @@ interface ProfileData {
   pic: string;
 }
 
+interface SantaRow {
+  year: number;
+  receiverNickname: string | null;
+  receiverPic: string | null;
+}
+
 const LOCALES = [
   { value: 'de', label: 'Deutsch' },
   { value: 'en', label: 'English' },
 ];
 
-export default function ProfileClient({ member }: { member: ProfileData }) {
+export default function ProfileClient({ member, santaRows }: { member: ProfileData; santaRows: SantaRow[] }) {
   const t = useTranslations('profile');
+  const tSanta = useTranslations('secretSanta');
   const tCommon = useTranslations('common');
+  const currentYear = new Date().getFullYear();
   const locale = useLocale();
   const pathname = usePathname();
   const router = useRouter();
@@ -41,8 +50,6 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
   const [birthday, setBirthday] = useState(
     member.birthday ? new Date(member.birthday).toISOString().split('T')[0] : ''
   );
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -63,11 +70,6 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password && password !== confirmPassword) {
-      toast.error(t('error.passwordMismatch'));
-      return;
-    }
-
     setSaving(true);
     try {
       const formData = new FormData();
@@ -77,19 +79,16 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
       formData.append('email', email);
       formData.append('phone', phone);
       formData.append('birthday', birthday);
-      formData.append('password', password);
       if (avatarFile) formData.append('avatar', avatarFile);
 
       const res = await fetch('/api/profile', { method: 'PUT', body: formData });
       if (!res.ok) {
         const data = await res.json();
-        const knownErrors = ['nicknameTaken', 'emailTaken', 'passwordMismatch', 'nicknameRequired'];
+        const knownErrors = ['nicknameTaken', 'emailTaken', 'nicknameRequired'];
         toast.error(knownErrors.includes(data.error) ? t(`error.${data.error}`) : tCommon('unknownError'));
         return;
       }
       toast.success(t('success'));
-      setPassword('');
-      setConfirmPassword('');
     } finally {
       setSaving(false);
     }
@@ -101,7 +100,8 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t('title')}</h1>
 
-      <form onSubmit={handleSubmit} className="max-w-lg space-y-5">
+      <div className="flex gap-0 items-start divide-x">
+      <form onSubmit={handleSubmit} className="flex-1 space-y-5 pr-8">
         {/* Avatar */}
         <div className="flex items-center gap-4">
           {currentPic ? (
@@ -180,27 +180,6 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
         </div>
 
         <div className="space-y-1">
-          <Label htmlFor="password">{t('password')}</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder={t('passwordHint')}
-          />
-        </div>
-
-        <div className="space-y-1">
-          <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-1">
           <Label htmlFor="language">{t('language')}</Label>
           <select
             id="language"
@@ -224,6 +203,72 @@ export default function ProfileClient({ member }: { member: ProfileData }) {
           {saving ? tCommon('loading') : tCommon('save')}
         </Button>
       </form>
+
+      <div className="flex flex-col gap-2 pt-1 pl-8">
+        <Link
+          href={`/${locale}/members/${member.id}?preview=guest`}
+          className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
+        >
+          <Eye size={15} />
+          {t('viewPublicProfile')}
+        </Link>
+        <Link
+          href={`/${locale}/profile/password`}
+          className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
+        >
+          <KeyRound size={15} />
+          {t('changePasswordLink')}
+        </Link>
+
+        {/* Secret Santa history */}
+        <div className="mt-4 rounded-lg border bg-muted/30 p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <Gift size={15} />
+            {tSanta('historyTitle')}
+          </h2>
+          {santaRows.length === 0 ? (
+            <p className="text-xs text-muted-foreground">{tSanta('noRoundsYet')}</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-muted-foreground">
+                  <th className="pb-1 text-left font-medium">{tSanta('year')}</th>
+                  <th className="pb-1 text-left font-medium">{tSanta('partnerLabel')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {santaRows.map((h) => {
+                  const hasPic = h.receiverPic && h.receiverPic !== 'none';
+                  return (
+                    <tr key={h.year} className={`border-t${h.year === currentYear ? ' font-semibold' : ''}`}>
+                      <td className="py-1 pr-4">{h.year}</td>
+                      <td className="py-1">
+                        {h.receiverNickname ? (
+                          <span className="flex items-center gap-2">
+                            {hasPic ? (
+                              <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full border">
+                                <Image src={h.receiverPic!} alt={h.receiverNickname} fill className="object-cover" />
+                              </div>
+                            ) : (
+                              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-semibold text-muted-foreground">
+                                {h.receiverNickname.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            {h.receiverNickname}
+                          </span>
+                        ) : (
+                          <span className="font-normal text-muted-foreground italic">{tSanta('notParticipated')}</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+      </div>
     </div>
   );
 }

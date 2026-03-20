@@ -83,7 +83,8 @@
       "error": {
         "invalidToken": "Ungültiger oder abgelaufener Link.",
         "passwordMismatch": "Die Passwörter stimmen nicht überein.",
-        "weakPassword": "Das Passwort muss mindestens 4 Zeichen lang sein."
+        "weakPassword": "Das Passwort muss mindestens 4 Zeichen lang sein.",
+        "captchaFailed": "Captcha-Überprüfung fehlgeschlagen. Bitte erneut versuchen."
       }
     }
   },
@@ -100,10 +101,34 @@
     "secretSanta": "Wichteln",
     "mobileApi": "Mobile App",
     "editProfile": "Profil bearbeiten",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "browseClubs": "Klubs entdecken",
+    "login": "Anmelden"
+  },
+  "publicLanding": {
+    "hero": "Willkommen bei KegelNetzwerk",
+    "heroSub": "Die Plattform für Kegelklubs",
+    "loginPrompt": "Du bist Mitglied?",
+    "loginButton": "Zum Login",
+    "noClubs": "Noch keine Klubs registriert.",
+    "memberCount": "{count} Mitglieder",
+    "whatIsTitle": "Was ist das KegelNetzwerk?",
+    "whatIsPara1": "Das KegelNetzwerk ist eine Plattform, die Kegelklubs dabei unterstützt, ihren Vereinsalltag einfach und digital zu organisieren. In wenigen Klicks kannst du deinen Klub im Internet präsentieren, eigene Spielregeln und Strafen hinterlegen und die Punkte automatisch berechnen lassen – ganz ohne Rechenfehler.",
+    "feature1": "Öffentliches Klubprofil mit Mitgliederliste",
+    "feature2": "Eigene Spielregeln & Strafen verwalten",
+    "feature3": "Automatische Punkteberechnung",
+    "feature4": "Terminverwaltung & Abstimmungen",
+    "feature5": "Kontaktliste für alle Mitglieder",
+    "feature6": "Wichteln – ohne doppelte Partner über 3 Jahre",
+    "clubsTitle": "Registrierte Klubs",
+    "appTitle": "KegelNetzwerk App",
+    "appComingSoon": "Die neue App zum Punkte eintragen direkt vom Handy – bald verfügbar."
   },
   "profile": {
     "title": "Profil bearbeiten",
+    "changePasswordTitle": "Passwort ändern",
+    "changePasswordLink": "Passwort ändern",
+    "viewPublicProfile": "Öffentliches Profil ansehen",
     "nickname": "Spitzname",
     "firstName": "Vorname",
     "lastName": "Nachname",
@@ -117,6 +142,7 @@
     "passwordHint": "Leer lassen, um das Passwort nicht zu ändern.",
     "avatar": "Profilbild",
     "success": "Profil erfolgreich gespeichert.",
+    "passwordSuccess": "Passwort erfolgreich geändert.",
     "sidebar": {
       "members": "Mitglieder",
       "nextBirthday": "Nächster Geburtstag",
@@ -129,8 +155,21 @@
       "nicknameTaken": "Dieser Spitzname ist bereits vergeben.",
       "emailTaken": "Diese E-Mail-Adresse ist bereits vergeben.",
       "passwordMismatch": "Die Passwörter stimmen nicht überein.",
-      "nicknameRequired": "Spitzname muss mindestens 2 Zeichen lang sein."
+      "nicknameRequired": "Spitzname muss mindestens 2 Zeichen lang sein.",
+      "weakPassword": "Passwort muss mindestens 4 Zeichen lang sein."
     }
+  },
+  "memberProfile": {
+    "title": "Mitgliederprofil",
+    "notFound": "Mitglied nicht gefunden.",
+    "birthday": "Geburtstag",
+    "email": "E-Mail-Adresse",
+    "phone": "Handynummer",
+    "editProfile": "Eigenes Profil bearbeiten",
+    "backToClub": "Zurück zum Klub",
+    "loginToSeeMore": "Anmelden, um Kontaktdaten zu sehen",
+    "guestPreviewBanner": "Vorschau: So sehen Gäste dein Profil",
+    "exitPreview": "Vorschau beenden"
   },
   "news": {
     "title": "Neuigkeiten",
@@ -406,19 +445,27 @@
     "assignConfirm": "Möchten Sie die Wichtelpartner jetzt auslosen? Die aktuellen Zuweisungen werden überschrieben.",
     "assignSuccess": "Wichtelpartner erfolgreich ausgelost.",
     "assignError": "Auslosen fehlgeschlagen. Nicht genügend Mitglieder.",
-    "previousPartnerAvoided": "Vorjährige Partnerzuweisung wird vermieden."
+    "previousPartnerAvoided": "Partnerzuweisungen der letzten 3 Jahre werden vermieden.",
+    "historyTitle": "Meine Wichtelhistorie",
+    "year": "Jahr",
+    "partnerLabel": "Ausgelost",
+    "notParticipated": "Nicht teilgenommen",
+    "noRoundsYet": "Es wurden noch keine Wichtelrunden durchgeführt."
   },
   "comments": {
     "title": "Kommentare",
     "noComments": "Noch keine Kommentare",
     "addComment": "Kommentar hinzufügen",
     "placeholder": "Kommentar schreiben...",
+    "guest": "Gast",
+    "guestNamePlaceholder": "Ihr Name (Pflichtfeld)",
     "submit": "Kommentieren",
     "deleteConfirm": "Möchten Sie diesen Kommentar wirklich löschen?",
     "deleteSuccess": "Kommentar erfolgreich gelöscht.",
     "error": {
       "tooShort": "Kommentar muss mindestens 1 Zeichen lang sein.",
-      "saveFailed": "Kommentar konnte nicht gespeichert werden."
+      "saveFailed": "Kommentar konnte nicht gespeichert werden.",
+      "captchaFailed": "Captcha-Überprüfung fehlgeschlagen. Bitte erneut versuchen."
     }
   }
 }

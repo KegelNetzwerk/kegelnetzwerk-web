@@ -83,7 +83,8 @@
       "error": {
         "invalidToken": "Invalid or expired link.",
         "passwordMismatch": "Passwords do not match.",
-        "weakPassword": "Password must be at least 4 characters long."
+        "weakPassword": "Password must be at least 4 characters long.",
+        "captchaFailed": "Captcha verification failed. Please try again."
       }
     }
   },
@@ -100,10 +101,34 @@
     "secretSanta": "Secret Santa",
     "mobileApi": "Mobile App",
     "editProfile": "Edit Profile",
-    "logout": "Sign Out"
+    "logout": "Sign Out",
+    "browseClubs": "Browse Clubs",
+    "login": "Sign In"
+  },
+  "publicLanding": {
+    "hero": "Welcome to KegelNetzwerk",
+    "heroSub": "The platform for bowling clubs",
+    "loginPrompt": "Are you a member?",
+    "loginButton": "Sign In",
+    "noClubs": "No clubs registered yet.",
+    "memberCount": "{count} members",
+    "whatIsTitle": "What is KegelNetzwerk?",
+    "whatIsPara1": "KegelNetzwerk is a platform that helps bowling clubs organise their club life simply and digitally. In just a few clicks you can present your club online, define your own game rules and penalties, and have scores calculated automatically — with no calculation errors.",
+    "feature1": "Public club profile with member list",
+    "feature2": "Manage your own game rules & penalties",
+    "feature3": "Automatic score calculation",
+    "feature4": "Event management & votes",
+    "feature5": "Contact list for all members",
+    "feature6": "Secret Santa — no repeated partners over 3 years",
+    "clubsTitle": "Registered Clubs",
+    "appTitle": "KegelNetzwerk App",
+    "appComingSoon": "The new app to enter scores directly from your phone — coming soon."
   },
   "profile": {
     "title": "Edit Profile",
+    "changePasswordTitle": "Change Password",
+    "changePasswordLink": "Change password",
+    "viewPublicProfile": "View public profile",
     "nickname": "Nickname",
     "firstName": "First name",
     "lastName": "Last name",
@@ -117,6 +142,7 @@
     "passwordHint": "Leave blank to keep your current password.",
     "avatar": "Profile picture",
     "success": "Profile saved successfully.",
+    "passwordSuccess": "Password changed successfully.",
     "sidebar": {
       "members": "Members",
       "nextBirthday": "Next birthday",
@@ -129,8 +155,21 @@
       "nicknameTaken": "This nickname is already taken.",
       "emailTaken": "This email address is already taken.",
       "passwordMismatch": "Passwords do not match.",
-      "nicknameRequired": "Nickname must be at least 2 characters long."
+      "nicknameRequired": "Nickname must be at least 2 characters long.",
+      "weakPassword": "Password must be at least 4 characters long."
     }
+  },
+  "memberProfile": {
+    "title": "Member Profile",
+    "notFound": "Member not found.",
+    "birthday": "Birthday",
+    "email": "Email address",
+    "phone": "Mobile number",
+    "editProfile": "Edit my profile",
+    "backToClub": "Back to club",
+    "loginToSeeMore": "Sign in to see contact details",
+    "guestPreviewBanner": "Preview: This is how guests see your profile",
+    "exitPreview": "Exit preview"
   },
   "news": {
     "title": "News",
@@ -406,19 +445,27 @@
     "assignConfirm": "Do you want to draw Secret Santa partners now? Current assignments will be overwritten.",
     "assignSuccess": "Secret Santa partners drawn successfully.",
     "assignError": "Drawing failed. Not enough members.",
-    "previousPartnerAvoided": "Previous year's assignment will be avoided."
+    "previousPartnerAvoided": "Assignments from the last 3 years will be avoided.",
+    "historyTitle": "My Secret Santa history",
+    "year": "Year",
+    "partnerLabel": "Drawn",
+    "notParticipated": "Did not participate",
+    "noRoundsYet": "No Secret Santa rounds have taken place yet."
   },
   "comments": {
     "title": "Comments",
     "noComments": "No comments yet",
     "addComment": "Add a comment",
     "placeholder": "Write a comment...",
+    "guest": "Guest",
+    "guestNamePlaceholder": "Your name (required)",
     "submit": "Comment",
     "deleteConfirm": "Are you sure you want to delete this comment?",
     "deleteSuccess": "Comment deleted successfully.",
     "error": {
       "tooShort": "Comment must be at least 1 character long.",
-      "saveFailed": "Could not save comment."
+      "saveFailed": "Could not save comment.",
+      "captchaFailed": "Captcha verification failed. Please try again."
     }
   }
 }

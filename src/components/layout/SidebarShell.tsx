@@ -35,7 +35,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <span style={{ color: 'rgba(0,0,0,0.45)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
         {label}
       </span>
-      <span style={{ color: 'rgba(0,0,0,0.8)', fontSize: 12 }}>{value}</span>
+      <span style={{ color: 'rgba(0,0,0,0.8)', fontSize: 12 }} className="group-hover:underline">{value}</span>
     </div>
   );
 }
@@ -149,7 +149,7 @@ export default function SidebarShell({
           <div className="flex flex-col gap-3">
             {latestNews && (
               latestNewsId ? (
-                <Link href={`/${locale}/news/${latestNewsId}`} className="no-underline">
+                <Link href={`/${locale}/news/${latestNewsId}`} className="no-underline group">
                   <InfoRow label={labelLatestNews} value={latestNews} />
                 </Link>
               ) : (
@@ -158,7 +158,7 @@ export default function SidebarShell({
             )}
             {nextEvent && (
               nextEventId ? (
-                <Link href={`/${locale}/events/${nextEventId}`} className="no-underline">
+                <Link href={`/${locale}/events/${nextEventId}`} className="no-underline group">
                   <InfoRow label={labelNextEvent} value={nextEvent} />
                 </Link>
               ) : (
@@ -173,7 +173,7 @@ export default function SidebarShell({
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {openVotes.map((vote) => (
                     <li key={vote.id} style={{ fontSize: 12, paddingLeft: 8, borderLeft: '2px solid rgba(0,0,0,0.15)' }}>
-                      <Link href={`/${locale}/votes/${vote.id}`} style={{ color: 'rgba(0,0,0,0.8)', textDecoration: 'none' }}>
+                      <Link href={`/${locale}/votes/${vote.id}`} style={{ color: 'rgba(0,0,0,0.8)', textDecoration: 'none' }} className="hover:underline">
                         {vote.title}
                       </Link>
                     </li>

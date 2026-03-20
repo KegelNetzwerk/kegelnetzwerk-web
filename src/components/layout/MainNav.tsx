@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import {
   Newspaper, CheckSquare, CalendarDays, BarChart2,
-  ShieldCheck, LogOut, Building2, User, Menu, X,
+  ShieldCheck, LogOut, Building2, User, Menu, X, LogIn,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -16,9 +16,10 @@ interface MainNavProps {
   nickname: string;
   memberPic: string;
   clubPic: string;
+  isGuest?: boolean;
 }
 
-export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic }: MainNavProps) {
+export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic, isGuest }: MainNavProps) {
   const t = useTranslations('nav');
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -32,13 +33,15 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic 
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
-  const navItems: { href: string; label: string; icon: LucideIcon }[] = [
-    { href: `/${locale}/news`,    label: t('news'),        icon: Newspaper    },
-    { href: `/${locale}/votes`,   label: t('votes'),       icon: CheckSquare  },
-    { href: `/${locale}/events`,  label: t('events'),      icon: CalendarDays },
-    { href: `/${locale}/scoring`, label: t('scoring'),     icon: BarChart2    },
-    ...(isAdmin ? [{ href: `/${locale}/admin`, label: t('admin'), icon: ShieldCheck }] : []),
-  ];
+  const navItems: { href: string; label: string; icon: LucideIcon }[] = isGuest
+    ? [{ href: `/${locale}`, label: t('browseClubs'), icon: Building2 }]
+    : [
+        { href: `/${locale}/news`,    label: t('news'),        icon: Newspaper    },
+        { href: `/${locale}/votes`,   label: t('votes'),       icon: CheckSquare  },
+        { href: `/${locale}/events`,  label: t('events'),      icon: CalendarDays },
+        { href: `/${locale}/scoring`, label: t('scoring'),     icon: BarChart2    },
+        ...(isAdmin ? [{ href: `/${locale}/admin`, label: t('admin'), icon: ShieldCheck }] : []),
+      ];
 
   const isActive = (href: string) => pathname.startsWith(href);
 
@@ -91,46 +94,56 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic 
           <Menu size={22} />
         </button>
 
-        {/* ── Right side: icons only on mobile, icons + text on desktop ── */}
+        {/* ── Right side ── */}
         <div className="flex items-stretch">
-          {/* Club profile */}
-          <Link href={`/${locale}/club`} style={linkStyle(`/${locale}/club`)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-            {hasClubPic ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', flexShrink: 0, overflow: 'hidden' }}>
-                <img src={clubPic} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
-              </span>
-            ) : (
-              <Building2 size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
-            )}
-            <span className="hidden md:inline">{t('clubProfile')}</span>
-          </Link>
+          {isGuest ? (
+            /* Guest: Sign In link only */
+            <Link href={`/${locale}/login`} style={linkStyle(`/${locale}/login`)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+              <LogIn size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
+              <span className="hidden md:inline">{t('login')}</span>
+            </Link>
+          ) : (
+            <>
+              {/* Club profile */}
+              <Link href={`/${locale}/club`} style={linkStyle(`/${locale}/club`)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                {hasClubPic ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', flexShrink: 0, overflow: 'hidden' }}>
+                    <img src={clubPic} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+                  </span>
+                ) : (
+                  <Building2 size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
+                )}
+                <span className="hidden md:inline">{t('clubProfile')}</span>
+              </Link>
 
-          {/* Profile */}
-          <Link href={`/${locale}/profile`} style={linkStyle(`/${locale}/profile`)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
-            {hasMemberPic ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', flexShrink: 0, overflow: 'hidden' }}>
-                <img src={memberPic} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
-              </span>
-            ) : (
-              <User size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
-            )}
-            <span className="hidden md:inline">{nickname}</span>
-          </Link>
+              {/* Profile */}
+              <Link href={`/${locale}/profile`} style={linkStyle(`/${locale}/profile`)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                {hasMemberPic ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', flexShrink: 0, overflow: 'hidden' }}>
+                    <img src={memberPic} alt="" style={{ width: 20, height: 20, borderRadius: '50%', objectFit: 'cover' }} />
+                  </span>
+                ) : (
+                  <User size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
+                )}
+                <span className="hidden md:inline">{nickname}</span>
+              </Link>
 
-          {/* Logout */}
-          <form action="/api/auth/logout" method="POST" className="flex items-stretch">
-            <button
-              type="submit"
-              style={{ ...linkStyle('__logout__'), cursor: 'pointer', border: 'none', background: 'transparent' }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.15)'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
-            >
-              <LogOut size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
-              <span className="hidden md:inline">{t('logout')}</span>
-            </button>
-          </form>
+              {/* Logout */}
+              <form action="/api/auth/logout" method="POST" className="flex items-stretch">
+                <button
+                  type="submit"
+                  style={{ ...linkStyle('__logout__'), cursor: 'pointer', border: 'none', background: 'transparent' }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'rgba(0,0,0,0.15)'; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
+                >
+                  <LogOut size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
+                  <span className="hidden md:inline">{t('logout')}</span>
+                </button>
+              </form>
+            </>
+          )}
         </div>
       </nav>
 
@@ -187,39 +200,52 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic 
               ))}
             </nav>
 
-            {/* Drawer footer: club + profile + logout */}
+            {/* Drawer footer */}
             <div style={{ borderTop: '1px solid rgba(255,255,255,0.15)', paddingBottom: 8 }}>
-              <Link
-                href={`/${locale}/club`}
-                onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 14 }}
-              >
-                {hasClubPic
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={clubPic} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }} />
-                  : <Building2 size={19} />}
-                {t('clubProfile')}
-              </Link>
-              <Link
-                href={`/${locale}/profile`}
-                onClick={() => setMenuOpen(false)}
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 14 }}
-              >
-                {hasMemberPic
-                  // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={memberPic} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }} />
-                  : <User size={19} />}
-                {nickname}
-              </Link>
-              <form action="/api/auth/logout" method="POST">
-                <button
-                  type="submit"
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', color: 'rgba(255,255,255,0.8)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, width: '100%' }}
+              {isGuest ? (
+                <Link
+                  href={`/${locale}/login`}
+                  onClick={() => setMenuOpen(false)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 14 }}
                 >
-                  <LogOut size={19} />
-                  {t('logout')}
-                </button>
-              </form>
+                  <LogIn size={19} />
+                  {t('login')}
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href={`/${locale}/club`}
+                    onClick={() => setMenuOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 14 }}
+                  >
+                    {hasClubPic
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={clubPic} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }} />
+                      : <Building2 size={19} />}
+                    {t('clubProfile')}
+                  </Link>
+                  <Link
+                    href={`/${locale}/profile`}
+                    onClick={() => setMenuOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 14 }}
+                  >
+                    {hasMemberPic
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={memberPic} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }} />
+                      : <User size={19} />}
+                    {nickname}
+                  </Link>
+                  <form action="/api/auth/logout" method="POST">
+                    <button
+                      type="submit"
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', color: 'rgba(255,255,255,0.8)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, width: '100%' }}
+                    >
+                      <LogOut size={19} />
+                      {t('logout')}
+                    </button>
+                  </form>
+                </>
+              )}
             </div>
           </div>
         </div>

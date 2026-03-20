@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentMember } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
+import { sendPushToClub } from '@/lib/push';
 
 const PAGE_SIZE = 5;
 
@@ -62,6 +63,11 @@ export async function POST(req: NextRequest) {
     },
     include: { author: { select: { nickname: true, pic: true } } },
   });
+
+  // Send push notification to app users (fire-and-forget, non-blocking)
+  if (!internal) {
+    sendPushToClub(member.clubId, title, 'Neue Neuigkeit im KegelNetzwerk', { type: 'news' }).catch(() => {});
+  }
 
   // Send email notification if requested
   if (sendNotification) {

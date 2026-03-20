@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { generateToken } from '@/lib/auth';
 import { sendEmail, passwordResetEmailHtml } from '@/lib/email';
+import { verifyTurnstile } from '@/lib/turnstile';
 
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
+  const { email, captchaToken } = await req.json();
+
+  if (!captchaToken || !(await verifyTurnstile(captchaToken))) {
+    return NextResponse.json({ error: 'captchaFailed' }, { status: 400 });
+  }
 
   if (!email) {
     return NextResponse.json({ ok: true }); // don't reveal if email exists

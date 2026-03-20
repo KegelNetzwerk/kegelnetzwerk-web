@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentMember } from '@/lib/auth';
+import { sendPushToClub } from '@/lib/push';
 
 const PAGE_SIZE = 3;
 
@@ -124,6 +125,9 @@ export async function POST(req: NextRequest) {
     },
     include: { author: { select: { id: true, nickname: true } } },
   });
+
+  // Send push notification to app users (fire-and-forget)
+  sendPushToClub(member.clubId, title, 'Neue Abstimmung im KegelNetzwerk', { type: 'vote' }).catch(() => {});
 
   return NextResponse.json(vote, { status: 201 });
 }

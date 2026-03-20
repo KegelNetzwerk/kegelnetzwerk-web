@@ -4,7 +4,7 @@ import { verifyPassword } from '@/lib/auth';
 
 // POST /api/app/login
 // Body: { clubName, nickname, password }
-// Returns: { memberId, clubId, role, token } or error
+// Returns: { memberId, clubId, nickname, role, token } or error
 export async function POST(req: NextRequest) {
   try {
     const { clubName, nickname, password } = await req.json();
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       memberId: member.id,
       clubId: member.clubId,
+      nickname: member.nickname,
       role: member.role,
       token,
     });

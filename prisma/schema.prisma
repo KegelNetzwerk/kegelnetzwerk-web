@@ -62,7 +62,9 @@ model Club {
   createdAt      DateTime @default(now())
 
   // Relations
-  members              Member[]
+  members                Member[]
+  clubComments           ClubComment[]
+  secretSantaAssignments SecretSantaAssignment[]
   news                 News[]
   votes                Vote[]
   events               Event[]
@@ -89,10 +91,12 @@ model Member {
   pic                  String   @default("none") // avatar path
   phone                String   @default("")
 
-  // Secret Santa self-relation
+  // Secret Santa self-relation (current assignment)
   secretSantaPartnerId Int?
   secretSantaPartner   Member?  @relation("SecretSanta", fields: [secretSantaPartnerId], references: [id])
   secretSantaOf        Member[] @relation("SecretSanta")
+  secretSantaGiven     SecretSantaAssignment[] @relation("SecretSantaGiver")
+  secretSantaReceived  SecretSantaAssignment[] @relation("SecretSantaReceiver")
 
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
@@ -108,6 +112,10 @@ model Member {
   eventCancellations   EventCancellation[]
   comments             Comment[]
   results              Result[]
+  profileComments          MemberComment[] @relation("ProfileComments")
+  authoredMemberComments   MemberComment[] @relation("AuthoredMemberComments")
+  authoredClubComments     ClubComment[]   @relation("AuthoredClubComments")
+  pushToken                PushToken?
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -134,6 +142,15 @@ model RegistrationCode {
   id        Int      @id @default(autoincrement())
   code      String   @unique // hashed
   createdAt DateTime @default(now())
+}
+
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  memberId  Int      @unique
+  member    Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 // ─── News ─────────────────────────────────────────────────────────────────────
@@ -272,6 +289,51 @@ model Comment {
 
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+}
+
+// ─── Secret Santa History ─────────────────────────────────────────────────────
+
+model SecretSantaAssignment {
+  id         Int      @id @default(autoincrement())
+  clubId     Int
+  club       Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  giverId    Int
+  giver      Member   @relation("SecretSantaGiver", fields: [giverId], references: [id], onDelete: Cascade)
+  receiverId Int
+  receiver   Member   @relation("SecretSantaReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  year       Int
+
+  createdAt  DateTime @default(now())
+
+  @@unique([clubId, giverId, year])
+}
+
+// ─── Club Comments ────────────────────────────────────────────────────────────
+
+model ClubComment {
+  id             Int      @id @default(autoincrement())
+  clubId         Int
+  club           Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  authorMemberId Int?
+  authorMember   Member?  @relation("AuthoredClubComments", fields: [authorMemberId], references: [id], onDelete: SetNull)
+  guestName      String   @default("")
+  content        String
+
+  createdAt      DateTime @default(now())
+}
+
+// ─── Member Profile Comments ──────────────────────────────────────────────────
+
+model MemberComment {
+  id              Int      @id @default(autoincrement())
+  profileMemberId Int
+  profileMember   Member   @relation("ProfileComments", fields: [profileMemberId], references: [id], onDelete: Cascade)
+  authorMemberId  Int?
+  authorMember    Member?  @relation("AuthoredMemberComments", fields: [authorMemberId], references: [id], onDelete: SetNull)
+  guestName       String   @default("")
+  content         String
+
+  createdAt       DateTime @default(now())
 }
 
 // ─── Scoring ──────────────────────────────────────────────────────────────────
