@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
       nickname: member.nickname,
       role: member.role,
       token,
+      farbe1: club.farbe1,
+      farbe2: club.farbe2,
+      farbe3: club.farbe3,
     });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
