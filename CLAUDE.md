@@ -2,9 +2,14 @@
 
 This file provides guidance to Claude Code when working with this repository.
 
+## Project Locations
+
+- **Webservice** (this project): `E:\2026_Projects\kegelnetzwerk-web`
+- **App**: `E:\2026_Projects\kegelnetzwerk-app`
+
 ## Project Overview
 
-KegelNetzwerk 2 is a Next.js 16 App Router multi-tenant web application for managing German bowling clubs (Kegelklubs). It handles members, news, votes, events, scoring (games & penalties), a Secret Santa feature, and club administration.
+KegelNetzwerk Web is a Next.js 16 App Router multi-tenant web application for managing German bowling clubs (Kegelklubs). It handles members, news, votes, events, scoring (games & penalties), a Secret Santa feature, and club administration.
 
 ## Tech Stack
 
