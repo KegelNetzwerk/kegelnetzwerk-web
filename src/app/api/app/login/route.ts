@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     if (!club) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 
     const member = await prisma.member.findFirst({
-      where: { clubId: club.id, nickname },
+      where: { clubId: club.id, nickname: { equals: nickname, mode: 'insensitive' } },
     });
     if (!member) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 
@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
       farbe1: club.farbe1,
       farbe2: club.farbe2,
       farbe3: club.farbe3,
+      bg1: club.bg1,
     });
   } catch {
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
