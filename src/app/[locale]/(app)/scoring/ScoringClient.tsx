@@ -85,13 +85,14 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
   const [sortAsc, setSortAsc] = useState(getParam('sortAsc') === 'true');
   const [data, setData] = useState<ScoringData | null>(null);
   const [loading, setLoading] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(() => {
+  const [filterOpen, setFilterOpen] = useState(!hasUrlParams && !defaultScoringFilter);
+
+  useEffect(() => {
     try {
       const stored = localStorage.getItem('scoring-filter-open');
-      if (stored !== null) return stored === 'true';
+      if (stored !== null) setFilterOpen(stored === 'true');
     } catch {}
-    return !hasUrlParams && !defaultScoringFilter;
-  });
+  }, []);
 
   function toggleFilter() {
     setFilterOpen((o) => {

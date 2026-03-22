@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAppMember } from '@/lib/appAuth';
 
 interface ResultEntry {
+  clientId?: string;    // app-local UUID; stored for deletion support
   memberId: number;
   partId: number;
   gopId: number;
@@ -44,14 +45,16 @@ export async function POST(req: NextRequest) {
 
   await prisma.result.createMany({
     data: entries.map((e) => ({
+      clientId: e.clientId ?? null,
       clubId: member.clubId,
       memberId: e.memberId,
       partId: e.partId,
       gopId: e.gopId,
       value: e.value,
       date: new Date(e.date),
-      sessionGroup: e.sessionGroup,
+      sessionGroup: e.sessionGroup ?? Math.floor(new Date(e.date).getTime() / 1000),
     })),
+    skipDuplicates: true,
   });
 
   return NextResponse.json({ ok: true, inserted: entries.length });

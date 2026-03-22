@@ -437,6 +437,14 @@
     "email": "Email",
     "phone": "Mobile number"
   },
+  "adminPage": {
+    "title": "Administration",
+    "settings": "Club Settings",
+    "members": "Members",
+    "games": "Games & Penalties",
+    "results": "Result Editor",
+    "secretSanta": "Secret Santa"
+  },
   "secretSanta": {
     "title": "Secret Santa",
     "yourPartner": "Your Secret Santa partner",
@@ -451,6 +459,31 @@
     "partnerLabel": "Drawn",
     "notParticipated": "Did not participate",
     "noRoundsYet": "No Secret Santa rounds have taken place yet."
+  },
+  "resultManagement": {
+    "title": "Edit Results",
+    "allGames": "All games/penalties",
+    "allYears": "All",
+    "noSessions": "No game sessions found.",
+    "entries": "entries",
+    "editSession": "Edit",
+    "deleteSession": "Delete session",
+    "deleteConfirm": "Are you sure you want to delete this game session? All results will be removed.",
+    "date": "Date",
+    "game": "Game/Penalty",
+    "player": "Player",
+    "showAllMembers": "Show all members",
+    "addValue": "Add value",
+    "removeValue": "Remove value",
+    "undoRemove": "Undo removal",
+    "saveSuccess": "Session saved successfully.",
+    "deleteSuccess": "Session deleted successfully.",
+    "error": {
+      "loadFailed": "Could not load sessions.",
+      "saveFailed": "Could not save session.",
+      "deleteFailed": "Could not delete session.",
+      "invalidValue": "Invalid value – please check all fields."
+    }
   },
   "comments": {
     "title": "Comments",

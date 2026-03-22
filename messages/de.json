@@ -437,6 +437,14 @@
     "email": "E-Mail",
     "phone": "Handynummer"
   },
+  "adminPage": {
+    "title": "Administration",
+    "settings": "Einstellungen",
+    "members": "Mitglieder",
+    "games": "Spiele & Strafen",
+    "results": "Ergebnisse bearbeiten",
+    "secretSanta": "Wichteln"
+  },
   "secretSanta": {
     "title": "Wichteln",
     "yourPartner": "Ihr Wichtelpartner",
@@ -451,6 +459,31 @@
     "partnerLabel": "Ausgelost",
     "notParticipated": "Nicht teilgenommen",
     "noRoundsYet": "Es wurden noch keine Wichtelrunden durchgeführt."
+  },
+  "resultManagement": {
+    "title": "Ergebnisse bearbeiten",
+    "allGames": "Alle Spiele/Strafen",
+    "allYears": "Alle",
+    "noSessions": "Keine Spielsitzungen gefunden.",
+    "entries": "Einträge",
+    "editSession": "Bearbeiten",
+    "deleteSession": "Sitzung löschen",
+    "deleteConfirm": "Möchten Sie diese Spielsitzung wirklich löschen? Alle Ergebnisse werden entfernt.",
+    "date": "Datum",
+    "game": "Spiel/Strafe",
+    "player": "Spieler",
+    "showAllMembers": "Alle Mitglieder anzeigen",
+    "addValue": "Wert hinzufügen",
+    "removeValue": "Wert entfernen",
+    "undoRemove": "Entfernen rückgängig machen",
+    "saveSuccess": "Sitzung erfolgreich gespeichert.",
+    "deleteSuccess": "Sitzung erfolgreich gelöscht.",
+    "error": {
+      "loadFailed": "Sitzungen konnten nicht geladen werden.",
+      "saveFailed": "Sitzung konnte nicht gespeichert werden.",
+      "deleteFailed": "Sitzung konnte nicht gelöscht werden.",
+      "invalidValue": "Ungültiger Wert – bitte alle Felder prüfen."
+    }
   },
   "comments": {
     "title": "Kommentare",

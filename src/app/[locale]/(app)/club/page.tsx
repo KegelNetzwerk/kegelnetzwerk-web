@@ -8,7 +8,7 @@ import ContactList from './ContactList';
 import GamesOverview from './GamesOverview';
 import YearlyWinners from './YearlyWinners';
 import { computeYearlyWinners } from '@/lib/yearly-winners';
-import ClubComments, { ClubCommentData } from '@/components/ClubComments';
+import ClubComments, { type ClubCommentData } from './ClubCommentsWrapper';
 
 export default async function ClubProfilePage() {
   const member = await getCurrentMember();

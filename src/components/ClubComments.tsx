@@ -5,6 +5,10 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { toast } from 'sonner';
+import RichTextEditor from '@/components/RichTextEditor';
+import { Turnstile } from '@marsidev/react-turnstile';
+import type { TurnstileInstance } from '@marsidev/react-turnstile';
 
 function AuthorBadge({ clubName, clubColor, guestLabel }: { clubName: string | null; clubColor: string | null; guestLabel: string }) {
   if (clubName === null) {
@@ -20,11 +24,6 @@ function AuthorBadge({ clubName, clubColor, guestLabel }: { clubName: string | n
     </span>
   );
 }
-import { toast } from 'sonner';
-import RichTextEditor from '@/components/RichTextEditor';
-import { Turnstile } from '@marsidev/react-turnstile';
-import type { TurnstileInstance } from '@marsidev/react-turnstile';
-
 export interface ClubCommentData {
   id: number;
   content: string;
