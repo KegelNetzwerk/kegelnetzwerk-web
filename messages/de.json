@@ -342,7 +342,22 @@
     "error": {
       "nameTooShort": "Name muss mindestens 1 Zeichen lang sein.",
       "saveFailed": "Konnte nicht gespeichert werden."
-    }
+    },
+    "picTabUpload": "Hochladen",
+    "picTabEmoji": "Emoji",
+    "picTabGenerate": "Generieren",
+    "picEmojiPlaceholder": "z.B. 🎳",
+    "picGenColor": "Farbe",
+    "picGenSave": "Generieren & Speichern",
+    "picRemove": "Bild entfernen",
+    "picSaveSuccess": "Bild gespeichert.",
+    "picSaveError": "Bild konnte nicht gespeichert werden.",
+    "picGenPreview": "Vorschau",
+    "picGenBg": "Hintergrund",
+    "picGenBgTransparent": "Transparent",
+    "picGenBgColor": "Farbe",
+    "picGenStroke": "Randfarbe",
+    "picStagedSuccess": "Bild ausgewählt"
   },
   "memberManagement": {
     "title": "Mitgliederverwaltung",

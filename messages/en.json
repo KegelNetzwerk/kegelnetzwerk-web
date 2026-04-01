@@ -342,7 +342,22 @@
     "error": {
       "nameTooShort": "Name must be at least 1 character long.",
       "saveFailed": "Could not save."
-    }
+    },
+    "picTabUpload": "Upload",
+    "picTabEmoji": "Emoji",
+    "picTabGenerate": "Generate",
+    "picEmojiPlaceholder": "e.g. 🎳",
+    "picGenColor": "Color",
+    "picGenSave": "Generate & Save",
+    "picRemove": "Remove image",
+    "picSaveSuccess": "Image saved.",
+    "picSaveError": "Could not save image.",
+    "picGenPreview": "Preview",
+    "picGenBg": "Background",
+    "picGenBgTransparent": "Transparent",
+    "picGenBgColor": "Color",
+    "picGenStroke": "Border color",
+    "picStagedSuccess": "Image selected"
   },
   "memberManagement": {
     "title": "Member Management",

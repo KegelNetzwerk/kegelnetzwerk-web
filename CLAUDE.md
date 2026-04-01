@@ -20,6 +20,10 @@ KegelNetzwerk Web is a Next.js 16 App Router multi-tenant web application for ma
 - **Auth**: Cookie-based sessions (`getCurrentMember()` from `@/lib/auth`)
 - **Font**: DM Sans via `next/font/google`
 
+## Language
+
+All English-language strings (i18n, code comments, documentation) must use **American English** (e.g. "color" not "colour", "center" not "centre").
+
 ## UI Conventions
 
 ### User Feedback — always use Toaster

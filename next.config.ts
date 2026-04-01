@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
   transpilePackages: ['@marsidev/react-turnstile'],
+  serverExternalPackages: ['@resvg/resvg-js'],
   async headers() {
     return [
       {
@@ -17,6 +18,12 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/uploads/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+        ],
+      },
+      {
+        source: '/api/gen/:path*',
         headers: [
           { key: 'Access-Control-Allow-Origin', value: '*' },
         ],
