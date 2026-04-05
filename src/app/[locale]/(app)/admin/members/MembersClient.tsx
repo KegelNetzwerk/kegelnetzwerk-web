@@ -168,7 +168,7 @@ export default function MembersClient({ initialMembers, initialGuests, currentMe
           email: promoteState.email,
           phone: '',
           birthday: null,
-          role: 'MEMBER',
+          role: 'MEMBER' as const,
           pic: 'none',
         },
       ].sort((a, b) => a.nickname.localeCompare(b.nickname)));

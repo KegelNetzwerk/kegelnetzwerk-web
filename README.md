@@ -70,11 +70,27 @@ EMAIL_PASS="your-smtp-password"
 
 ### 4. Run database migrations
 
-This creates all tables in your PostgreSQL database:
+This creates all tables in your PostgreSQL database.
 
+**Development:**
 ```bash
 npx prisma migrate dev
 ```
+
+**Production** (the DB user typically lacks permission to create a shadow database):
+```bash
+npx prisma migrate deploy
+```
+
+### 4b. Generate the Prisma client
+
+If you see `Cannot find module '.prisma/client/default'` when seeding or starting the app, generate the client manually:
+
+```bash
+npx prisma generate
+```
+
+This is normally done automatically by `prisma migrate dev`, but may need to be run explicitly after `prisma migrate deploy` or a fresh `npm install`.
 
 ### 5. Seed a registration code
 
