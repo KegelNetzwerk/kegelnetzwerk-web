@@ -580,12 +580,13 @@ async function migrateComments(
   console.log(`  ✓ ${count} comments`);
 }
 
-async function migrateResults(rows: Row[]) {
+async function migrateResults(rows: Row[], memberIds: Set<number>) {
   console.log(`\nMigrating ${rows.length} results...`);
   let count = 0;
   let skippedPseudo = 0;
   let skippedInvalidFK = 0;
   let skippedFKMissing = 0;
+  let nulledMember = 0;
   for (const r of rows) {
     // results: id, date, clubid, memid, gopid, partid, value, ended
     const [id, date, clubid, memid, gopid, partid, value, ended] = r;
@@ -599,13 +600,18 @@ async function migrateResults(rows: Row[]) {
       continue;
     }
 
+    // Member may have been deleted from the legacy DB; null out the FK instead
+    // of failing the insert — the result data is preserved without the member link.
+    const resolvedMemberId = memberIds.has(int(memid)) ? int(memid) : null;
+    if (resolvedMemberId === null) nulledMember++;
+
     const ok = await prisma.result.upsert({
       where: { id: int(id) },
       update: {},
       create: {
         id: int(id),
         clubId: int(clubid),
-        memberId: int(memid),
+        memberId: resolvedMemberId,
         gopId: int(gopid),
         partId: int(partid),
         value: float(value),
@@ -622,6 +628,7 @@ async function migrateResults(rows: Row[]) {
   }
   if (skippedPseudo > 0)    console.log(`  Skipped ${skippedPseudo} pseudo-member results (memid ≤ 0)`);
   if (skippedInvalidFK > 0) console.log(`  Skipped ${skippedInvalidFK} results with NULL/0 gopid or partid`);
+  if (nulledMember > 0)     console.log(`  Nulled memberId for ${nulledMember} results (member deleted from legacy DB)`);
   if (skippedFKMissing > 0) console.log(`  Skipped ${skippedFKMissing} results with missing FK (game/part deleted)`);
   console.log(`  ✓ ${count} results`);
 }
@@ -769,7 +776,9 @@ async function main() {
   await migrateComments(get('comments'), newsIds, voteIds, eventIds);
 
   await migrateVotings(get('votings'));
-  await migrateResults(get('results'));
+  // member id is at column index 1 (clubid is index 0)
+  const memberIds = new Set(get('member').map((r) => int(r[1])));
+  await migrateResults(get('results'), memberIds);
   await patchMemberSecretSanta(get('member'));
   await resetAdminPassword();
 
