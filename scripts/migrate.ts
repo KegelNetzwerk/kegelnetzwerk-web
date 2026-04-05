@@ -584,6 +584,8 @@ async function migrateResults(rows: Row[]) {
   console.log(`\nMigrating ${rows.length} results...`);
   let count = 0;
   let skippedPseudo = 0;
+  let skippedInvalidFK = 0;
+  let skippedFKMissing = 0;
   for (const r of rows) {
     // results: id, date, clubid, memid, gopid, partid, value, ended
     const [id, date, clubid, memid, gopid, partid, value, ended] = r;
@@ -591,7 +593,13 @@ async function migrateResults(rows: Row[]) {
     // memid = -1 is the legacy "club account" pseudo-member — skip
     if (int(memid) <= 0) { skippedPseudo++; continue; }
 
-    await prisma.result.upsert({
+    // gopid/partid of 0 or NULL cannot satisfy the FK constraint — skip
+    if (int(gopid) <= 0 || int(partid) <= 0) {
+      skippedInvalidFK++;
+      continue;
+    }
+
+    const ok = await prisma.result.upsert({
       where: { id: int(id) },
       update: {},
       create: {
@@ -605,10 +613,12 @@ async function migrateResults(rows: Row[]) {
         sessionGroup: int(ended),
         createdAt: toDate(int(date)),
       },
-    }).catch(() => skip(`result ${id}: FK missing`));
-    count++;
+    }).then(() => true).catch(() => { skippedFKMissing++; return false; });
+    if (ok) count++;
   }
-  if (skippedPseudo > 0) console.log(`  Skipped ${skippedPseudo} pseudo-member results (memid ≤ 0)`);
+  if (skippedPseudo > 0)    console.log(`  Skipped ${skippedPseudo} pseudo-member results (memid ≤ 0)`);
+  if (skippedInvalidFK > 0) console.log(`  Skipped ${skippedInvalidFK} results with NULL/0 gopid or partid`);
+  if (skippedFKMissing > 0) console.log(`  Skipped ${skippedFKMissing} results with missing FK (game/part deleted)`);
   console.log(`  ✓ ${count} results`);
 }
 
