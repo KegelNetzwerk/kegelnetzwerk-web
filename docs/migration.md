@@ -4,12 +4,13 @@ If you are upgrading from the original PHP/MySQL version of KegelNetzwerk, a mig
 
 ## Prerequisites
 
-- The new PostgreSQL database must already be set up and all Prisma migrations applied (`npx prisma migrate dev`).
+- The new PostgreSQL database must already be set up and all Prisma migrations applied (`npx prisma migrate deploy`).
 - A MySQL dump file of the legacy database (e.g. exported with `mysqldump`).
+- The legacy uploads directory (member avatars, news images, etc.) available on the local filesystem.
 
 ## Running the migration
 
-First, clear the target database so there are no conflicts:
+The script is **idempotent** — it uses upsert for every record and can be run multiple times safely without creating duplicates. Clearing the database first is optional but recommended for a clean initial import:
 
 ```bash
 npx prisma migrate reset --force
@@ -21,19 +22,19 @@ Then run the migration script:
 npm run db:migrate-legacy
 ```
 
-By default the script looks for the dump at:
+## Environment variables
 
-```
-E:\2026_Projects\kegelnetzwerk\Database\dump-kegelnetzwerk1-202603141411.sql
-```
+| Variable | Default | Description |
+|---|---|---|
+| `DUMP_PATH` | `E:\2026_Projects\kegelnetzwerk\Database\dump-kegelnetzwerk1-202603141411.sql` | Path to the MySQL dump file |
+| `LEGACY_UPLOADS_DIR` | `E:\2026_Projects\kegelnetzwerk\uploads` | Path to the legacy uploads directory (avatars, images) |
+| `ADMIN_PASSWORD` | `lolipop` | Password set for member id 1 after migration |
 
-To use a different path, set the `DUMP_PATH` environment variable:
+Override any of these before running:
 
 ```bash
-DUMP_PATH="C:\path\to\your\dump.sql" npm run db:migrate-legacy
+DUMP_PATH="/path/to/dump.sql" LEGACY_UPLOADS_DIR="/path/to/uploads" npm run db:migrate-legacy
 ```
-
-The script is **idempotent** — it uses upsert for every record and can be run multiple times safely without creating duplicates.
 
 ## What is migrated
 
@@ -47,6 +48,12 @@ The script is **idempotent** — it uses upsert for every record and can be run 
 | `comments` | `Comment` | Linked to news, votes, or events via type detection |
 | `gamesandpenalties` + `parts` + `results` | `GameOrPenalty`, `Part`, `Result` | Full scoring history |
 | `codes` | `RegistrationCode` | Club registration codes |
+
+### Image copy
+
+All files from `LEGACY_UPLOADS_DIR` are copied recursively into `public/uploads/` in the new project. Existing files are not overwritten, so uploads made after a previous migration run are preserved.
+
+If `LEGACY_UPLOADS_DIR` does not exist, the image copy step is skipped with a warning — the rest of the migration continues normally.
 
 ## What is NOT migrated
 
