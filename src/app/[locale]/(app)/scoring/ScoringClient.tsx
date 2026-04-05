@@ -21,7 +21,7 @@ interface SessionData {
   date: string;
 }
 
-interface MemberScore {
+interface ParticipantScore {
   id: number;
   nickname: string;
   total: number;
@@ -33,20 +33,24 @@ interface PartBreakdown {
   id: number;
   name: string;
   unit: string;
-  members: { nickname: string; total: number }[];
+  members: { nickname: string; total: number; isGuest?: boolean }[];
 }
 
 interface ScoringData {
-  members: MemberScore[];
+  members: ParticipantScore[];
+  guests: ParticipantScore[];
   sessions: SessionData[];
   partsBreakdown: PartBreakdown[];
   unit: string;
 }
 
+type ParticipantMode = 'members' | 'both' | 'guests';
+
 interface ScoringClientProps {
   games: GameOption[];
   defaultScoringFilter: string;
 }
+
 
 export default function ScoringClient({ games, defaultScoringFilter }: ScoringClientProps) {
   const t = useTranslations('scoring');
@@ -64,7 +68,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
     searchParams.has('from') || searchParams.has('to') ||
     searchParams.has('unit') || searchParams.has('gopId') ||
     searchParams.has('eliLowest') || searchParams.has('eliHighest') ||
-    searchParams.has('sortAsc');
+    searchParams.has('sortAsc') || searchParams.has('participantMode');
 
   const activeParams = hasUrlParams
     ? searchParams
@@ -83,6 +87,10 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
   const [eliLowest, setEliLowest] = useState(getParam('eliLowest') ?? '0');
   const [eliHighest, setEliHighest] = useState(getParam('eliHighest') ?? '0');
   const [sortAsc, setSortAsc] = useState(getParam('sortAsc') === 'true');
+  const rawMode = getParam('participantMode');
+  const [participantMode, setParticipantMode] = useState<ParticipantMode>(
+    rawMode === 'both' || rawMode === 'guests' ? rawMode : 'members'
+  );
   const [data, setData] = useState<ScoringData | null>(null);
   const [loading, setLoading] = useState(false);
   const [filterOpen, setFilterOpen] = useState(!hasUrlParams && !defaultScoringFilter);
@@ -102,7 +110,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
     });
   }
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (mode?: ParticipantMode) => {
     setLoading(true);
     const params = new URLSearchParams({
       from: new Date(from).toISOString(),
@@ -111,6 +119,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
       eliLowest,
       eliHighest,
       sort: sortAsc ? 'asc' : 'desc',
+      participantMode: mode ?? participantMode,
       ...(gopId ? { gopId } : {}),
     });
     const res = await fetch(`/api/scoring?${params}`);
@@ -118,7 +127,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
       setData(await res.json());
     }
     setLoading(false);
-  }, [from, to, unit, gopId, eliLowest, eliHighest, sortAsc]);
+  }, [from, to, unit, gopId, eliLowest, eliHighest, sortAsc, participantMode]);
 
   // Auto-fetch on mount when there are URL params or a club default filter
   useEffect(() => {
@@ -128,7 +137,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function buildParams(overrides: Partial<{ from: string; to: string }> = {}) {
+  function buildParams(overrides: Partial<{ from: string; to: string; participantMode: ParticipantMode }> = {}) {
     const params = new URLSearchParams();
     params.set('from', overrides.from ?? from);
     params.set('to', overrides.to ?? to);
@@ -137,6 +146,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
     params.set('eliLowest', eliLowest);
     params.set('eliHighest', eliHighest);
     params.set('sortAsc', String(sortAsc));
+    params.set('participantMode', overrides.participantMode ?? participantMode);
     return params;
   }
 
@@ -151,14 +161,18 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
 
   const hasElimination = parseInt(eliLowest) > 0 || parseInt(eliHighest) > 0;
 
-  // Top 3 individual session scores across all members
+  // Top 3 individual session scores across all visible participants
   const top3Cells = new Set<string>();
   if (data) {
     const allCells: { key: string; value: number }[] = [];
-    for (const m of data.members) {
-      for (const s of m.sessions) {
+    const allParticipants = [
+      ...data.members.map((m) => ({ ...m, isGuest: false })),
+      ...data.guests.map((g) => ({ ...g, isGuest: true })),
+    ];
+    for (const p of allParticipants) {
+      for (const s of p.sessions) {
         if (!s.missed && !s.excluded) {
-          allCells.push({ key: `${m.id}:${s.sessionGroup}`, value: s.value });
+          allCells.push({ key: `${p.isGuest ? 'g' : 'm'}${p.id}:${s.sessionGroup}`, value: s.value });
         }
       }
     }
@@ -175,10 +189,10 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
     );
   }
 
-  function sortedMembers(members: MemberScore[]) {
-    if (!tableSort) return members;
+  function sortedParticipants(participants: Array<ParticipantScore & { isGuest: boolean }>) {
+    if (!tableSort) return participants;
     const { key, asc } = tableSort;
-    return [...members].sort((a, b) => {
+    return [...participants].sort((a, b) => {
       let va: number | string;
       let vb: number | string;
       if (key === 'nickname') {
@@ -215,7 +229,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
   function applyRange(newFrom: string, newTo: string) {
     setFrom(newFrom);
     setTo(newTo);
-    const params = buildParams({ from: newFrom, to: newTo });
+    const params = buildParams({ from: newFrom, to: newTo, participantMode });
     router.replace(`?${params.toString()}`, { scroll: false });
     setLoading(true);
     const apiParams = new URLSearchParams({
@@ -225,6 +239,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
       eliLowest,
       eliHighest,
       sort: sortAsc ? 'asc' : 'desc',
+      participantMode,
       ...(gopId ? { gopId } : {}),
     });
     fetch(`/api/scoring?${apiParams}`).then(async (res) => {
@@ -232,6 +247,20 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
       setLoading(false);
     });
   }
+
+  function handleModeChange(mode: ParticipantMode) {
+    setParticipantMode(mode);
+    router.replace(`?${buildParams({ participantMode: mode }).toString()}`, { scroll: false });
+    fetchData(mode);
+  }
+
+  // Merged and sorted participant list for the table
+  const tableParticipants = data
+    ? sortedParticipants([
+        ...data.members.map((m) => ({ ...m, isGuest: false })),
+        ...data.guests.map((g) => ({ ...g, isGuest: true })),
+      ])
+    : [];
 
   return (
     <div className="space-y-6">
@@ -342,6 +371,33 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
               <option value="asc">{t('sortAsc')}</option>
             </select>
           </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Teilnehmer</Label>
+            <div className="flex rounded border overflow-hidden text-sm">
+              {(['members', 'both', 'guests'] as ParticipantMode[]).map((mode) => {
+                const labels: Record<ParticipantMode, string> = {
+                  members: 'Mitglieder',
+                  both: 'Alle',
+                  guests: 'Gäste',
+                };
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setParticipantMode(mode)}
+                    className="flex-1 px-2 py-2 transition-colors"
+                    style={
+                      participantMode === mode
+                        ? { background: 'var(--kn-primary, #005982)', color: 'white' }
+                        : { background: 'white', color: '#374151' }
+                    }
+                  >
+                    {labels[mode]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
           <Button onClick={applyFilter} disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
             <Filter size={15} />
@@ -417,11 +473,20 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                 </tr>
               </thead>
               <tbody>
-                {sortedMembers(data.members).map((m, i) => (
-                  <tr key={m.id} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
-                    <td className="px-2 py-1.5 font-medium truncate border-t border-gray-100">{m.nickname}</td>
+                {tableParticipants.map((p, i) => (
+                  <tr key={`${p.isGuest ? 'g' : 'm'}${p.id}`} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
+                    <td className="px-2 py-1.5 font-medium truncate border-t border-gray-100">
+                      <span className="flex items-center gap-1.5 flex-wrap">
+                        {p.nickname}
+                        {p.isGuest && (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 font-normal leading-none">
+                            Gast
+                          </span>
+                        )}
+                      </span>
+                    </td>
                     {data.sessions.map((s) => {
-                      const session = m.sessions.find((ms) => ms.sessionGroup === s.sessionGroup);
+                      const session = p.sessions.find((ms) => ms.sessionGroup === s.sessionGroup);
                       const isExcluded = session?.excluded ?? false;
                       const isMissed = session?.missed ?? false;
                       const style = isExcluded
@@ -429,7 +494,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                         : isMissed
                         ? { color: '#9ca3af' }
                         : undefined;
-                      const cellKey = `${m.id}:${s.sessionGroup}`;
+                      const cellKey = `${p.isGuest ? 'g' : 'm'}${p.id}:${s.sessionGroup}`;
                       const isTop3 = top3Cells.has(cellKey);
                       const display = !session || isMissed ? '' : `${parseFloat(session.value.toFixed(2))}${unit === 'EURO' ? '€' : ''}`;
                       return (
@@ -445,11 +510,11 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                     })}
                     {hasElimination ? (
                       <>
-                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{parseFloat(m.rawTotal.toFixed(2))}</td>
-                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100">{parseFloat(m.total.toFixed(2))}</td>
+                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{parseFloat(p.rawTotal.toFixed(2))}</td>
+                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100">{parseFloat(p.total.toFixed(2))}</td>
                       </>
                     ) : (
-                      <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{parseFloat(m.total.toFixed(2))}</td>
+                      <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{parseFloat(p.total.toFixed(2))}</td>
                     )}
                   </tr>
                 ))}
@@ -457,7 +522,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
             </table>
           </div>
 
-          {/* Chart */}
+          {/* Chart — only for members (chart component expects member-shaped data) */}
           {data.members.length > 0 && (
             <div>
               <h2 className="font-semibold mb-2">{t('chartTitle')} ({unitLabel})</h2>
@@ -483,7 +548,12 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                       <tbody>
                         {part.members.map((m, i) => (
                           <tr key={m.nickname} className={`${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}>
-                            <td className="px-3 py-1.5 border-t border-gray-100">{m.nickname}</td>
+                            <td className="px-3 py-1.5 border-t border-gray-100">
+                              {m.nickname}
+                              {m.isGuest && (
+                                <span className="ml-1.5 text-[10px] px-1 py-0.5 rounded bg-gray-200 text-gray-600">Gast</span>
+                              )}
+                            </td>
                             <td className="px-3 py-1.5 text-right font-mono border-t border-gray-100 border-l border-l-gray-200">
                               {parseFloat(m.total.toFixed(2))}{part.unit === 'EURO' ? '€' : ''}
                             </td>
@@ -498,6 +568,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
           )}
         </>
       )}
+
     </div>
   );
 }

@@ -32,10 +32,11 @@ export async function GET(req: NextRequest, { params }: Params) {
       where: { sessionGroup: sg, gopId, clubId: member.clubId },
       include: {
         member: { select: { nickname: true } },
+        guest: { select: { nickname: true } },
         part: { select: { name: true, unit: true } },
         gameOrPenalty: { select: { name: true } },
       },
-      orderBy: [{ member: { nickname: 'asc' } }, { partId: 'asc' }],
+      orderBy: [{ partId: 'asc' }],
     }),
     prisma.part.findMany({
       where: { gameOrPenaltyId: gopId, clubId: member.clubId },
@@ -60,7 +61,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     rows: results.map((r) => ({
       resultId: r.id,
       memberId: r.memberId,
-      nickname: r.member.nickname,
+      guestId: r.guestId,
+      nickname: r.member?.nickname ?? r.guest?.nickname ?? '?',
+      isGuest: r.guestId !== null,
       partId: r.partId,
       partName: r.part.name,
       unit: r.part.unit,

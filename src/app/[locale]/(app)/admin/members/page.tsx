@@ -8,26 +8,33 @@ export default async function AdminMembersPage() {
   const member = await getCurrentMember();
   if (!member || member.role !== Role.ADMIN) redirect('/');
 
-  const members = await prisma.member.findMany({
-    where: { clubId: member.clubId },
-    orderBy: { nickname: 'asc' },
-    select: {
-      id: true,
-      nickname: true,
-      firstName: true,
-      lastName: true,
-      email: true,
-      phone: true,
-      birthday: true,
-      role: true,
-      pic: true,
-    },
-  });
+  const [members, guests] = await Promise.all([
+    prisma.member.findMany({
+      where: { clubId: member.clubId },
+      orderBy: { nickname: 'asc' },
+      select: {
+        id: true,
+        nickname: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        birthday: true,
+        role: true,
+        pic: true,
+      },
+    }),
+    prisma.guest.findMany({
+      where: { clubId: member.clubId },
+      orderBy: { nickname: 'asc' },
+      select: { id: true, nickname: true, firstName: true, lastName: true },
+    }),
+  ]);
 
   const serialized = members.map((m) => ({
     ...m,
     birthday: m.birthday ? m.birthday.toISOString() : null,
   }));
 
-  return <MembersClient initialMembers={serialized} currentMemberId={member.id} />;
+  return <MembersClient initialMembers={serialized} initialGuests={guests} currentMemberId={member.id} />;
 }

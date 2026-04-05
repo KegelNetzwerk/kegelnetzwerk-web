@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Plus, Pencil, Trash2, Save, X } from 'lucide-react';
+import { Plus, Pencil, Trash2, Save, X, UserCheck } from 'lucide-react';
 
 interface MemberRow {
   id: number;
@@ -21,8 +21,26 @@ interface MemberRow {
   pic: string;
 }
 
+interface GuestRow {
+  id: number;
+  nickname: string;
+  firstName: string;
+  lastName: string;
+}
+
+interface PromoteState {
+  guestId: number;
+  nickname: string;
+  email: string;
+  password: string;
+  sendInvite: boolean;
+  saving: boolean;
+  error: string | null;
+}
+
 interface MembersClientProps {
   initialMembers: MemberRow[];
+  initialGuests: GuestRow[];
   currentMemberId: number;
 }
 
@@ -38,16 +56,18 @@ const EMPTY_FORM = {
   sendInvite: false,
 };
 
-export default function MembersClient({ initialMembers, currentMemberId }: MembersClientProps) {
+export default function MembersClient({ initialMembers, initialGuests, currentMemberId }: MembersClientProps) {
   const t = useTranslations('memberManagement');
   const tCommon = useTranslations('common');
 
   const [members, setMembers] = useState<MemberRow[]>(initialMembers);
+  const [guests, setGuests] = useState<GuestRow[]>(initialGuests);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [promoteState, setPromoteState] = useState<PromoteState | null>(null);
 
   function openCreate() {
     setEditingId(null);
@@ -112,6 +132,52 @@ export default function MembersClient({ initialMembers, currentMemberId }: Membe
     if (!res.ok) { toast.error(tCommon('unknownError')); return; }
     setMembers((prev) => prev.filter((m) => m.id !== id));
     toast.success(t('deleteSuccess'));
+  }
+
+  async function handleDeleteGuest(id: number, nickname: string) {
+    if (!confirm(`Gast „${nickname}" und alle zugehörigen Ergebnisse löschen?`)) return;
+    const res = await fetch(`/api/app/guests/${id}`, { method: 'DELETE' });
+    if (!res.ok) { toast.error(tCommon('unknownError')); return; }
+    setGuests((prev) => prev.filter((g) => g.id !== id));
+    toast.success('Gast gelöscht');
+  }
+
+  async function handlePromoteSubmit() {
+    if (!promoteState) return;
+    setPromoteState((s) => s && { ...s, saving: true, error: null });
+    const res = await fetch(`/api/app/guests/${promoteState.guestId}/promote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: promoteState.email,
+        password: promoteState.password,
+        sendInvite: promoteState.sendInvite,
+      }),
+    });
+    if (res.ok) {
+      const { memberId } = await res.json();
+      // Remove guest, add new member via page reload (simplest — avoids re-fetching member data)
+      setGuests((prev) => prev.filter((g) => g.id !== promoteState.guestId));
+      setMembers((prev) => [
+        ...prev,
+        {
+          id: memberId,
+          nickname: promoteState.nickname,
+          firstName: '',
+          lastName: '',
+          email: promoteState.email,
+          phone: '',
+          birthday: null,
+          role: 'MEMBER',
+          pic: 'none',
+        },
+      ].sort((a, b) => a.nickname.localeCompare(b.nickname)));
+      setPromoteState(null);
+      toast.success(`„${promoteState.nickname}" ist jetzt Mitglied`);
+    } else {
+      const { error } = await res.json().catch(() => ({ error: 'Fehler' }));
+      setPromoteState((s) => s && { ...s, saving: false, error: error ?? 'Fehler' });
+    }
   }
 
   return (
@@ -250,7 +316,7 @@ export default function MembersClient({ initialMembers, currentMemberId }: Membe
               <th className="px-4 py-2 text-left font-medium">{t('lastName')}</th>
               <th className="px-4 py-2 text-left font-medium">{t('email')}</th>
               <th className="px-4 py-2 text-left font-medium">{t('role')}</th>
-              <th className="px-4 py-2 text-left font-medium"></th>
+              <th className="px-4 py-2 text-right font-medium"></th>
             </tr>
           </thead>
           <tbody>
@@ -273,7 +339,7 @@ export default function MembersClient({ initialMembers, currentMemberId }: Membe
                 <td className="px-4 py-2">{m.email || '—'}</td>
                 <td className="px-4 py-2">{m.role === 'ADMIN' ? t('roleAdmin') : t('roleMember')}</td>
                 <td className="px-4 py-2">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 justify-end">
                     <Button size="sm" variant="outline" onClick={() => openEdit(m)}>
                       <Pencil size={13} />
                       {tCommon('edit')}
@@ -291,6 +357,112 @@ export default function MembersClient({ initialMembers, currentMemberId }: Membe
           </tbody>
         </table>
       </div>
+
+      {/* Guests table */}
+      {guests.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-lg font-semibold">Gäste</h2>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium">Spitzname</th>
+                  <th className="px-4 py-2 text-left font-medium">Vorname</th>
+                  <th className="px-4 py-2 text-left font-medium">Nachname</th>
+                  <th className="px-4 py-2 text-right font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {guests.map((g) => (
+                  <tr key={g.id} className="border-t hover:bg-muted/50">
+                    <td className="px-4 py-2 font-medium">{g.nickname}</td>
+                    <td className="px-4 py-2">{g.firstName || '—'}</td>
+                    <td className="px-4 py-2">{g.lastName || '—'}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setPromoteState({
+                            guestId: g.id,
+                            nickname: g.nickname,
+                            email: '',
+                            password: '',
+                            sendInvite: false,
+                            saving: false,
+                            error: null,
+                          })}
+                        >
+                          <UserCheck size={13} />
+                          Zum Mitglied befördern
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleDeleteGuest(g.id, g.nickname)}>
+                          <Trash2 size={13} />
+                          {tCommon('delete')}
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Promote guest dialog */}
+      {promoteState && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm space-y-4">
+            <h2 className="font-bold text-lg">„{promoteState.nickname}" zum Mitglied befördern</h2>
+            <p className="text-sm text-gray-600">
+              Alle bisherigen Ergebnisse des Gastes werden dem neuen Mitglied zugeordnet.
+            </p>
+            <div className="space-y-1">
+              <Label>E-Mail</Label>
+              <Input
+                type="email"
+                value={promoteState.email}
+                onChange={(e) => setPromoteState((s) => s && { ...s, email: e.target.value })}
+                placeholder="email@beispiel.de"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Passwort (mind. 4 Zeichen)</Label>
+              <Input
+                type="password"
+                value={promoteState.password}
+                onChange={(e) => setPromoteState((s) => s && { ...s, password: e.target.value })}
+                placeholder="Passwort setzen"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={promoteState.sendInvite}
+                onChange={(e) => setPromoteState((s) => s && { ...s, sendInvite: e.target.checked })}
+              />
+              Einladungs-E-Mail senden
+            </label>
+            {promoteState.error && (
+              <p className="text-sm text-red-600">{promoteState.error}</p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setPromoteState(null)} disabled={promoteState.saving}>
+                {tCommon('cancel')}
+              </Button>
+              <Button
+                onClick={handlePromoteSubmit}
+                disabled={promoteState.saving || !promoteState.email || promoteState.password.length < 4}
+                style={{ background: 'var(--kn-primary, #005982)' }}
+                className="text-white"
+              >
+                {promoteState.saving ? tCommon('loading') : 'Befördern'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

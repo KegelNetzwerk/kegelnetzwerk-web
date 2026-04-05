@@ -63,6 +63,7 @@ model Club {
 
   // Relations
   members                Member[]
+  guests                 Guest[]
   clubComments           ClubComment[]
   secretSantaAssignments SecretSantaAssignment[]
   news                 News[]
@@ -336,6 +337,23 @@ model MemberComment {
   createdAt       DateTime @default(now())
 }
 
+// ─── Guest ────────────────────────────────────────────────────────────────────
+
+model Guest {
+  id        Int      @id @default(autoincrement())
+  clubId    Int
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  nickname  String
+  firstName String   @default("")
+  lastName  String   @default("")
+
+  results   Result[]
+
+  createdAt DateTime @default(now())
+
+  @@unique([clubId, nickname])
+}
+
 // ─── Scoring ──────────────────────────────────────────────────────────────────
 
 model GameOrPenalty {
@@ -376,8 +394,10 @@ model Result {
   clientId        String?       @unique // UUID sent by the app; used for client-initiated deletion
   clubId          Int
   club            Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  memberId        Int
-  member          Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  memberId        Int?          // null for guest results
+  member          Member?       @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  guestId         Int?          // null for member results
+  guest           Guest?        @relation(fields: [guestId], references: [id], onDelete: Cascade)
   partId          Int
   part            Part          @relation(fields: [partId], references: [id], onDelete: Cascade)
   gopId           Int

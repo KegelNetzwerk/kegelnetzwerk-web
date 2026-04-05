@@ -281,7 +281,8 @@
       "invalidDate": "Invalid date.",
       "invalidTime": "Invalid time.",
       "saveFailed": "Could not save event."
-    }
+    },
+    "perPage": "per page:"
   },
   "scoring": {
     "title": "Points & Penalties",
@@ -455,7 +456,7 @@
   "adminPage": {
     "title": "Administration",
     "settings": "Club Settings",
-    "members": "Members",
+    "members": "Members & Guests",
     "games": "Games & Penalties",
     "results": "Result Editor",
     "secretSanta": "Secret Santa"

@@ -281,7 +281,8 @@
       "invalidDate": "Ungültiges Datum.",
       "invalidTime": "Ungültige Uhrzeit.",
       "saveFailed": "Termin konnte nicht gespeichert werden."
-    }
+    },
+    "perPage": "pro Seite:"
   },
   "scoring": {
     "title": "Punkte & Strafen",
@@ -455,7 +456,7 @@
   "adminPage": {
     "title": "Administration",
     "settings": "Einstellungen",
-    "members": "Mitglieder",
+    "members": "Mitglieder & Gäste",
     "games": "Spiele & Strafen",
     "results": "Ergebnisse bearbeiten",
     "secretSanta": "Wichteln"

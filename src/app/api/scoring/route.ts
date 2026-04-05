@@ -15,24 +15,22 @@ export async function GET(req: NextRequest) {
   const eliLowest = parseInt(searchParams.get('eliLowest') ?? '0', 10);
   const eliHighest = parseInt(searchParams.get('eliHighest') ?? '0', 10);
   const sortAsc = searchParams.get('sort') === 'asc';
+  // 'members' (default) | 'both' | 'guests'
+  const participantMode = searchParams.get('participantMode') ?? 'members';
+  const includeMembers = participantMode !== 'guests';
+  const includeGuests = participantMode === 'both' || participantMode === 'guests';
 
-  // Build result filter
-  const resultWhere = {
+  // Build result filter — sessions are determined from all results (members + guests)
+  const baseResultWhere = {
     clubId: member.clubId,
     date: { gte: from, lte: to },
     part: { unit },
     ...(gopId ? { gopId: parseInt(gopId, 10) } : {}),
   };
 
-  // Fetch all members of the club
-  const members = await prisma.member.findMany({
-    where: { clubId: member.clubId },
-    select: { id: true, nickname: true },
-  });
-
-  // Fetch all sessions (unique sessionGroup values in date range)
+  // Fetch all sessions (unique sessionGroup values in date range, across members and guests)
   const sessions = await prisma.result.findMany({
-    where: resultWhere,
+    where: baseResultWhere,
     select: { sessionGroup: true, date: true },
     distinct: ['sessionGroup'],
     orderBy: { sessionGroup: 'asc' },
@@ -40,57 +38,54 @@ export async function GET(req: NextRequest) {
 
   // Fetch all results
   const allResults = await prisma.result.findMany({
-    where: resultWhere,
+    where: baseResultWhere,
     include: { part: { select: { name: true, unit: true } } },
   });
 
-  // Build per-member aggregations
-  const memberData = members.map((m) => {
-    const memberResults = allResults.filter((r) => r.memberId === m.id);
-
-    // Group by session
+  /** Shared helper: build per-participant session aggregation with elimination */
+  function buildParticipantData(
+    participantId: number,
+    participantResults: typeof allResults,
+    padMissedSessions: boolean,
+  ) {
     const sessionMap = new Map<number, number>();
-    for (const r of memberResults) {
-      const current = sessionMap.get(r.sessionGroup) ?? 0;
-      sessionMap.set(r.sessionGroup, current + r.value);
+    for (const r of participantResults) {
+      sessionMap.set(r.sessionGroup, (sessionMap.get(r.sessionGroup) ?? 0) + r.value);
     }
 
-    // Actual results per session
     const sessionValues = Array.from(sessionMap.entries()).map(([sg, val]) => ({
       sessionGroup: sg,
       value: val,
       missed: false,
     }));
 
-    // Pad with zero for every session the member missed — zeros compete in elimination
-    const attendedGroups = new Set(sessionMap.keys());
-    for (const s of sessions) {
-      if (!attendedGroups.has(s.sessionGroup)) {
-        sessionValues.push({ sessionGroup: s.sessionGroup, value: 0, missed: true });
+    if (padMissedSessions) {
+      const attendedGroups = new Set(sessionMap.keys());
+      for (const s of sessions) {
+        if (!attendedGroups.has(s.sessionGroup)) {
+          sessionValues.push({ sessionGroup: s.sessionGroup, value: 0, missed: true });
+        }
       }
     }
 
-    // Elimination (operates on all sessions including zeros for missed ones)
     let includedSessions = [...sessionValues];
     if (eliLowest > 0) {
       const sorted = [...includedSessions].sort((a, b) => a.value - b.value);
-      const toExclude = sorted.slice(0, eliLowest).map((s) => s.sessionGroup);
-      includedSessions = includedSessions.filter((s) => !toExclude.includes(s.sessionGroup));
+      const toExclude = new Set(sorted.slice(0, eliLowest).map((s) => s.sessionGroup));
+      includedSessions = includedSessions.filter((s) => !toExclude.has(s.sessionGroup));
     }
     if (eliHighest > 0) {
       const sorted = [...includedSessions].sort((a, b) => b.value - a.value);
-      const toExclude = sorted.slice(0, eliHighest).map((s) => s.sessionGroup);
-      includedSessions = includedSessions.filter((s) => !toExclude.includes(s.sessionGroup));
+      const toExclude = new Set(sorted.slice(0, eliHighest).map((s) => s.sessionGroup));
+      includedSessions = includedSessions.filter((s) => !toExclude.has(s.sessionGroup));
     }
 
+    const includedGroups = new Set(includedSessions.map((s) => s.sessionGroup));
     const total = includedSessions.reduce((sum, s) => sum + s.value, 0);
     const rawTotal = sessionValues.reduce((sum, s) => sum + s.value, 0);
 
-    const includedGroups = new Set(includedSessions.map((s) => s.sessionGroup));
-
     return {
-      id: m.id,
-      nickname: m.nickname,
+      id: participantId,
       total,
       rawTotal,
       sessions: sessionValues.map((s) => ({
@@ -100,11 +95,47 @@ export async function GET(req: NextRequest) {
         missed: s.missed,
       })),
     };
-  });
+  }
 
-  // Filter out members with no results and sort
-  const withResults = memberData.filter((m) => m.total !== 0 || m.sessions.length > 0);
-  withResults.sort((a, b) => sortAsc ? a.total - b.total : b.total - a.total);
+  // ── Member aggregation ──
+  let withResults: Array<{ id: number; nickname: string; total: number; rawTotal: number; sessions: { sessionGroup: number; value: number; excluded: boolean; missed: boolean }[] }> = [];
+
+  if (includeMembers) {
+    const clubMembers = await prisma.member.findMany({
+      where: { clubId: member.clubId },
+      select: { id: true, nickname: true },
+    });
+
+    const memberResultsOnly = allResults.filter((r) => r.memberId !== null);
+    const memberData = clubMembers.map((m) => {
+      const data = buildParticipantData(m.id, memberResultsOnly.filter((r) => r.memberId === m.id), true);
+      return { ...data, nickname: m.nickname };
+    });
+
+    const filtered = memberData.filter((m) => m.total !== 0 || m.sessions.some((s) => !s.missed));
+    filtered.sort((a, b) => sortAsc ? a.total - b.total : b.total - a.total);
+    withResults = filtered;
+  }
+
+  // ── Guest aggregation ──
+  let guestResults: Array<{ id: number; nickname: string; total: number; rawTotal: number; sessions: { sessionGroup: number; value: number; excluded: boolean; missed: boolean }[] }> = [];
+
+  if (includeGuests) {
+    const clubGuests = await prisma.guest.findMany({
+      where: { clubId: member.clubId },
+      select: { id: true, nickname: true },
+    });
+
+    const guestResultsOnly = allResults.filter((r) => r.guestId !== null);
+    const guestData = clubGuests.map((g) => {
+      const data = buildParticipantData(g.id, guestResultsOnly.filter((r) => r.guestId === g.id), false);
+      return { ...data, nickname: g.nickname };
+    });
+
+    const filtered = guestData.filter((g) => g.total !== 0 || g.sessions.length > 0);
+    filtered.sort((a, b) => sortAsc ? a.total - b.total : b.total - a.total);
+    guestResults = filtered;
+  }
 
   // Parts breakdown
   const parts = await prisma.part.findMany({
@@ -118,19 +149,26 @@ export async function GET(req: NextRequest) {
 
   const partsBreakdown = parts.map((part) => {
     const partResults = allResults.filter((r) => r.partId === part.id);
-    const partMemberData = members.map((m) => {
-      const total = partResults
-        .filter((r) => r.memberId === m.id)
-        .reduce((sum, r) => sum + r.value, 0);
-      return { nickname: m.nickname, total };
-    }).filter((m) => m.total !== 0);
+    const partParticipants = [
+      ...withResults.map((m) => ({
+        nickname: m.nickname,
+        total: partResults.filter((r) => r.memberId === m.id).reduce((sum, r) => sum + r.value, 0),
+        isGuest: false,
+      })),
+      ...guestResults.map((g) => ({
+        nickname: g.nickname,
+        total: partResults.filter((r) => r.guestId === g.id).reduce((sum, r) => sum + r.value, 0),
+        isGuest: true,
+      })),
+    ].filter((p) => p.total !== 0);
 
-    partMemberData.sort((a, b) => sortAsc ? a.total - b.total : b.total - a.total);
-    return { id: part.id, name: part.name, unit: part.unit, members: partMemberData };
+    partParticipants.sort((a, b) => sortAsc ? a.total - b.total : b.total - a.total);
+    return { id: part.id, name: part.name, unit: part.unit, members: partParticipants };
   });
 
   return NextResponse.json({
     members: withResults,
+    guests: guestResults,
     sessions: sessions.map((s) => ({ sessionGroup: s.sessionGroup, date: s.date.toISOString() })),
     partsBreakdown,
     unit,

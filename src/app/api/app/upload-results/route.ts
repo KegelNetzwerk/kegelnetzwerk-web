@@ -4,7 +4,8 @@ import { getAppMember } from '@/lib/appAuth';
 
 interface ResultEntry {
   clientId?: string;    // app-local UUID; stored for deletion support
-  memberId: number;
+  memberId?: number;    // set for member results
+  guestId?: number;     // set for guest results; exactly one of memberId/guestId must be present
   partId: number;
   gopId: number;
   value: number;
@@ -31,6 +32,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, inserted: 0 });
   }
 
+  // Each entry must have exactly one of memberId or guestId
+  const malformed = entries.find((e) => !e.memberId && !e.guestId);
+  if (malformed) {
+    return NextResponse.json({ error: 'Each entry needs memberId or guestId' }, { status: 422 });
+  }
+
   // Validate all referenced parts belong to the member's club
   const partIds = [...new Set(entries.map((e) => e.partId))];
   const parts = await prisma.part.findMany({
@@ -43,11 +50,46 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid partId' }, { status: 422 });
   }
 
+  // Validate all referenced memberIds belong to the member's club
+  const memberIds = [...new Set(entries.filter((e) => e.memberId).map((e) => e.memberId as number))];
+  if (memberIds.length > 0) {
+    const validMembers = await prisma.member.findMany({
+      where: { id: { in: memberIds }, clubId: member.clubId },
+      select: { id: true },
+    });
+    const validMemberIds = new Set(validMembers.map((m) => m.id));
+    const invalidMemberEntries = entries.filter((e) => e.memberId && !validMemberIds.has(e.memberId));
+    if (invalidMemberEntries.length > 0) {
+      return NextResponse.json({
+        error: 'INVALID_PARTICIPANTS',
+        invalidClientIds: invalidMemberEntries.map((e) => e.clientId).filter(Boolean),
+      }, { status: 422 });
+    }
+  }
+
+  // Validate all referenced guestIds belong to the member's club
+  const guestIds = [...new Set(entries.filter((e) => e.guestId).map((e) => e.guestId as number))];
+  if (guestIds.length > 0) {
+    const validGuests = await prisma.guest.findMany({
+      where: { id: { in: guestIds }, clubId: member.clubId },
+      select: { id: true },
+    });
+    const validGuestIds = new Set(validGuests.map((g) => g.id));
+    const invalidGuestEntries = entries.filter((e) => e.guestId && !validGuestIds.has(e.guestId));
+    if (invalidGuestEntries.length > 0) {
+      return NextResponse.json({
+        error: 'INVALID_PARTICIPANTS',
+        invalidClientIds: invalidGuestEntries.map((e) => e.clientId).filter(Boolean),
+      }, { status: 422 });
+    }
+  }
+
   await prisma.result.createMany({
     data: entries.map((e) => ({
       clientId: e.clientId ?? null,
       clubId: member.clubId,
-      memberId: e.memberId,
+      memberId: e.memberId ?? null,
+      guestId: e.guestId ?? null,
       partId: e.partId,
       gopId: e.gopId,
       value: e.value,

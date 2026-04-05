@@ -31,11 +31,12 @@ export default function EventsClient({
   const [loading, setLoading] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
+  const [currentPageSize, setCurrentPageSize] = useState(pageSize);
 
   const fetchPage = useCallback(
-    async (newOffset: number, past: boolean) => {
+    async (newOffset: number, past: boolean, limit: number = currentPageSize) => {
       setLoading(true);
-      const res = await fetch(`/api/events?offset=${newOffset}&past=${past}`);
+      const res = await fetch(`/api/events?offset=${newOffset}&past=${past}&limit=${limit}`);
       if (res.ok) {
         const data = await res.json();
         setItems(data.items);
@@ -44,13 +45,18 @@ export default function EventsClient({
       }
       setLoading(false);
     },
-    []
+    [currentPageSize]
   );
+
+  function handlePageSizeChange(newSize: number) {
+    setCurrentPageSize(newSize);
+    fetchPage(0, showPast, newSize);
+  }
 
   function togglePast() {
     const next = !showPast;
     setShowPast(next);
-    fetchPage(0, next);
+    fetchPage(0, next, currentPageSize);
   }
 
   function handleEdit(event: EventData) {
@@ -60,7 +66,7 @@ export default function EventsClient({
 
   async function handleDelete(id: number) {
     await fetch(`/api/events/${id}`, { method: 'DELETE' });
-    await fetchPage(offset, showPast);
+    await fetchPage(offset, showPast, currentPageSize);
   }
 
   function handleRsvpChange(eventId: number, cancel: boolean) {
@@ -78,11 +84,11 @@ export default function EventsClient({
   async function handleFormSaved() {
     setFormOpen(false);
     setEditingEvent(null);
-    await fetchPage(0, showPast);
+    await fetchPage(0, showPast, currentPageSize);
   }
 
-  const totalPages = Math.ceil(total / pageSize);
-  const currentPage = Math.floor(offset / pageSize);
+  const totalPages = Math.ceil(total / currentPageSize);
+  const currentPage = Math.floor(offset / currentPageSize);
 
   return (
     <div className="space-y-6">
@@ -136,24 +142,39 @@ export default function EventsClient({
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center gap-2 justify-center mt-4 flex-wrap">
-          <Button variant="outline" size="sm" disabled={currentPage === 0}
-            onClick={() => fetchPage(Math.max(0, offset - pageSize), showPast)}>
-            <ChevronLeft size={15} />
-          </Button>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <Button key={i} variant={i === currentPage ? 'default' : 'outline'} size="sm"
-              onClick={() => fetchPage(i * pageSize, showPast)}>
-              {i + 1}
+      <div className="flex items-center justify-between flex-wrap gap-2 mt-4">
+        <div className="flex items-center gap-1 text-sm text-gray-500">
+          <span>{t('perPage')}</span>
+          {[5, 10, 20].map((n) => (
+            <Button
+              key={n}
+              variant={n === currentPageSize ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handlePageSizeChange(n)}
+            >
+              {n}
             </Button>
           ))}
-          <Button variant="outline" size="sm" disabled={currentPage === totalPages - 1}
-            onClick={() => fetchPage(offset + pageSize, showPast)}>
-            <ChevronRight size={15} />
-          </Button>
         </div>
-      )}
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" disabled={currentPage === 0}
+              onClick={() => fetchPage(Math.max(0, offset - currentPageSize), showPast)}>
+              <ChevronLeft size={15} />
+            </Button>
+            {Array.from({ length: totalPages }, (_, i) => (
+              <Button key={i} variant={i === currentPage ? 'default' : 'outline'} size="sm"
+                onClick={() => fetchPage(i * currentPageSize, showPast)}>
+                {i + 1}
+              </Button>
+            ))}
+            <Button variant="outline" size="sm" disabled={currentPage === totalPages - 1}
+              onClick={() => fetchPage(offset + currentPageSize, showPast)}>
+              <ChevronRight size={15} />
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

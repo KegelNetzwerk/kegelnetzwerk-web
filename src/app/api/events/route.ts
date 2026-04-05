@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentMember } from '@/lib/auth';
 import { ensureRecurringEvents, generateOccurrences } from '@/lib/recurrence';
 
-const PAGE_SIZE = 5;
+const ALLOWED_PAGE_SIZES = [5, 10, 20];
+const DEFAULT_PAGE_SIZE = 5;
 
 export async function GET(req: NextRequest) {
   const member = await getCurrentMember();
@@ -16,6 +17,8 @@ export async function GET(req: NextRequest) {
   const offset = parseInt(searchParams.get('offset') ?? '0', 10);
   const past = searchParams.get('past') === 'true';
   const eventId = searchParams.get('id');
+  const limitParam = parseInt(searchParams.get('limit') ?? String(DEFAULT_PAGE_SIZE), 10);
+  const pageSize = ALLOWED_PAGE_SIZES.includes(limitParam) ? limitParam : DEFAULT_PAGE_SIZE;
 
   const now = new Date();
 
@@ -39,7 +42,7 @@ export async function GET(req: NextRequest) {
         },
       },
       orderBy: { date: past ? 'desc' : 'asc' },
-      take: eventId ? 1 : PAGE_SIZE,
+      take: eventId ? 1 : pageSize,
       skip: eventId ? 0 : offset,
     }),
     eventId ? Promise.resolve(1) : prisma.event.count({ where }),
@@ -81,7 +84,7 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json({ items: serialized, total, pageSize: PAGE_SIZE });
+  return NextResponse.json({ items: serialized, total, pageSize });
 }
 
 export async function POST(req: NextRequest) {
