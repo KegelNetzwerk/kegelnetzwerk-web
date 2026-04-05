@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getAppMember } from '@/lib/appAuth';
 
 // GET /api/app/activity?since=<isoTimestamp>
-// Returns counts of new public news and votes since the given timestamp (background poll fallback)
+// Returns counts of new news (including internal) and votes since the given timestamp (background poll fallback)
 export async function GET(req: NextRequest) {
   const member = await getAppMember(req);
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const [newsItems, voteItems] = await Promise.all([
     prisma.news.findMany({
-      where: { ...where, internal: false },
+      where,
       orderBy: { createdAt: 'desc' },
       select: { title: true },
     }),
