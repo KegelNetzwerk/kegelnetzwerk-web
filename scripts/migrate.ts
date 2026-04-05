@@ -619,11 +619,7 @@ async function migrateResults(rows: Row[], memberIds: Set<number>) {
         sessionGroup: int(ended),
         createdAt: toDate(int(date)),
       },
-    }).then(() => true).catch((e) => {
-      if (skippedFKMissing === 0) console.warn(`  FIRST RESULT ERROR (id=${id}):`, e?.message ?? e);
-      skippedFKMissing++;
-      return false;
-    });
+    }).then(() => true).catch(() => { skippedFKMissing++; return false; });
     if (ok) count++;
   }
   if (skippedPseudo > 0)    console.log(`  Skipped ${skippedPseudo} pseudo-member results (memid ≤ 0)`);
