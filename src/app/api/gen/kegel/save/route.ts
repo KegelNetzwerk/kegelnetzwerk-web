@@ -31,8 +31,7 @@ export async function POST(req: NextRequest) {
     activePins: Array.isArray(activePins) ? activePins : [],
   });
 
-  const uploadBase = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'public', 'uploads');
-  const dir = path.join(uploadBase, 'parts');
+  const dir = path.join(process.cwd(), 'public', 'uploads', 'parts');
   await fs.mkdir(dir, { recursive: true });
   const filename = `${randomUUID()}.png`;
   await fs.writeFile(path.join(dir, filename), png);

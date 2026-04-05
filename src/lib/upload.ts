@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { randomUUID } from 'crypto';
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR ?? path.join(process.cwd(), 'public', 'uploads');
+const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
 
 // Ensure upload directory exists
 async function ensureDir(dir: string) {
