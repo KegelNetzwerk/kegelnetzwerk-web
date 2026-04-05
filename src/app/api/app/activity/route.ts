@@ -17,12 +17,12 @@ export async function GET(req: NextRequest) {
     prisma.news.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      select: { title: true },
+      select: { id: true, title: true },
     }),
     prisma.vote.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      select: { title: true },
+      select: { id: true, title: true },
     }),
   ]);
 
@@ -30,6 +30,8 @@ export async function GET(req: NextRequest) {
     newNewsCount: newsItems.length,
     newVotesCount: voteItems.length,
     latestNewsTitle: newsItems[0]?.title ?? null,
+    latestNewsId: newsItems[0]?.id ?? null,
     latestVoteTitle: voteItems[0]?.title ?? null,
+    latestVoteId: voteItems[0]?.id ?? null,
   });
 }
