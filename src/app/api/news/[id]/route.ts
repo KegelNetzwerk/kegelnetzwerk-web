@@ -10,7 +10,7 @@ export async function PUT(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const newsId = parseInt(id, 10);
+  const newsId = Number.parseInt(id, 10);
   const { title, content, internal } = await req.json();
 
   const existing = await prisma.news.findFirst({
@@ -48,7 +48,7 @@ export async function DELETE(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const newsId = parseInt(id, 10);
+  const newsId = Number.parseInt(id, 10);
 
   const existing = await prisma.news.findFirst({
     where: { id: newsId, clubId: member.clubId },

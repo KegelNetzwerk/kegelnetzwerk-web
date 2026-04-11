@@ -24,7 +24,7 @@ export async function POST(
   }
 
   const { id } = await params;
-  const guestId = parseInt(id, 10);
+  const guestId = Number.parseInt(id, 10);
   if (isNaN(guestId)) {
     return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
   }

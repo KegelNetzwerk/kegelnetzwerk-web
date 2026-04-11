@@ -8,11 +8,11 @@ import VoteForm from './VoteForm';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface VotesClientProps {
-  initialItems: VoteData[];
-  initialTotal: number;
-  pageSize: number;
-  currentMemberId: number;
-  isAdmin: boolean;
+  readonly initialItems: VoteData[];
+  readonly initialTotal: number;
+  readonly pageSize: number;
+  readonly currentMemberId: number;
+  readonly isAdmin: boolean;
 }
 
 export default function VotesClient({

@@ -39,9 +39,9 @@ interface PromoteState {
 }
 
 interface MembersClientProps {
-  initialMembers: MemberRow[];
-  initialGuests: GuestRow[];
-  currentMemberId: number;
+  readonly initialMembers: MemberRow[];
+  readonly initialGuests: GuestRow[];
+  readonly currentMemberId: number;
 }
 
 const EMPTY_FORM = {

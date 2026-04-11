@@ -17,7 +17,7 @@ export default async function MemberProfilePage({
 }) {
   const { id } = await params;
   const { preview } = await searchParams;
-  const memberId = parseInt(id, 10);
+  const memberId = Number.parseInt(id, 10);
   if (isNaN(memberId)) notFound();
 
   const [viewer, locale, t] = await Promise.all([

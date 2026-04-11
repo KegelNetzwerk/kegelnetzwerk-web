@@ -10,9 +10,9 @@ export async function computeYearlyWinners(
 ): Promise<YearlyWinnersEntry[]> {
   const filterParams = new URLSearchParams(defaultScoringFilter ?? '');
   const filterUnit = (filterParams.get('unit') === 'EURO' ? 'EURO' : 'POINTS') as Unit;
-  const filterGopId = filterParams.get('gopId') ? parseInt(filterParams.get('gopId')!) : null;
-  const filterEliLowest = parseInt(filterParams.get('eliLowest') ?? '0', 10);
-  const filterEliHighest = parseInt(filterParams.get('eliHighest') ?? '0', 10);
+  const filterGopId = filterParams.get('gopId') ? Number.parseInt(filterParams.get('gopId')!) : null;
+  const filterEliLowest = Number.parseInt(filterParams.get('eliLowest') ?? '0', 10);
+  const filterEliHighest = Number.parseInt(filterParams.get('eliHighest') ?? '0', 10);
 
   const [clubMembers, allScoringResults] = await Promise.all([
     prisma.member.findMany({ where: { clubId }, select: { id: true, nickname: true } }),

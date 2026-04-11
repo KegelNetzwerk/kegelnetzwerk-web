@@ -23,11 +23,11 @@ interface NewsItem {
 }
 
 interface NewsClientProps {
-  initialItems: NewsItem[];
-  initialTotal: number;
-  pageSize: number;
-  currentMemberId: number;
-  isAdmin: boolean;
+  readonly initialItems: NewsItem[];
+  readonly initialTotal: number;
+  readonly pageSize: number;
+  readonly currentMemberId: number;
+  readonly isAdmin: boolean;
 }
 
 export default function NewsClient({

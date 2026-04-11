@@ -10,12 +10,12 @@ export async function GET(req: NextRequest) {
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+  const offset = Number.parseInt(searchParams.get('offset') ?? '0', 10);
   const voteId = searchParams.get('id');
 
   const where = {
     clubId: member.clubId,
-    ...(voteId ? { id: parseInt(voteId, 10) } : {}),
+    ...(voteId ? { id: Number.parseInt(voteId, 10) } : {}),
   };
 
   const [votes, total] = await Promise.all([
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
       authorId: member.id,
       title,
       description: description ?? '',
-      maxVoices: maxVoices === -1 ? -1 : Math.max(1, parseInt(maxVoices ?? '1', 10)),
+      maxVoices: maxVoices === -1 ? -1 : Math.max(1, Number.parseInt(maxVoices ?? '1', 10)),
       anonymous: !!anonymous,
       maybe: !!maybe,
       previewResults: !!previewResults,

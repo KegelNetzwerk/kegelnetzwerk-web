@@ -10,7 +10,7 @@ export async function POST(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const voteId = parseInt(id, 10);
+  const voteId = Number.parseInt(id, 10);
   const { closed } = await req.json(); // true = close, false = reopen
 
   const vote = await prisma.vote.findFirst({ where: { id: voteId, clubId: member.clubId } });

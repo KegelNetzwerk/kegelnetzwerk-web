@@ -15,9 +15,9 @@ export interface CommentData {
 }
 
 interface CommentsProps {
-  referenceId: number;
-  type: 'NEWS' | 'VOTE' | 'EVENT';
-  initialComments: CommentData[];
+  readonly referenceId: number;
+  readonly type: 'NEWS' | 'VOTE' | 'EVENT';
+  readonly initialComments: CommentData[];
 }
 
 export default function Comments({ referenceId, type, initialComments }: CommentsProps) {

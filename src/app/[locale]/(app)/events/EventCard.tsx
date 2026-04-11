@@ -9,12 +9,12 @@ import type { EventData } from './EventForm';
 import { ThumbsUp, ThumbsDown, Pencil, Trash2, Repeat2, AlertTriangle } from 'lucide-react';
 
 interface EventCardProps {
-  event: EventData;
-  isAdmin: boolean;
-  currentMemberId: number;
-  onEdit: (event: EventData) => void;
-  onDelete: (id: number) => void;
-  onRsvpChange: (eventId: number, cancel: boolean) => void;
+  readonly event: EventData;
+  readonly isAdmin: boolean;
+  readonly currentMemberId: number;
+  readonly onEdit: (event: EventData) => void;
+  readonly onDelete: (id: number) => void;
+  readonly onRsvpChange: (eventId: number, cancel: boolean) => void;
 }
 
 export default function EventCard({

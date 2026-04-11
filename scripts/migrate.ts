@@ -55,11 +55,11 @@ function toDateOrNull(unixSeconds: number | null | undefined): Date | null {
 }
 
 function int(v: string | null | undefined): number {
-  return parseInt(v ?? '0', 10) || 0;
+  return Number.parseInt(v ?? '0', 10) || 0;
 }
 
 function float(v: string | null | undefined): number {
-  return parseFloat(v ?? '0') || 0;
+  return Number.parseFloat(v ?? '0') || 0;
 }
 
 function bool(v: string | null | undefined): boolean {
@@ -81,8 +81,8 @@ const HTML_ENTITIES: Record<string, string> = {
 
 function decodeEntities(s: string): string {
   return s
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(parseInt(n, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number.parseInt(n, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, n) => String.fromCodePoint(Number.parseInt(n, 16)))
     .replace(/&([a-zA-Z]+);/g, (match, name) => HTML_ENTITIES[name] ?? match);
 }
 

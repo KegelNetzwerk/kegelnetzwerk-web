@@ -31,9 +31,9 @@ export interface EventData {
 }
 
 interface EventFormProps {
-  initial?: EventData | null;
-  onSaved: () => void;
-  onCancel: () => void;
+  readonly initial?: EventData | null;
+  readonly onSaved: () => void;
+  readonly onCancel: () => void;
 }
 
 export default function EventForm({ initial, onSaved, onCancel }: EventFormProps) {
@@ -158,7 +158,7 @@ export default function EventForm({ initial, onSaved, onCancel }: EventFormProps
                   min={1}
                   max={52}
                   value={intervalWeeks}
-                  onChange={(e) => setIntervalWeeks(parseInt(e.target.value, 10) || 1)}
+                  onChange={(e) => setIntervalWeeks(Number.parseInt(e.target.value, 10) || 1)}
                   className="w-20"
                 />
               </div>

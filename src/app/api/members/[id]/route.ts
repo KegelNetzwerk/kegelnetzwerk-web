@@ -15,7 +15,7 @@ export async function PUT(
   }
 
   const { id } = await params;
-  const memberId = parseInt(id);
+  const memberId = Number.parseInt(id);
 
   const target = await prisma.member.findFirst({
     where: { id: memberId, clubId: current.clubId },
@@ -89,7 +89,7 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const memberId = parseInt(id);
+  const memberId = Number.parseInt(id);
 
   if (memberId === current.id) {
     return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });

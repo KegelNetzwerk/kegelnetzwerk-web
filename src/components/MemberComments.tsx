@@ -39,9 +39,9 @@ export interface MemberCommentData {
 }
 
 interface MemberCommentsProps {
-  profileMemberId: number;
-  initialComments: MemberCommentData[];
-  isLoggedIn: boolean;
+  readonly profileMemberId: number;
+  readonly initialComments: MemberCommentData[];
+  readonly isLoggedIn: boolean;
 }
 
 export default function MemberComments({
@@ -61,7 +61,7 @@ export default function MemberComments({
 
   const latest = comments[0];
 
-  const commentIsEmpty = !newComment.replace(/<[^>]*>/g, '').trim();
+  const commentIsEmpty = !newComment.replace(/<[^>]+>/g, '').trim();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

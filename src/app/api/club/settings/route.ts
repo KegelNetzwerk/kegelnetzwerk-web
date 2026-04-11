@@ -26,15 +26,15 @@ export async function PUT(req: NextRequest) {
 
   const formData = await req.formData();
 
-  const cancelDaysBeforeEvent = parseInt((formData.get('cancelDaysBeforeEvent') as string) ?? '5') || 5;
+  const cancelDaysBeforeEvent = Number.parseInt((formData.get('cancelDaysBeforeEvent') as string) ?? '5') || 5;
   const defaultScoringFilter = (formData.get('defaultScoringFilter') as string) ?? '';
   const aboutUs = (formData.get('aboutUs') as string) ?? '';
   const farbe1 = ((formData.get('farbe1') as string) ?? '').replace('#', '');
   const farbe2 = ((formData.get('farbe2') as string) ?? '').replace('#', '');
   const farbe3 = ((formData.get('farbe3') as string) ?? '').replace('#', '');
   const mono = formData.get('mono') === 'true';
-  const bg1 = parseInt((formData.get('bg1') as string) ?? '0') || 0;
-  const bg2 = parseInt((formData.get('bg2') as string) ?? '0') || 0;
+  const bg1 = Number.parseInt((formData.get('bg1') as string) ?? '0') || 0;
+  const bg2 = Number.parseInt((formData.get('bg2') as string) ?? '0') || 0;
   const bgColor = ((formData.get('bgColor') as string) ?? '').replace('#', '') || 'FFFFFF';
 
   const logoFile = formData.get('logo') as File | null;

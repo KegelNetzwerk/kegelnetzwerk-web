@@ -10,7 +10,7 @@ export async function PUT(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const eventId = parseInt(id, 10);
+  const eventId = Number.parseInt(id, 10);
 
   const existing = await prisma.event.findFirst({
     where: { id: eventId, clubId: member.clubId },
@@ -41,7 +41,7 @@ export async function DELETE(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const eventId = parseInt(id, 10);
+  const eventId = Number.parseInt(id, 10);
 
   const existing = await prisma.event.findFirst({
     where: { id: eventId, clubId: member.clubId },

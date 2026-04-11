@@ -15,22 +15,22 @@ interface YearEntry {
 }
 
 interface YearlyWinnersProps {
-  winners: YearEntry[];
-  labels: {
-    title: string;
-    year: string;
-    rank1: string;
-    rank2: string;
-    rank3: string;
-    lastPlace: string;
-    noData: string;
+  readonly winners: YearEntry[];
+  readonly labels: {
+    readonly title: string;
+    readonly year: string;
+    readonly rank1: string;
+    readonly rank2: string;
+    readonly rank3: string;
+    readonly lastPlace: string;
+    readonly noData: string;
   };
 }
 
 type SortKey = 'year' | 'rank1' | 'rank2' | 'rank3' | 'last';
 
 function fmt(n: number) {
-  return parseFloat(n.toFixed(2));
+  return Number.parseFloat(n.toFixed(2));
 }
 
 function RankCell({ entry, index, unit }: { entry: YearEntry; index: number; unit: string }) {

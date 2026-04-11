@@ -14,10 +14,10 @@ export async function GET(req: NextRequest) {
   await ensureRecurringEvents(member.clubId);
 
   const { searchParams } = new URL(req.url);
-  const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+  const offset = Number.parseInt(searchParams.get('offset') ?? '0', 10);
   const past = searchParams.get('past') === 'true';
   const eventId = searchParams.get('id');
-  const limitParam = parseInt(searchParams.get('limit') ?? String(DEFAULT_PAGE_SIZE), 10);
+  const limitParam = Number.parseInt(searchParams.get('limit') ?? String(DEFAULT_PAGE_SIZE), 10);
   const pageSize = ALLOWED_PAGE_SIZES.includes(limitParam) ? limitParam : DEFAULT_PAGE_SIZE;
 
   const now = new Date();
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   const where = {
     clubId: member.clubId,
     date: past ? { lt: now } : { gte: now },
-    ...(eventId ? { id: parseInt(eventId, 10) } : {}),
+    ...(eventId ? { id: Number.parseInt(eventId, 10) } : {}),
   };
 
   const [events, total, club] = await Promise.all([

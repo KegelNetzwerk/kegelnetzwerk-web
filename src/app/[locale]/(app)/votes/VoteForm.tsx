@@ -10,9 +10,9 @@ import type { VoteData } from './VoteCard';
 import { Save, X, Plus } from 'lucide-react';
 
 interface VoteFormProps {
-  initial?: VoteData | null;
-  onSaved: () => void;
-  onCancel: () => void;
+  readonly initial?: VoteData | null;
+  readonly onSaved: () => void;
+  readonly onCancel: () => void;
 }
 
 export default function VoteForm({ initial, onSaved, onCancel }: VoteFormProps) {
@@ -134,7 +134,7 @@ export default function VoteForm({ initial, onSaved, onCancel }: VoteFormProps) 
               <Input
                 type="number"
                 value={maxVoices}
-                onChange={(e) => setMaxVoices(parseInt(e.target.value, 10) || 1)}
+                onChange={(e) => setMaxVoices(Number.parseInt(e.target.value, 10) || 1)}
                 className="w-20"
                 min={1}
               />

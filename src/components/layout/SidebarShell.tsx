@@ -7,24 +7,24 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 const COOKIE_NAME = 'kn-sidebar-collapsed';
 
 interface SidebarShellProps {
-  initialCollapsed: boolean;
-  locale: string;
-  clubName: string;
-  clubPic: string;
-  memberCount: number;
-  nextBirthday: string | null;
-  santaPartner: string | null;
-  latestNewsId: number | null;
-  latestNews: string | null;
-  nextEventId: number | null;
-  nextEvent: string | null;
-  openVotes: { id: number; title: string }[];
-  labelMembers: string;
-  labelBirthday: string;
-  labelSanta: string;
-  labelLatestNews: string;
-  labelNextEvent: string;
-  labelOpenVotes: string;
+  readonly initialCollapsed: boolean;
+  readonly locale: string;
+  readonly clubName: string;
+  readonly clubPic: string;
+  readonly memberCount: number;
+  readonly nextBirthday: string | null;
+  readonly santaPartner: string | null;
+  readonly latestNewsId: number | null;
+  readonly latestNews: string | null;
+  readonly nextEventId: number | null;
+  readonly nextEvent: string | null;
+  readonly openVotes: { id: number; title: string }[];
+  readonly labelMembers: string;
+  readonly labelBirthday: string;
+  readonly labelSanta: string;
+  readonly labelLatestNews: string;
+  readonly labelNextEvent: string;
+  readonly labelOpenVotes: string;
 }
 
 const sep = <hr style={{ border: 'none', borderTop: '1px solid rgba(0,0,0,0.1)', margin: '4px 0' }} />;

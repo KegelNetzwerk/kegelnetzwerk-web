@@ -12,7 +12,7 @@ export async function POST(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const eventId = parseInt(id, 10);
+  const eventId = Number.parseInt(id, 10);
   const { cancel } = await req.json(); // true = cancel attendance, false = re-accept
 
   const event = await prisma.event.findFirst({

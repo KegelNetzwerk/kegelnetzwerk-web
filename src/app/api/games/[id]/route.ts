@@ -12,7 +12,7 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const gameId = parseInt(id, 10);
+  const gameId = Number.parseInt(id, 10);
 
   const existing = await prisma.gameOrPenalty.findFirst({
     where: { id: gameId, clubId: member.clubId },

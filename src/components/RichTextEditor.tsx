@@ -6,10 +6,10 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { useEffect } from 'react';
 
 interface RichTextEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  minHeight?: string;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly placeholder?: string;
+  readonly minHeight?: string;
 }
 
 export default function RichTextEditor({

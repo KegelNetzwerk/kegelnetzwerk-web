@@ -31,9 +31,9 @@ interface GameOrPenalty {
 }
 
 interface GamesClientProps {
-  initialGames: GameOrPenalty[];
-  clubColor: string;
-  clubColor2: string;
+  readonly initialGames: GameOrPenalty[];
+  readonly clubColor: string;
+  readonly clubColor2: string;
 }
 
 type PicTab = 'upload' | 'emoji' | 'gen';

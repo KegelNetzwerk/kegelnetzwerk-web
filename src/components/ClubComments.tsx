@@ -38,9 +38,9 @@ export interface ClubCommentData {
 }
 
 interface ClubCommentsProps {
-  clubId: number;
-  initialComments: ClubCommentData[];
-  isLoggedIn: boolean;
+  readonly clubId: number;
+  readonly initialComments: ClubCommentData[];
+  readonly isLoggedIn: boolean;
 }
 
 export default function ClubComments({
@@ -59,7 +59,7 @@ export default function ClubComments({
   const turnstileRef = useRef<TurnstileInstance>(null);
 
   const latest = comments[0];
-  const commentIsEmpty = !newComment.replace(/<[^>]*>/g, '').trim();
+  const commentIsEmpty = !newComment.replace(/<[^>]+>/g, '').trim();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

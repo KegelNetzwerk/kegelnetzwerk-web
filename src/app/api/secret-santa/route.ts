@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { randomInt } from 'node:crypto';
 import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Role } from '@prisma/client';
@@ -84,6 +85,16 @@ export async function POST(_req: NextRequest) {
   return NextResponse.json({ ok: true, count: assignment.length });
 }
 
+// Cryptographically secure Fisher-Yates shuffle.
+function cryptoShuffle<T>(arr: T[]): T[] {
+  const result = [...arr];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = randomInt(0, i + 1);
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
 // Generate a derangement avoiding forbidden (giver→receiver) pairs.
 // Falls back relaxing constraints if needed.
 function generateAssignment(
@@ -93,7 +104,7 @@ function generateAssignment(
   const n = ids.length;
 
   for (let attempt = 0; attempt < 2000; attempt++) {
-    const shuffled = [...ids].sort(() => Math.random() - 0.5);
+    const shuffled = cryptoShuffle(ids);
     let valid = true;
     for (let i = 0; i < n; i++) {
       const giver = ids[i];
@@ -108,7 +119,7 @@ function generateAssignment(
 
   // Fallback: only avoid self-assignment
   for (let attempt = 0; attempt < 1000; attempt++) {
-    const shuffled = [...ids].sort(() => Math.random() - 0.5);
+    const shuffled = cryptoShuffle(ids);
     let valid = true;
     for (let i = 0; i < n; i++) {
       if (ids[i] === shuffled[i]) { valid = false; break; }

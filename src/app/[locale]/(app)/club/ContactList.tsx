@@ -12,11 +12,11 @@ interface ContactMember {
 }
 
 interface ContactListProps {
-  members: ContactMember[];
-  title: string;
-  nicknameLabel: string;
-  emailLabel: string;
-  phoneLabel: string;
+  readonly members: ContactMember[];
+  readonly title: string;
+  readonly nicknameLabel: string;
+  readonly emailLabel: string;
+  readonly phoneLabel: string;
 }
 
 export default function ContactList({ members, title, nicknameLabel, emailLabel, phoneLabel }: ContactListProps) {

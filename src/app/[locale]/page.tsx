@@ -141,5 +141,12 @@ export default async function LandingPage() {
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  let result = '';
+  let inTag = false;
+  for (const char of html) {
+    if (char === '<') { inTag = true; result += ' '; }
+    else if (char === '>') { inTag = false; }
+    else if (!inTag) { result += char; }
+  }
+  return result.replace(/\s+/g, ' ').trim();
 }

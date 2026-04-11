@@ -8,11 +8,11 @@ import EventForm, { type EventData } from './EventForm';
 import { Plus, CalendarDays, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface EventsClientProps {
-  initialItems: EventData[];
-  initialTotal: number;
-  pageSize: number;
-  isAdmin: boolean;
-  currentMember: { id: number; nickname: string; pic: string };
+  readonly initialItems: EventData[];
+  readonly initialTotal: number;
+  readonly pageSize: number;
+  readonly isAdmin: boolean;
+  readonly currentMember: { id: number; nickname: string; pic: string };
 }
 
 export default function EventsClient({

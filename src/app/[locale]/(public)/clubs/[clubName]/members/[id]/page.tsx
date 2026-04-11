@@ -13,7 +13,7 @@ export default async function PublicMemberProfilePage({
   params: Promise<{ clubName: string; id: string }>;
 }) {
   const { clubName, id } = await params;
-  const memberId = parseInt(id, 10);
+  const memberId = Number.parseInt(id, 10);
   if (isNaN(memberId)) notFound();
 
   const decodedClubName = decodeURIComponent(clubName);

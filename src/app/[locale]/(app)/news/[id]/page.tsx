@@ -9,7 +9,7 @@ export default async function NewsDetailPage({ params }: { params: Promise<{ id:
   if (!member) redirect('/login');
 
   const item = await prisma.news.findUnique({
-    where: { id: parseInt(id, 10) },
+    where: { id: Number.parseInt(id, 10) },
     include: {
       author: { select: { id: true, nickname: true } },
       comments: {

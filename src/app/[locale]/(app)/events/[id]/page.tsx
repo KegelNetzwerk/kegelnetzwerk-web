@@ -10,7 +10,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const [event, club] = await Promise.all([
     prisma.event.findUnique({
-      where: { id: parseInt(id, 10) },
+      where: { id: Number.parseInt(id, 10) },
       include: {
         author: { select: { id: true, nickname: true } },
         cancellations: {

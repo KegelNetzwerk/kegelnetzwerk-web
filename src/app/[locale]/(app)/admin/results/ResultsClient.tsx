@@ -51,9 +51,9 @@ interface SessionDetail {
 }
 
 interface ResultsClientProps {
-  games: GameOption[];
-  members: MemberOption[];
-  years: number[];
+  readonly games: GameOption[];
+  readonly members: MemberOption[];
+  readonly years: number[];
 }
 
 export default function ResultsClient({ games, members, years }: ResultsClientProps) {
@@ -149,7 +149,7 @@ export default function ResultsClient({ games, members, years }: ResultsClientPr
     // Validate updated values (skip pending-deleted ones)
     const updatedResults = detail.rows
       .filter((r) => !pendingDeletes.has(r.resultId))
-      .map((r) => ({ resultId: r.resultId, value: parseFloat(editValues[r.resultId] ?? String(r.value)) }));
+      .map((r) => ({ resultId: r.resultId, value: Number.parseFloat(editValues[r.resultId] ?? String(r.value)) }));
 
     if (updatedResults.some((r) => isNaN(r.value))) {
       toast.error(t('error.invalidValue'));
@@ -159,7 +159,7 @@ export default function ResultsClient({ games, members, years }: ResultsClientPr
     // Validate pending adds
     const creates = Object.entries(pendingAdds).map(([key, val]) => {
       const [memberId, partId] = key.split('-').map(Number);
-      return { memberId, partId, value: parseFloat(val) };
+      return { memberId, partId, value: Number.parseFloat(val) };
     });
 
     if (creates.some((c) => isNaN(c.value))) {

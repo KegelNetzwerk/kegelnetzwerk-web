@@ -5,8 +5,8 @@ import type { Member, Club } from '@prisma/client';
 import SidebarShell from './SidebarShell';
 
 interface SidebarProps {
-  member: (Member & { club: Club }) | null;
-  locale: string;
+  readonly member: (Member & { club: Club }) | null;
+  readonly locale: string;
 }
 
 export default async function Sidebar({ member, locale }: SidebarProps) {

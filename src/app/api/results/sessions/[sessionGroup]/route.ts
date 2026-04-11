@@ -8,7 +8,7 @@ type Params = { params: Promise<{ sessionGroup: string }> };
 function parseGopId(req: NextRequest): number | null {
   const raw = new URL(req.url).searchParams.get('gopId');
   if (!raw) return null;
-  const n = parseInt(raw);
+  const n = Number.parseInt(raw);
   return isNaN(n) ? null : n;
 }
 
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest, { params }: Params) {
   }
 
   const { sessionGroup } = await params;
-  const sg = parseInt(sessionGroup);
+  const sg = Number.parseInt(sessionGroup);
   const gopId = parseGopId(req);
 
   if (gopId === null) {
@@ -86,7 +86,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 
   const { sessionGroup } = await params;
-  const sg = parseInt(sessionGroup);
+  const sg = Number.parseInt(sessionGroup);
   const gopId = parseGopId(req);
 
   if (gopId === null) {
@@ -209,7 +209,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   }
 
   const { sessionGroup } = await params;
-  const sg = parseInt(sessionGroup);
+  const sg = Number.parseInt(sessionGroup);
   const gopId = parseGopId(req);
 
   if (gopId === null) {

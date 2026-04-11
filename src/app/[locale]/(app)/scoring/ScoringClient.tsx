@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { type CSSProperties, useState, useCallback, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
@@ -47,8 +47,8 @@ interface ScoringData {
 type ParticipantMode = 'members' | 'both' | 'guests';
 
 interface ScoringClientProps {
-  games: GameOption[];
-  defaultScoringFilter: string;
+  readonly games: GameOption[];
+  readonly defaultScoringFilter: string;
 }
 
 
@@ -159,7 +159,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
     applyRange(`${year}-01-01`, `${year}-12-31`);
   }
 
-  const hasElimination = parseInt(eliLowest) > 0 || parseInt(eliHighest) > 0;
+  const hasElimination = Number.parseInt(eliLowest) > 0 || Number.parseInt(eliHighest) > 0;
 
   // Top 3 individual session scores across all visible participants
   const top3Cells = new Set<string>();
@@ -205,7 +205,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
         va = a.rawTotal;
         vb = b.rawTotal;
       } else {
-        const sg = parseInt(key.split(':')[1], 10);
+        const sg = Number.parseInt(key.split(':')[1], 10);
         va = a.sessions.find((s) => s.sessionGroup === sg)?.value ?? -Infinity;
         vb = b.sessions.find((s) => s.sessionGroup === sg)?.value ?? -Infinity;
       }
@@ -489,14 +489,15 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                       const session = p.sessions.find((ms) => ms.sessionGroup === s.sessionGroup);
                       const isExcluded = session?.excluded ?? false;
                       const isMissed = session?.missed ?? false;
-                      const style = isExcluded
-                        ? { color: '#dc2626', textDecoration: 'line-through' }
-                        : isMissed
-                        ? { color: '#9ca3af' }
-                        : undefined;
+                      let style: CSSProperties | undefined;
+                      if (isExcluded) {
+                        style = { color: '#dc2626', textDecoration: 'line-through' };
+                      } else if (isMissed) {
+                        style = { color: '#9ca3af' };
+                      }
                       const cellKey = `${p.isGuest ? 'g' : 'm'}${p.id}:${s.sessionGroup}`;
                       const isTop3 = top3Cells.has(cellKey);
-                      const display = !session || isMissed ? '' : `${parseFloat(session.value.toFixed(2))}${unit === 'EURO' ? '€' : ''}`;
+                      const display = !session || isMissed ? '' : `${Number.parseFloat(session.value.toFixed(2))}${unit === 'EURO' ? '€' : ''}`;
                       return (
                         <td
                           key={s.sessionGroup}
@@ -510,11 +511,11 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                     })}
                     {hasElimination ? (
                       <>
-                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{parseFloat(p.rawTotal.toFixed(2))}</td>
-                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100">{parseFloat(p.total.toFixed(2))}</td>
+                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{Number.parseFloat(p.rawTotal.toFixed(2))}</td>
+                        <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100">{Number.parseFloat(p.total.toFixed(2))}</td>
                       </>
                     ) : (
-                      <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{parseFloat(p.total.toFixed(2))}</td>
+                      <td className="px-1 py-1.5 text-right font-bold font-mono border-t border-gray-100 border-l border-l-gray-200">{Number.parseFloat(p.total.toFixed(2))}</td>
                     )}
                   </tr>
                 ))}
@@ -555,7 +556,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                               )}
                             </td>
                             <td className="px-3 py-1.5 text-right font-mono border-t border-gray-100 border-l border-l-gray-200">
-                              {parseFloat(m.total.toFixed(2))}{part.unit === 'EURO' ? '€' : ''}
+                              {Number.parseFloat(m.total.toFixed(2))}{part.unit === 'EURO' ? '€' : ''}
                             </td>
                           </tr>
                         ))}

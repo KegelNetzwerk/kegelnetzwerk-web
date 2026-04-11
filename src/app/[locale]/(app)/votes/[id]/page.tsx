@@ -9,7 +9,7 @@ export default async function VoteDetailPage({ params }: { params: Promise<{ id:
   if (!member) redirect('/login');
 
   const vote = await prisma.vote.findUnique({
-    where: { id: parseInt(id, 10) },
+    where: { id: Number.parseInt(id, 10) },
     include: {
       author: { select: { id: true, nickname: true } },
       options: { orderBy: { position: 'asc' } },

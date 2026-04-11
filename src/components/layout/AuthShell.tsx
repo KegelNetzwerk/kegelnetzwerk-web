@@ -1,7 +1,7 @@
 interface AuthShellProps {
-  children: React.ReactNode;
+  readonly children: React.ReactNode;
   /** Tailwind max-width class, e.g. 'max-w-2xl' (default) or 'max-w-4xl' */
-  maxWidth?: string;
+  readonly maxWidth?: string;
 }
 
 export default function AuthShell({ children, maxWidth = 'max-w-2xl' }: AuthShellProps) {

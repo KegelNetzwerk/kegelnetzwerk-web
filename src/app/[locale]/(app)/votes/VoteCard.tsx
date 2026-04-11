@@ -35,13 +35,13 @@ export interface VoteData {
 }
 
 interface VoteCardProps {
-  vote: VoteData;
-  currentMemberId: number;
-  isAdmin: boolean;
-  onEdit: (vote: VoteData) => void;
-  onDelete: (id: number) => void;
-  onClose: (id: number, closed: boolean) => void;
-  onVoted: (updatedVote: VoteData) => void;
+  readonly vote: VoteData;
+  readonly currentMemberId: number;
+  readonly isAdmin: boolean;
+  readonly onEdit: (vote: VoteData) => void;
+  readonly onDelete: (id: number) => void;
+  readonly onClose: (id: number, closed: boolean) => void;
+  readonly onVoted: (updatedVote: VoteData) => void;
 }
 
 export default function VoteCard({

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentMember } from '@/lib/auth';
+import { getCurrentMember, hashPassword } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { hashPassword } from '@/lib/auth';
 import { saveUploadedFile } from '@/lib/upload';
 import { sendEmail, inviteEmailHtml } from '@/lib/email';
 import { Role } from '@prisma/client';

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentMember } from '@/lib/auth';
-import { CommentType } from '@prisma/client';
+import { CommentType, Prisma } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
   const member = await getCurrentMember();
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid type.' }, { status: 400 });
   }
 
-  const data: Parameters<typeof prisma.comment.create>[0]['data'] = {
+  const data: Prisma.CommentUncheckedCreateInput = {
     authorId: member.id,
     content: content.trim(),
     type: type as CommentType,

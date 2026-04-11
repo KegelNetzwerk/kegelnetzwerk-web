@@ -12,7 +12,7 @@ export async function DELETE(
   if (!viewer) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const commentId = parseInt(id, 10);
+  const commentId = Number.parseInt(id, 10);
 
   const comment = await prisma.memberComment.findUnique({ where: { id: commentId } });
   if (!comment) return NextResponse.json({ error: 'Not found' }, { status: 404 });

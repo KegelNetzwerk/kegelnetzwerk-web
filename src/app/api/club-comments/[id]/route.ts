@@ -9,7 +9,7 @@ export async function DELETE(
   const viewer = await getCurrentMember();
   if (!viewer) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const commentId = parseInt((await params).id, 10);
+  const commentId = Number.parseInt((await params).id, 10);
   if (isNaN(commentId)) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const comment = await prisma.clubComment.findUnique({

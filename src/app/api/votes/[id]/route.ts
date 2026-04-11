@@ -10,7 +10,7 @@ export async function PUT(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const voteId = parseInt(id, 10);
+  const voteId = Number.parseInt(id, 10);
 
   const existing = await prisma.vote.findFirst({ where: { id: voteId, clubId: member.clubId } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -26,7 +26,7 @@ export async function PUT(
     data: {
       title,
       description: description ?? '',
-      maxVoices: maxVoices === -1 ? -1 : Math.max(1, parseInt(maxVoices ?? '1', 10)),
+      maxVoices: maxVoices === -1 ? -1 : Math.max(1, Number.parseInt(maxVoices ?? '1', 10)),
       anonymous: !!anonymous,
       maybe: !!maybe,
       previewResults: !!previewResults,
@@ -48,7 +48,7 @@ export async function DELETE(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const voteId = parseInt(id, 10);
+  const voteId = Number.parseInt(id, 10);
 
   const existing = await prisma.vote.findFirst({ where: { id: voteId, clubId: member.clubId } });
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });

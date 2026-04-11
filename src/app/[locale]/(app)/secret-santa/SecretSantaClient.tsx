@@ -14,8 +14,8 @@ interface Partner {
 }
 
 interface SecretSantaClientProps {
-  isAdmin: boolean;
-  partner: Partner | null;
+  readonly isAdmin: boolean;
+  readonly partner: Partner | null;
 }
 
 export default function SecretSantaClient({ isAdmin, partner: initialPartner }: SecretSantaClientProps) {

@@ -12,8 +12,8 @@ export async function GET(req: NextRequest) {
   const to = new Date(searchParams.get('to') ?? Date.now());
   const unit = (searchParams.get('unit') ?? 'POINTS') as Unit;
   const gopId = searchParams.get('gopId');
-  const eliLowest = parseInt(searchParams.get('eliLowest') ?? '0', 10);
-  const eliHighest = parseInt(searchParams.get('eliHighest') ?? '0', 10);
+  const eliLowest = Number.parseInt(searchParams.get('eliLowest') ?? '0', 10);
+  const eliHighest = Number.parseInt(searchParams.get('eliHighest') ?? '0', 10);
   const sortAsc = searchParams.get('sort') === 'asc';
   // 'members' (default) | 'both' | 'guests'
   const participantMode = searchParams.get('participantMode') ?? 'members';
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     clubId: member.clubId,
     date: { gte: from, lte: to },
     part: { unit },
-    ...(gopId ? { gopId: parseInt(gopId, 10) } : {}),
+    ...(gopId ? { gopId: Number.parseInt(gopId, 10) } : {}),
   };
 
   // Fetch all sessions (unique sessionGroup values in date range, across members and guests)
@@ -142,7 +142,7 @@ export async function GET(req: NextRequest) {
     where: {
       clubId: member.clubId,
       unit,
-      ...(gopId ? { gameOrPenaltyId: parseInt(gopId, 10) } : {}),
+      ...(gopId ? { gameOrPenaltyId: Number.parseInt(gopId, 10) } : {}),
     },
     select: { id: true, name: true, unit: true },
   });

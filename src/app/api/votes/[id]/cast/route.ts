@@ -11,7 +11,7 @@ export async function POST(
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { id } = await params;
-  const voteId = parseInt(id, 10);
+  const voteId = Number.parseInt(id, 10);
 
   const vote = await prisma.vote.findFirst({
     where: { id: voteId, clubId: member.clubId },
@@ -48,7 +48,7 @@ export async function POST(
   const creates = [];
   for (const [optionIdStr, value] of Object.entries(selections)) {
     if (value === null) continue;
-    const optionId = parseInt(optionIdStr, 10);
+    const optionId = Number.parseInt(optionIdStr, 10);
     if (!vote.options.find((o) => o.id === optionId)) continue;
     creates.push(
       prisma.voting.create({

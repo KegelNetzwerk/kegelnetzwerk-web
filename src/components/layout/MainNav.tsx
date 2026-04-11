@@ -11,12 +11,12 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 interface MainNavProps {
-  isAdmin: boolean;
-  locale: string;
-  nickname: string;
-  memberPic: string;
-  clubPic: string;
-  isGuest?: boolean;
+  readonly isAdmin: boolean;
+  readonly locale: string;
+  readonly nickname: string;
+  readonly memberPic: string;
+  readonly clubPic: string;
+  readonly isGuest?: boolean;
 }
 
 export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic, isGuest }: MainNavProps) {

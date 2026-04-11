@@ -22,23 +22,23 @@ interface Game {
 }
 
 interface GamesOverviewProps {
-  games: Game[];
-  title: string;
-  labels: {
-    partName: string;
-    unit: string;
-    value: string;
-    variable: string;
-    once: string;
-    unitPoints: string;
-    unitEuro: string;
+  readonly games: Game[];
+  readonly title: string;
+  readonly labels: {
+    readonly partName: string;
+    readonly unit: string;
+    readonly value: string;
+    readonly variable: string;
+    readonly once: string;
+    readonly unitPoints: string;
+    readonly unitEuro: string;
   };
 }
 
 function formatFormula(part: Part): string {
-  const val = part.variable ? '~' : String(parseFloat(part.value.toFixed(2)));
-  const factor = String(parseFloat(part.factor.toFixed(2)));
-  const bonus = String(parseFloat(part.bonus.toFixed(2)));
+  const val = part.variable ? '~' : String(Number.parseFloat(part.value.toFixed(2)));
+  const factor = String(Number.parseFloat(part.factor.toFixed(2)));
+  const bonus = String(Number.parseFloat(part.bonus.toFixed(2)));
   // Simplify: omit factor if 1.0, omit bonus if 0.0
   const hasFactor = part.factor !== 1.0;
   const hasBonus = part.bonus !== 0.0;

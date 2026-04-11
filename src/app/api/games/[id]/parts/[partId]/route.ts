@@ -14,7 +14,7 @@ export async function PUT(
   }
 
   const { partId } = await params;
-  const pId = parseInt(partId, 10);
+  const pId = Number.parseInt(partId, 10);
 
   const existing = await prisma.part.findFirst({
     where: { id: pId, clubId: member.clubId },
@@ -25,10 +25,10 @@ export async function PUT(
   const name = formData.get('name') as string;
   const unit = (formData.get('unit') as string) === 'EURO' ? Unit.EURO : Unit.POINTS;
   const once = formData.get('once') === 'true';
-  const value = parseFloat(formData.get('value') as string) || 0;
+  const value = Number.parseFloat(formData.get('value') as string) || 0;
   const variable = formData.get('variable') === 'true';
-  const factor = parseFloat(formData.get('factor') as string) || 1.0;
-  const bonus = parseFloat(formData.get('bonus') as string) || 0.0;
+  const factor = Number.parseFloat(formData.get('factor') as string) || 1.0;
+  const bonus = Number.parseFloat(formData.get('bonus') as string) || 0.0;
   const description = (formData.get('description') as string) || '';
   const picFile = formData.get('pic') as File | null;
 
@@ -59,7 +59,7 @@ export async function PATCH(
   }
 
   const { partId } = await params;
-  const pId = parseInt(partId, 10);
+  const pId = Number.parseInt(partId, 10);
 
   const existing = await prisma.part.findFirst({
     where: { id: pId, clubId: member.clubId },
@@ -98,7 +98,7 @@ export async function DELETE(
   }
 
   const { partId } = await params;
-  const pId = parseInt(partId, 10);
+  const pId = Number.parseInt(partId, 10);
 
   const existing = await prisma.part.findFirst({
     where: { id: pId, clubId: member.clubId },

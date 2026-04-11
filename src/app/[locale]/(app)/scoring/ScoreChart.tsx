@@ -32,14 +32,14 @@ interface SessionInfo {
 }
 
 interface ScoreChartProps {
-  members: MemberEntry[];
-  sessions: SessionInfo[];
+  readonly members: MemberEntry[];
+  readonly sessions: SessionInfo[];
 }
 
 function hexToRgb(hex: string): [number, number, number] | null {
   const clean = hex.replace('#', '');
   if (clean.length !== 6) return null;
-  return [parseInt(clean.slice(0, 2), 16), parseInt(clean.slice(2, 4), 16), parseInt(clean.slice(4, 6), 16)];
+  return [Number.parseInt(clean.slice(0, 2), 16), Number.parseInt(clean.slice(2, 4), 16), Number.parseInt(clean.slice(4, 6), 16)];
 }
 
 function generateShades(baseHex: string, count: number): string[] {
@@ -105,8 +105,8 @@ export default function ScoreChart({ members, sessions }: ScoreChartProps) {
     return (
       <div style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: 6, padding: '6px 10px', fontSize: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 4 }}>{label}</div>
-        <div>{sessionLabels[hoveredKey]}: <span style={{ fontWeight: 700 }}>{parseFloat(Number(entry.value).toFixed(2))}</span></div>
-        {member && <div style={{ marginTop: 2, color: '#6b7280' }}>Gesamt: <span style={{ fontWeight: 700 }}>{parseFloat(member.total.toFixed(2))}</span></div>}
+        <div>{sessionLabels[hoveredKey]}: <span style={{ fontWeight: 700 }}>{Number.parseFloat(Number(entry.value).toFixed(2))}</span></div>
+        {member && <div style={{ marginTop: 2, color: '#6b7280' }}>Gesamt: <span style={{ fontWeight: 700 }}>{Number.parseFloat(member.total.toFixed(2))}</span></div>}
       </div>
     );
   }

@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const from = searchParams.get('from');
   const to = searchParams.get('to');
 
-  const parsedGopId = gopIdParam ? parseInt(gopIdParam) : null;
+  const parsedGopId = gopIdParam ? Number.parseInt(gopIdParam) : null;
   if (gopIdParam && isNaN(parsedGopId!)) {
     return NextResponse.json({ error: 'Invalid gopId' }, { status: 400 });
   }

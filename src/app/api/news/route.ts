@@ -11,12 +11,12 @@ export async function GET(req: NextRequest) {
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const offset = parseInt(searchParams.get('offset') ?? '0', 10);
+  const offset = Number.parseInt(searchParams.get('offset') ?? '0', 10);
   const newsId = searchParams.get('id');
 
   const where = {
     clubId: member.clubId,
-    ...(newsId ? { id: parseInt(newsId, 10) } : {}),
+    ...(newsId ? { id: Number.parseInt(newsId, 10) } : {}),
   };
 
   const [items, total] = await Promise.all([

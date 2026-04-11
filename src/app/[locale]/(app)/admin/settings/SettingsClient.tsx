@@ -179,7 +179,7 @@ export default function SettingsClient({ club }: { club: ClubSettings }) {
                 min="0"
                 max="365"
                 value={cancelDaysBeforeEvent}
-                onChange={(e) => setCancelDaysBeforeEvent(parseInt(e.target.value) || 0)}
+                onChange={(e) => setCancelDaysBeforeEvent(Number.parseInt(e.target.value) || 0)}
                 className="max-w-[120px]"
               />
             </div>

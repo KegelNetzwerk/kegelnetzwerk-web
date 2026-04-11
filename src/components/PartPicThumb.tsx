@@ -1,6 +1,6 @@
 interface Props {
-  pic: string;
-  size?: number;
+  readonly pic: string;
+  readonly size?: number;
 }
 
 export default function PartPicThumb({ pic, size = 32 }: Props) {
