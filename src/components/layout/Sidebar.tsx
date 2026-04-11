@@ -19,12 +19,12 @@ export default async function Sidebar({ member, locale }: SidebarProps) {
   const [members, santaPartner, latestNews, nextEvent, openVotes] = await Promise.all([
     prisma.member.findMany({
       where: { clubId: member.clubId },
-      select: { nickname: true, birthday: true },
+      select: { id: true, nickname: true, birthday: true },
     }),
     member.secretSantaPartnerId
       ? prisma.member.findUnique({
           where: { id: member.secretSantaPartnerId },
-          select: { nickname: true },
+          select: { id: true, nickname: true },
         })
       : Promise.resolve(null),
     prisma.news.findFirst({
@@ -44,7 +44,7 @@ export default async function Sidebar({ member, locale }: SidebarProps) {
     }),
   ]);
 
-  const nextBirthday = getNextBirthday(members, new Date());
+  const nextBirthdayResult = getNextBirthday(members, new Date());
 
   const nextEventLabel = nextEvent
     ? `${nextEvent.subject} (${nextEvent.date.toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-GB', { day: '2-digit', month: '2-digit' })})`
@@ -57,8 +57,10 @@ export default async function Sidebar({ member, locale }: SidebarProps) {
       clubName={member.club.name}
       clubPic={member.club.pic}
       memberCount={members.length}
-      nextBirthday={nextBirthday}
+      nextBirthday={nextBirthdayResult?.label ?? null}
+      nextBirthdayMemberId={nextBirthdayResult?.id ?? null}
       santaPartner={santaPartner?.nickname ?? null}
+      santaPartnerId={santaPartner?.id ?? null}
       latestNewsId={latestNews?.id ?? null}
       latestNews={latestNews?.title ?? null}
       nextEventId={nextEvent?.id ?? null}
@@ -74,20 +76,20 @@ export default async function Sidebar({ member, locale }: SidebarProps) {
   );
 }
 
-function getNextBirthday(members: { nickname: string; birthday: Date | null }[], now: Date): string | null {
+function getNextBirthday(members: { id: number; nickname: string; birthday: Date | null }[], now: Date): { id: number; label: string } | null {
   const today = now.getMonth() * 100 + now.getDate();
-  let closest: { nickname: string; mmdd: number; wrapped: boolean } | null = null;
+  let closest: { id: number; nickname: string; mmdd: number; wrapped: boolean } | null = null;
   for (const m of members) {
     if (!m.birthday) continue;
     const mmdd = m.birthday.getMonth() * 100 + m.birthday.getDate();
     const wrapped = mmdd < today;
     const eff = wrapped ? mmdd + 10000 : mmdd;
     if (!closest || eff < (closest.wrapped ? closest.mmdd + 10000 : closest.mmdd)) {
-      closest = { nickname: m.nickname, mmdd, wrapped };
+      closest = { id: m.id, nickname: m.nickname, mmdd, wrapped };
     }
   }
   if (!closest) return null;
   const month = String(Math.floor(closest.mmdd / 100) + 1).padStart(2, '0');
   const day = String(closest.mmdd % 100).padStart(2, '0');
-  return `${closest.nickname} (${day}.${month}.)`;
+  return { id: closest.id, label: `${closest.nickname} (${day}.${month}.)` };
 }

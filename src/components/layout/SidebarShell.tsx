@@ -13,7 +13,9 @@ interface SidebarShellProps {
   readonly clubPic: string;
   readonly memberCount: number;
   readonly nextBirthday: string | null;
+  readonly nextBirthdayMemberId: number | null;
   readonly santaPartner: string | null;
+  readonly santaPartnerId: number | null;
   readonly latestNewsId: number | null;
   readonly latestNews: string | null;
   readonly nextEventId: number | null;
@@ -47,7 +49,9 @@ export default function SidebarShell({
   clubPic,
   memberCount,
   nextBirthday,
+  nextBirthdayMemberId,
   santaPartner,
+  santaPartnerId,
   latestNewsId,
   latestNews,
   nextEventId,
@@ -137,10 +141,23 @@ export default function SidebarShell({
 
           {/* Club info */}
           <div className="flex flex-col gap-3">
-            <InfoRow label={labelMembers} value={String(memberCount)} />
+            <Link href={`/${locale}/club`} className="no-underline group">
+              <InfoRow label={labelMembers} value={String(memberCount)} />
+            </Link>
 
-            {nextBirthday && <InfoRow label={labelBirthday} value={nextBirthday} />}
-            {santaPartner && <InfoRow label={labelSanta} value={santaPartner} />}
+            {nextBirthday && nextBirthdayMemberId && (
+              <Link href={`/${locale}/members/${nextBirthdayMemberId}`} className="no-underline group">
+                <InfoRow label={labelBirthday} value={nextBirthday} />
+              </Link>
+            )}
+            {nextBirthday && !nextBirthdayMemberId && <InfoRow label={labelBirthday} value={nextBirthday} />}
+
+            {santaPartner && santaPartnerId && (
+              <Link href={`/${locale}/members/${santaPartnerId}`} className="no-underline group">
+                <InfoRow label={labelSanta} value={santaPartner} />
+              </Link>
+            )}
+            {santaPartner && !santaPartnerId && <InfoRow label={labelSanta} value={santaPartner} />}
           </div>
 
           {sep}
