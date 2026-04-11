@@ -1,8 +1,34 @@
-# KegelNetzwerk
+<p align="center">
+  <img src="public/images/splash.png" alt="KegelNetzwerk" width="420">
+</p>
+
+<p align="center">
+  <a href="https://sonarcloud.io/summary/new_code?id=KegelNetzwerk_kegelnetzwerk-web">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=KegelNetzwerk_kegelnetzwerk-web&metric=alert_status" alt="Quality Gate Status">
+  </a>
+  <a href="https://sonarcloud.io/component_measures?id=KegelNetzwerk_kegelnetzwerk-web&metric=coverage">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=KegelNetzwerk_kegelnetzwerk-web&metric=coverage" alt="Coverage">
+  </a>
+  <a href="https://sonarcloud.io/component_measures?id=KegelNetzwerk_kegelnetzwerk-web&metric=bugs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=KegelNetzwerk_kegelnetzwerk-web&metric=bugs" alt="Bugs">
+  </a>
+  <a href="https://github.com/KegelNetzwerk/kegelnetzwerk-web/actions/workflows/build.yml">
+    <img src="https://github.com/KegelNetzwerk/kegelnetzwerk-web/actions/workflows/build.yml/badge.svg" alt="Build">
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js&logoColor=white" alt="Next.js">
+  <img src="https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white" alt="TypeScript">
+  <img src="https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Prisma-ORM-2D3748?logo=prisma&logoColor=white" alt="Prisma">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Node.js-24-339933?logo=node.js&logoColor=white" alt="Node.js">
+</p>
+
+---
 
 Multi-tenant web platform for managing German bowling clubs (Kegelklubs). Each club gets its own isolated space within a shared database. Features include news, voting/polls, events with RSVP, points & penalties scoring, member management, club settings with custom theming, Secret Santa, and a mobile app API.
-
-**Stack:** Next.js 16 (App Router, TypeScript) · PostgreSQL · Prisma · Tailwind CSS · shadcn/ui · next-intl (de/en)
 
 ---
 
@@ -145,6 +171,8 @@ Go to [http://localhost:3000/login](http://localhost:3000/login) and enter:
 npm run dev        # Start dev server at http://localhost:3000
 npm run build      # Production build
 npm run start      # Start production server
+npm test           # Run unit tests
+npm run test:coverage  # Run tests with coverage report
 ```
 
 ### Database helpers
