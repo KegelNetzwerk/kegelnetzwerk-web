@@ -55,3 +55,23 @@ Collapsible toggle buttons must always include `cursor-pointer` in their classNa
 - **Locale** in `AppShell` must be read via `getLocale()` from `next-intl/server` — never hardcoded.
 - **Filters in URL**: the scoring page stores all filter state as URL search params (`useSearchParams` / `router.replace`).
 - **Prisma migrations**: use `prisma migrate dev` for schema changes; if non-interactive, write the SQL manually and apply with `prisma migrate deploy`.
+
+## Code Quality (SonarQube)
+
+The SonarQube Cloud quality gate is enforced on every push. Avoid introducing these patterns:
+
+- **S3923** — never write a ternary where both branches return the same value; simplify to a single expression.
+- **S6772** — always wrap bare text that is a sibling of a JSX element in a `<span>`; e.g. `<label><input /><span>Label text</span></label>`.
+- **S7781** — use `replaceAll(/pattern/g, ...)` instead of `.replace(/pattern/g, ...)` for global regex replacements.
+- **S5852** (ReDoS) — avoid complex nested-quantifier regexes on untrusted strings; use the `stripHtml()` helper from `@/lib/strip-html` instead of inline `/<[^>]+>/g`.
+- **S2871** — always pass a comparator to `.sort()` on string arrays: `.sort((a, b) => a.localeCompare(b))`.
+
+The shadcn `src/components/ui/label.tsx` uses `// NOSONAR` to suppress S6853 (label association). Do not remove this comment or restructure the component — `htmlFor` is intentionally passed via props spread at every usage site.
+
+## Pre-commit Hook (SonarQube Secrets)
+
+A global SonarQube Secrets CLI hook (`~/.sonar/sonarqube-cli/hooks/pre-commit`) scans every staged file for hardcoded secrets. **`messages/de.json` and `messages/en.json` trigger false positives** because German/English UI strings contain words like "Passwort" / "Password".
+
+The hook has no exclusion mechanism. To avoid a blocked commit:
+- When fixing a bug that would otherwise require adding a new i18n key (e.g. to differentiate two toast messages), prefer simplifying the code to avoid the new key rather than modifying the messages files unnecessarily.
+- If a messages file change is genuinely needed, stage and commit it alone after verifying no other false positives are present.
