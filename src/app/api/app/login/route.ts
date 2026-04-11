@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
     }
 
-    const club = await prisma.club.findUnique({ where: { name: clubName } });
+    const club = await prisma.club.findFirst({ where: { name: { equals: clubName, mode: 'insensitive' } } });
     if (!club) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
 
     const member = await prisma.member.findFirst({

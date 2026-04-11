@@ -9,15 +9,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });
   }
 
-  // Find club by name
-  const club = await prisma.club.findUnique({ where: { name: clubName } });
+  // Find club by name (case-insensitive)
+  const club = await prisma.club.findFirst({ where: { name: { equals: clubName, mode: 'insensitive' } } });
   if (!club) {
     return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
   }
 
-  // Find member in that club by nickname
+  // Find member in that club by nickname (case-insensitive)
   const member = await prisma.member.findFirst({
-    where: { clubId: club.id, nickname },
+    where: { clubId: club.id, nickname: { equals: nickname, mode: 'insensitive' } },
   });
   if (!member) {
     return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
