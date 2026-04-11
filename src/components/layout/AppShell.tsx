@@ -11,7 +11,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
 
   return (
     <div
-      className="min-h-screen py-1 px-1 sm:py-4 sm:px-3 lg:py-6 lg:px-4"
+      className="min-h-screen pb-1 px-0 sm:py-4 sm:px-3 lg:py-6 lg:px-4"
       style={{
         backgroundImage: 'var(--kn-bg1-url)',
         backgroundSize: 'cover',

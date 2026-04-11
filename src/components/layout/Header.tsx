@@ -7,11 +7,9 @@ export default function Header({ member }: { member: (Member & { club: Club }) |
 
   return (
     <header
-      className="overflow-hidden h-[110px] sm:h-[160px] lg:h-[210px]"
+      className="overflow-hidden h-[110px] sm:h-[160px] lg:h-[210px] sm:[border-top-left-radius:30px] sm:[border-top-right-radius:30px]"
       style={{
         background: 'var(--kn-bg2)',
-        borderTopLeftRadius: 30,
-        borderTopRightRadius: 30,
         position: 'relative',
       }}
     >

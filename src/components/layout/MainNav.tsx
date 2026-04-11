@@ -155,7 +155,7 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic,
           onClick={() => setMenuOpen(false)}
         >
           <div
-            className="flex flex-col h-full"
+            className="flex flex-col h-screen"
             style={{ width: 280, background: navBg }}
             onClick={(e) => e.stopPropagation()}
           >

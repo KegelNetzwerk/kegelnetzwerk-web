@@ -100,8 +100,8 @@ export default function ProfileClient({ member, santaRows }: { member: ProfileDa
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">{t('title')}</h1>
 
-      <div className="flex gap-0 items-start divide-x">
-      <form onSubmit={handleSubmit} className="flex-1 space-y-5 pr-8">
+      <div className="flex flex-col sm:flex-row gap-0 items-start sm:divide-x">
+      <form onSubmit={handleSubmit} className="flex-1 space-y-5 w-full sm:pr-8">
         {/* Avatar */}
         <div className="flex items-center gap-4">
           {currentPic ? (
@@ -204,7 +204,9 @@ export default function ProfileClient({ member, santaRows }: { member: ProfileDa
         </Button>
       </form>
 
-      <div className="flex flex-col gap-2 pt-1 pl-8">
+      <hr className="w-full border-t my-4 sm:hidden" />
+
+      <div className="flex flex-col gap-2 pt-1 w-full sm:w-auto sm:pl-8">
         <Link
           href={`/${locale}/members/${member.id}?preview=guest`}
           className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted"
