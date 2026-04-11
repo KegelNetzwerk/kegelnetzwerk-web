@@ -28,7 +28,7 @@ describe('cryptoShuffle', () => {
   it('works with strings', () => {
     const arr = ['a', 'b', 'c'];
     const shuffled = cryptoShuffle(arr);
-    expect(shuffled.sort()).toEqual(['a', 'b', 'c']);
+    expect(shuffled.sort((a, b) => a.localeCompare(b))).toEqual(['a', 'b', 'c']);
   });
 });
 

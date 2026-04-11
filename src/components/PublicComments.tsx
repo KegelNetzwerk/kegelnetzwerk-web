@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Send, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import RichTextEditor from '@/components/RichTextEditor';
+import { stripHtml } from '@/lib/strip-html';
 import { Turnstile } from '@marsidev/react-turnstile';
 import type { TurnstileInstance } from '@marsidev/react-turnstile';
 
@@ -64,7 +65,7 @@ export default function PublicComments({
   const turnstileRef = useRef<TurnstileInstance>(null);
 
   const latest = comments[0];
-  const commentIsEmpty = !newComment.replace(/<[^>]+>/g, '').trim();
+  const commentIsEmpty = !stripHtml(newComment);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

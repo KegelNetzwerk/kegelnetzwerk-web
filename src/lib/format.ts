@@ -1,7 +1,7 @@
 /** Format a raw phone number string for display. */
 export function formatPhone(raw: string): string {
   if (!raw) return raw;
-  const cleaned = raw.replace(/\s+/g, '');
+  const cleaned = raw.replaceAll(/\s+/g, '');
   if (cleaned.startsWith('+')) {
     const digits = cleaned.slice(1); // strip '+'
     const cc = digits.slice(0, 2);   // e.g. "49"

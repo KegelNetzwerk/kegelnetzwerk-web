@@ -10,5 +10,5 @@ export function stripHtml(html: string): string {
     else if (char === '>') { inTag = false; }
     else if (!inTag) { result += char; }
   }
-  return result.replace(/\s+/g, ' ').trim();
+  return result.replaceAll(/\s+/g, ' ').trim();
 }
