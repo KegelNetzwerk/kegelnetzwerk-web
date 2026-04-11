@@ -1,4 +1,5 @@
 import { getCurrentMember } from '@/lib/auth';
+import { stripHtml } from '@/lib/strip-html';
 import { prisma } from '@/lib/prisma';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
@@ -140,13 +141,3 @@ export default async function LandingPage() {
   );
 }
 
-function stripHtml(html: string): string {
-  let result = '';
-  let inTag = false;
-  for (const char of html) {
-    if (char === '<') { inTag = true; result += ' '; }
-    else if (char === '>') { inTag = false; }
-    else if (!inTag) { result += char; }
-  }
-  return result.replace(/\s+/g, ' ').trim();
-}
