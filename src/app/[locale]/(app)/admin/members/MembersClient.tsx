@@ -442,7 +442,7 @@ export default function MembersClient({ initialMembers, initialGuests, currentMe
                 checked={promoteState.sendInvite}
                 onChange={(e) => setPromoteState((s) => s && { ...s, sendInvite: e.target.checked })}
               />
-              Einladungs-E-Mail senden
+              <span>Einladungs-E-Mail senden</span>
             </label>
             {promoteState.error && (
               <p className="text-sm text-red-600">{promoteState.error}</p>

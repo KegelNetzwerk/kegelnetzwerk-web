@@ -30,7 +30,7 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
       const res = await fetch('/api/secret-santa', { method: 'POST' });
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error === 'notEnoughMembers' ? t('assignError') : t('assignError'));
+        toast.error(t('assignError'));
         return;
       }
       toast.success(t('assignSuccess'));
