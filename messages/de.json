@@ -103,7 +103,8 @@
     "editProfile": "Profil bearbeiten",
     "logout": "Abmelden",
     "browseClubs": "Klubs entdecken",
-    "login": "Anmelden"
+    "login": "Anmelden",
+    "finance": "Kasse"
   },
   "publicLanding": {
     "hero": "Willkommen bei KegelNetzwerk",
@@ -459,7 +460,8 @@
     "members": "Mitglieder & Gäste",
     "games": "Spiele & Strafen",
     "results": "Ergebnisse bearbeiten",
-    "secretSanta": "Wichteln"
+    "secretSanta": "Wichteln",
+    "finance": "Finanzen"
   },
   "secretSanta": {
     "title": "Wichteln",
@@ -516,5 +518,162 @@
       "saveFailed": "Kommentar konnte nicht gespeichert werden.",
       "captchaFailed": "Captcha-Überprüfung fehlgeschlagen. Bitte erneut versuchen."
     }
+  },
+  "finance": {
+    "adminTitle": "Finanzverwaltung",
+    "memberTitle": "Mein Konto",
+    "tabs": {
+      "overview": "Übersicht",
+      "settings": "Einstellungen",
+      "collectives": "Sammelkassen",
+      "log": "Protokoll"
+    },
+    "balance": {
+      "label": "Kontostand",
+      "inCredit": "Guthaben",
+      "owes": "Ausstehend",
+      "zero": "Ausgeglichen"
+    },
+    "overview": {
+      "totalCredit": "Gesamt Guthaben",
+      "totalDebt": "Gesamt Ausstehend",
+      "members": "Mitglieder",
+      "member": "Mitglied",
+      "balance": "Kontostand",
+      "actions": "Aktionen"
+    },
+    "payoff": {
+      "trigger": "Abrechnung starten",
+      "due": "Abrechnung fällig",
+      "lastOn": "Letzte Abrechnung:",
+      "success": "Abrechnung erfolgreich durchgeführt",
+      "error": "Fehler bei der Abrechnung"
+    },
+    "payment": {
+      "in": "Einzahlung",
+      "out": "Abbuchung",
+      "amount": "Betrag",
+      "note": "Notiz",
+      "notePlaceholder": "Optionale Beschreibung",
+      "type": "Typ",
+      "save": "Speichern",
+      "success": "Zahlung gespeichert",
+      "error": "Fehler beim Speichern"
+    },
+    "bulk": {
+      "button": "Für alle Mitglieder",
+      "title": "Zahlung für alle Mitglieder",
+      "exclude": "Mitglieder ausschließen",
+      "apply": "Anwenden",
+      "success": "Zahlung für alle gespeichert",
+      "error": "Fehler beim Speichern"
+    },
+    "reset": {
+      "allButton": "Alle Konten zurücksetzen",
+      "member": "Konto zurücksetzen",
+      "confirmTitle": "Kontostand zurücksetzen",
+      "confirmAll": "Sollen alle Kontostände auf 0 gesetzt werden? Dies kann nicht rückgängig gemacht werden.",
+      "confirmOne": "Soll der Kontostand von {name} auf 0 gesetzt werden?",
+      "confirm": "Zurücksetzen",
+      "success": "Kontostand(e) zurückgesetzt",
+      "error": "Fehler beim Zurücksetzen"
+    },
+    "settings": {
+      "clubFee": "Vereinsbeitrag",
+      "feeAmount": "Betrag",
+      "feeFrequency": "Häufigkeit",
+      "autoPayoff": "Automatische Abrechnung",
+      "autoPayoffToggle": "Automatische Abrechnung umschalten",
+      "autoPayoffEnabled": "Automatische Abrechnung aktivieren",
+      "autoFrequency": "Häufigkeit",
+      "dayOfMonth": "Tag des Monats",
+      "save": "Einstellungen speichern",
+      "saving": "Speichert...",
+      "saved": "Einstellungen gespeichert",
+      "error": "Fehler beim Speichern"
+    },
+    "regularPayment": {
+      "title": "Regelmäßige Zahlungen",
+      "hint": "Mitglieder die regelmäßig einen festen Betrag einzahlen. Diese werden bei der nächsten Abrechnung automatisch gutgeschrieben.",
+      "add": "Zahlung hinzufügen",
+      "active": "Aktiv",
+      "created": "Regelmäßige Zahlung angelegt",
+      "deleted": "Regelmäßige Zahlung gelöscht",
+      "empty": "Keine regelmäßigen Zahlungen konfiguriert.",
+      "error": "Fehler beim Speichern"
+    },
+    "collective": {
+      "create": "Neue Sammelkasse",
+      "newTitle": "Sammelkasse anlegen",
+      "name": "Bezeichnung",
+      "namePlaceholder": "z. B. Vereinsausflug 2026",
+      "amount": "Betrag pro Mitglied",
+      "save": "Anlegen",
+      "created": "Sammelkasse angelegt",
+      "deleted": "Sammelkasse gelöscht",
+      "empty": "Keine Sammelkassen vorhanden.",
+      "error": "Fehler",
+      "invalidInput": "Bitte Name und gültigen Betrag eingeben",
+      "excludeMembers": "Mitglieder ausschließen",
+      "perMember": "pro Person",
+      "paid": "bezahlt",
+      "closed": "Geschlossen",
+      "close": "Schließen",
+      "reopen": "Wieder öffnen",
+      "status": "Status",
+      "excluded": "Ausgeschlossen",
+      "pending": "Ausstehend",
+      "paidOn": "Bezahlt am",
+      "markPaid": "Als bezahlt markieren",
+      "markUnpaid": "Als unbezahlt markieren",
+      "exclude": "Ausschließen",
+      "include": "Einschließen"
+    },
+    "clubPurchase": {
+      "button": "Vereinsausgabe",
+      "title": "Vereinsausgabe erfassen",
+      "hint": "Erfasst eine Ausgabe des Vereins ohne Mitgliederzuordnung.",
+      "save": "Speichern",
+      "success": "Ausgabe gespeichert",
+      "error": "Fehler beim Speichern"
+    },
+    "txType": {
+      "PENALTY": "Strafe",
+      "CLUB_FEE": "Beitrag",
+      "PAYMENT_IN": "Einzahlung",
+      "PAYMENT_OUT": "Abbuchung",
+      "CLUB_PURCHASE": "Vereinsausgabe",
+      "COLLECTIVE": "Sammelkasse",
+      "REGULAR_INCOME": "Regelmäßige Zahlung",
+      "RESET": "Zurückgesetzt",
+      "MANUAL": "Manuell"
+    },
+    "freq": {
+      "NONE": "Keine",
+      "WEEKLY": "Wöchentlich",
+      "MONTHLY": "Monatlich",
+      "QUARTERLY": "Vierteljährlich",
+      "YEARLY": "Jährlich"
+    },
+    "log": {
+      "allMembers": "Alle Mitglieder",
+      "clubPurchases": "Vereinsausgaben",
+      "type": "Typ",
+      "allTypes": "Alle Typen",
+      "from": "Von",
+      "to": "Bis",
+      "refresh": "Laden",
+      "empty": "Keine Buchungen gefunden.",
+      "date": "Datum",
+      "clubLabel": "Verein",
+      "deleted": "Buchung gelöscht",
+      "deleteError": "Fehler beim Löschen",
+      "loadError": "Fehler beim Laden",
+      "viewingMember": "Mitglied anzeigen"
+    },
+    "error": {
+      "invalidAmount": "Bitte einen gültigen Betrag eingeben"
+    },
+    "cancel": "Abbrechen"
   }
 }
