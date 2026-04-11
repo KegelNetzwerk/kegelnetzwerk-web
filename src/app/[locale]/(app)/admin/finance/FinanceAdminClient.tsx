@@ -1,0 +1,1601 @@
+'use client';
+
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  AlertTriangle, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
+  Trash2, Wallet, Users, BarChart3, ListFilter, RotateCcw, X,
+  Euro, TrendingUp, TrendingDown, ToggleLeft, ToggleRight,
+} from 'lucide-react';
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface FinanceSettings {
+  feeAmount: number;
+  feeFrequency: string;
+  autoPayoffEnabled: boolean;
+  autoPayoffFrequency: string;
+  autoPayoffDayOfMonth: number;
+  lastPayoffAt: string | null;
+}
+
+interface MemberSummary {
+  id: number;
+  nickname: string;
+  pic: string;
+  balance: number;
+}
+
+interface AssignmentRow {
+  id: number;
+  memberId: number;
+  amount: number;
+  excluded: boolean;
+  paidAt: string | null;
+  member: { id: number; nickname: string };
+}
+
+interface CollectiveCharge {
+  id: number;
+  name: string;
+  defaultAmount: number;
+  note: string;
+  closed: boolean;
+  createdAt: string;
+  assignments: AssignmentRow[];
+}
+
+interface RegularPayment {
+  id: number;
+  memberId: number;
+  amount: number;
+  frequency: string;
+  note: string;
+  active: boolean;
+  member: { id: number; nickname: string };
+}
+
+interface Transaction {
+  id: number;
+  memberId: number | null;
+  type: string;
+  amount: number;
+  note: string;
+  date: string;
+  payoffEventId: number | null;
+  member: { id: number; nickname: string } | null;
+}
+
+interface Props {
+  readonly settings: FinanceSettings;
+  readonly members: MemberSummary[];
+  readonly collectives: CollectiveCharge[];
+  readonly regularPayments: RegularPayment[];
+  readonly recentTransactions: Transaction[];
+  readonly payoffDue: boolean;
+}
+
+const FREQUENCIES = ['NONE', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'] as const;
+const FREQ_NO_NONE = ['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'] as const;
+const TX_TYPES = ['PAYMENT_IN', 'PAYMENT_OUT', 'MANUAL', 'CLUB_PURCHASE'] as const;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function fmt(amount: number): string {
+  return amount.toFixed(2).replace('.', ',') + ' €';
+}
+
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function BalanceBadge({ balance }: { balance: number }) {
+  const color = balance > 0 ? 'text-green-700 bg-green-50' : balance < 0 ? 'text-red-700 bg-red-50' : 'text-gray-500 bg-gray-100';
+  return (
+    <span className={`inline-block rounded px-2 py-0.5 text-xs font-semibold tabular-nums ${color}`}>
+      {balance > 0 ? '+' : ''}{fmt(balance)}
+    </span>
+  );
+}
+
+function TxTypeBadge({ type, t }: { type: string; t: (k: string) => string }) {
+  const colors: Record<string, string> = {
+    PENALTY: 'bg-red-100 text-red-700',
+    CLUB_FEE: 'bg-orange-100 text-orange-700',
+    PAYMENT_IN: 'bg-green-100 text-green-700',
+    PAYMENT_OUT: 'bg-red-100 text-red-700',
+    CLUB_PURCHASE: 'bg-gray-100 text-gray-600',
+    COLLECTIVE: 'bg-blue-100 text-blue-700',
+    REGULAR_INCOME: 'bg-teal-100 text-teal-700',
+    RESET: 'bg-purple-100 text-purple-700',
+    MANUAL: 'bg-yellow-100 text-yellow-700',
+  };
+  return (
+    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${colors[type] ?? 'bg-gray-100 text-gray-600'}`}>
+      {t(`txType.${type}`)}
+    </span>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+type Tab = 'overview' | 'settings' | 'collectives' | 'log';
+
+export default function FinanceAdminClient({
+  settings: initialSettings,
+  members,
+  collectives: initialCollectives,
+  regularPayments: initialRegularPayments,
+  recentTransactions: initialTx,
+  payoffDue,
+}: Props) {
+  const t = useTranslations('finance');
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [settings, setSettings] = useState(initialSettings);
+  const [collectives, setCollectives] = useState(initialCollectives);
+  const [regularPayments, setRegularPayments] = useState(initialRegularPayments);
+  const [transactions, setTransactions] = useState(initialTx);
+  const [memberBalances, setMemberBalances] = useState<Map<number, number>>(
+    new Map(members.map((m) => [m.id, m.balance]))
+  );
+
+  function getBalance(memberId: number) {
+    return Math.round((memberBalances.get(memberId) ?? 0) * 100) / 100;
+  }
+
+  function applyTxToBalance(memberId: number, amount: number) {
+    setMemberBalances((prev) => {
+      const next = new Map(prev);
+      next.set(memberId, Math.round(((next.get(memberId) ?? 0) + amount) * 100) / 100);
+      return next;
+    });
+  }
+
+  const tabItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
+    { id: 'overview', label: t('tabs.overview'), icon: <Wallet size={15} /> },
+    { id: 'settings', label: t('tabs.settings'), icon: <BarChart3 size={15} /> },
+    { id: 'collectives', label: t('tabs.collectives'), icon: <Users size={15} /> },
+    { id: 'log', label: t('tabs.log'), icon: <ListFilter size={15} /> },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">{t('adminTitle')}</h1>
+
+      {/* Tab bar */}
+      <div className="flex gap-1 border-b border-gray-200">
+        {tabItems.map(({ id, label, icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setActiveTab(id)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 cursor-pointer transition-colors ${
+              activeTab === id
+                ? 'border-[var(--kn-primary,#005982)] text-[var(--kn-primary,#005982)]'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {icon}
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'overview' && (
+        <OverviewTab
+          t={t}
+          members={members}
+          getBalance={getBalance}
+          applyTxToBalance={applyTxToBalance}
+          transactions={transactions}
+          setTransactions={setTransactions}
+          payoffDue={payoffDue}
+          settings={settings}
+        />
+      )}
+      {activeTab === 'settings' && (
+        <SettingsTab
+          t={t}
+          settings={settings}
+          setSettings={setSettings}
+          members={members}
+          regularPayments={regularPayments}
+          setRegularPayments={setRegularPayments}
+        />
+      )}
+      {activeTab === 'collectives' && (
+        <CollectivesTab
+          t={t}
+          members={members}
+          collectives={collectives}
+          setCollectives={setCollectives}
+          applyTxToBalance={applyTxToBalance}
+          transactions={transactions}
+          setTransactions={setTransactions}
+        />
+      )}
+      {activeTab === 'log' && (
+        <LogTab
+          t={t}
+          members={members}
+          transactions={transactions}
+          setTransactions={setTransactions}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+
+function OverviewTab({
+  t, members, getBalance, applyTxToBalance,
+  transactions, setTransactions, payoffDue, settings,
+}: {
+  t: (k: string) => string;
+  members: MemberSummary[];
+  getBalance: (id: number) => number;
+  applyTxToBalance: (id: number, amount: number) => void;
+  transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  payoffDue: boolean;
+  settings: FinanceSettings;
+}) {
+  const [payoffLoading, setPayoffLoading] = useState(false);
+  const [resetConfirm, setResetConfirm] = useState<'all' | number | null>(null);
+  const [addPaymentFor, setAddPaymentFor] = useState<number | null>(null); // memberId
+  const [bulkModal, setBulkModal] = useState(false);
+
+  // Quick payment modal state
+  const [payAmount, setPayAmount] = useState('');
+  const [payNote, setPayNote] = useState('');
+  const [payType, setPayType] = useState<'PAYMENT_IN' | 'PAYMENT_OUT'>('PAYMENT_IN');
+
+  // Bulk modal state
+  const [bulkType, setBulkType] = useState<'PAYMENT_IN' | 'PAYMENT_OUT' | 'MANUAL'>('MANUAL');
+  const [bulkAmount, setBulkAmount] = useState('');
+  const [bulkNote, setBulkNote] = useState('');
+  const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
+
+  const totalCredit = members.filter((m) => getBalance(m.id) > 0).reduce((s, m) => s + getBalance(m.id), 0);
+  const totalDebt = members.filter((m) => getBalance(m.id) < 0).reduce((s, m) => s + getBalance(m.id), 0);
+
+  async function triggerPayoff() {
+    setPayoffLoading(true);
+    try {
+      const res = await fetch('/api/finance/payoff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
+      if (!res.ok) throw new Error();
+      toast.success(t('payoff.success'));
+      // Reload page to get fresh data
+      window.location.reload();
+    } catch {
+      toast.error(t('payoff.error'));
+    } finally {
+      setPayoffLoading(false);
+    }
+  }
+
+  async function addPayment() {
+    if (!addPaymentFor) return;
+    const amount = Number.parseFloat(payAmount.replace(',', '.'));
+    if (Number.isNaN(amount) || amount <= 0) {
+      toast.error(t('error.invalidAmount'));
+      return;
+    }
+    const signedAmount = payType === 'PAYMENT_IN' ? amount : -amount;
+    try {
+      const res = await fetch('/api/finance/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: addPaymentFor, type: payType, amount: signedAmount, note: payNote }),
+      });
+      if (!res.ok) throw new Error();
+      const tx = await res.json() as Transaction;
+      setTransactions((prev) => [tx, ...prev]);
+      applyTxToBalance(addPaymentFor, signedAmount);
+      toast.success(t('payment.success'));
+      setAddPaymentFor(null);
+      setPayAmount('');
+      setPayNote('');
+    } catch {
+      toast.error(t('payment.error'));
+    }
+  }
+
+  async function doBulk() {
+    const amount = Number.parseFloat(bulkAmount.replace(',', '.'));
+    if (Number.isNaN(amount) || amount <= 0) {
+      toast.error(t('error.invalidAmount'));
+      return;
+    }
+    const signedAmount = bulkType === 'PAYMENT_OUT' ? -amount : amount;
+    try {
+      const res = await fetch('/api/finance/transactions/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: bulkType,
+          amount: signedAmount,
+          note: bulkNote,
+          excludedMemberIds: Array.from(excludedIds),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(t('bulk.success'));
+      window.location.reload();
+    } catch {
+      toast.error(t('bulk.error'));
+    }
+  }
+
+  async function doReset(memberIds?: number[]) {
+    try {
+      const res = await fetch('/api/finance/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: true, ...(memberIds ? { memberIds } : {}) }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(t('reset.success'));
+      window.location.reload();
+    } catch {
+      toast.error(t('reset.error'));
+    } finally {
+      setResetConfirm(null);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Payoff due banner */}
+      {payoffDue && (
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+          <div className="flex items-center gap-2 text-amber-800">
+            <AlertTriangle size={18} />
+            <span className="text-sm font-medium">{t('payoff.due')}</span>
+            {settings.lastPayoffAt && (
+              <span className="text-xs text-amber-600">
+                {t('payoff.lastOn')} {fmtDate(settings.lastPayoffAt)}
+              </span>
+            )}
+          </div>
+          <Button
+            size="sm"
+            onClick={triggerPayoff}
+            disabled={payoffLoading}
+            style={{ background: 'var(--kn-primary,#005982)' }}
+            className="text-white shrink-0"
+          >
+            <RefreshCw size={14} className={payoffLoading ? 'animate-spin' : ''} />
+            {t('payoff.trigger')}
+          </Button>
+        </div>
+      )}
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-lg border bg-gray-50 p-4 text-center">
+          <div className="text-xs text-gray-500 mb-1">{t('overview.totalCredit')}</div>
+          <div className="text-xl font-bold text-green-700">+{fmt(totalCredit)}</div>
+        </div>
+        <div className="rounded-lg border bg-gray-50 p-4 text-center">
+          <div className="text-xs text-gray-500 mb-1">{t('overview.totalDebt')}</div>
+          <div className="text-xl font-bold text-red-700">{fmt(totalDebt)}</div>
+        </div>
+        <div className="rounded-lg border bg-gray-50 p-4 text-center">
+          <div className="text-xs text-gray-500 mb-1">{t('overview.members')}</div>
+          <div className="text-xl font-bold">{members.length}</div>
+        </div>
+      </div>
+
+      {/* Actions row */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setBulkModal(true)}
+          className="gap-1.5"
+        >
+          <Users size={14} />
+          {t('bulk.button')}
+        </Button>
+        {!payoffDue && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={triggerPayoff}
+            disabled={payoffLoading}
+            className="gap-1.5"
+          >
+            <RefreshCw size={14} className={payoffLoading ? 'animate-spin' : ''} />
+            {t('payoff.trigger')}
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setResetConfirm('all')}
+          className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+        >
+          <RotateCcw size={14} />
+          {t('reset.allButton')}
+        </Button>
+      </div>
+
+      {/* Members table */}
+      <div className="overflow-x-auto rounded-lg border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <th className="px-4 py-3">{t('overview.member')}</th>
+              <th className="px-4 py-3 text-right">{t('overview.balance')}</th>
+              <th className="px-4 py-3 text-right">{t('overview.actions')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((m) => (
+              <tr key={m.id} className="border-b last:border-0 hover:bg-gray-50">
+                <td className="px-4 py-2.5 font-medium">{m.nickname}</td>
+                <td className="px-4 py-2.5 text-right">
+                  <BalanceBadge balance={getBalance(m.id)} />
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-green-700 hover:bg-green-50"
+                      onClick={() => { setAddPaymentFor(m.id); setPayType('PAYMENT_IN'); }}
+                      title={t('payment.in')}
+                    >
+                      <TrendingUp size={13} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-red-700 hover:bg-red-50"
+                      onClick={() => { setAddPaymentFor(m.id); setPayType('PAYMENT_OUT'); }}
+                      title={t('payment.out')}
+                    >
+                      <TrendingDown size={13} />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 px-2 text-purple-700 hover:bg-purple-50"
+                      onClick={() => setResetConfirm(m.id)}
+                      title={t('reset.member')}
+                    >
+                      <RotateCcw size={13} />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Add payment modal */}
+      {addPaymentFor !== null && (
+        <Modal onClose={() => setAddPaymentFor(null)} title={
+          payType === 'PAYMENT_IN'
+            ? `${t('payment.in')} — ${members.find((m) => m.id === addPaymentFor)?.nickname ?? ''}`
+            : `${t('payment.out')} — ${members.find((m) => m.id === addPaymentFor)?.nickname ?? ''}`
+        }>
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setPayType('PAYMENT_IN')}
+                className={`flex-1 rounded border py-2 text-sm font-medium cursor-pointer ${payType === 'PAYMENT_IN' ? 'bg-green-50 border-green-400 text-green-700' : 'border-gray-200 text-gray-500'}`}
+              >
+                {t('payment.in')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayType('PAYMENT_OUT')}
+                className={`flex-1 rounded border py-2 text-sm font-medium cursor-pointer ${payType === 'PAYMENT_OUT' ? 'bg-red-50 border-red-400 text-red-700' : 'border-gray-200 text-gray-500'}`}
+              >
+                {t('payment.out')}
+              </button>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="pay-amount">{t('payment.amount')} (€)</Label>
+              <Input
+                id="pay-amount"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={payAmount}
+                onChange={(e) => setPayAmount(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="pay-note">{t('payment.note')}</Label>
+              <Input
+                id="pay-note"
+                type="text"
+                placeholder={t('payment.notePlaceholder')}
+                value={payNote}
+                onChange={(e) => setPayNote(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setAddPaymentFor(null)}>{t('cancel')}</Button>
+              <Button
+                onClick={addPayment}
+                style={{ background: 'var(--kn-primary,#005982)' }}
+                className="text-white"
+              >
+                <Check size={14} />
+                {t('payment.save')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Bulk modal */}
+      {bulkModal && (
+        <Modal onClose={() => setBulkModal(false)} title={t('bulk.title')}>
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <Label>{t('payment.type')}</Label>
+              <select
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+                value={bulkType}
+                onChange={(e) => setBulkType(e.target.value as typeof bulkType)}
+              >
+                <option value="PAYMENT_IN">{t('txType.PAYMENT_IN')}</option>
+                <option value="PAYMENT_OUT">{t('txType.PAYMENT_OUT')}</option>
+                <option value="MANUAL">{t('txType.MANUAL')}</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="bulk-amount">{t('payment.amount')} (€)</Label>
+              <Input
+                id="bulk-amount"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={bulkAmount}
+                onChange={(e) => setBulkAmount(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="bulk-note">{t('payment.note')}</Label>
+              <Input
+                id="bulk-note"
+                type="text"
+                placeholder={t('payment.notePlaceholder')}
+                value={bulkNote}
+                onChange={(e) => setBulkNote(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t('bulk.exclude')}</Label>
+              <div className="max-h-40 overflow-y-auto rounded border divide-y text-sm">
+                {members.map((m) => (
+                  <label key={m.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={excludedIds.has(m.id)}
+                      onChange={(e) => {
+                        setExcludedIds((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(m.id); else next.delete(m.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    <span>{m.nickname}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setBulkModal(false)}>{t('cancel')}</Button>
+              <Button
+                onClick={doBulk}
+                style={{ background: 'var(--kn-primary,#005982)' }}
+                className="text-white"
+              >
+                <Check size={14} />
+                {t('bulk.apply')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Reset confirmation */}
+      {resetConfirm !== null && (
+        <Modal onClose={() => setResetConfirm(null)} title={t('reset.confirmTitle')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              {resetConfirm === 'all' ? t('reset.confirmAll') : t('reset.confirmOne').replace('{name}', members.find((m) => m.id === resetConfirm)?.nickname ?? '')}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setResetConfirm(null)}>{t('cancel')}</Button>
+              <Button
+                variant="destructive"
+                onClick={() => doReset(resetConfirm === 'all' ? undefined : [resetConfirm as number])}
+              >
+                {t('reset.confirm')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ─── Settings Tab ─────────────────────────────────────────────────────────────
+
+function SettingsTab({
+  t, settings, setSettings, members, regularPayments, setRegularPayments,
+}: {
+  t: (k: string) => string;
+  settings: FinanceSettings;
+  setSettings: React.Dispatch<React.SetStateAction<FinanceSettings>>;
+  members: MemberSummary[];
+  regularPayments: RegularPayment[];
+  setRegularPayments: React.Dispatch<React.SetStateAction<RegularPayment[]>>;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [fee, setFee] = useState(String(settings.feeAmount));
+  const [feeFreq, setFeeFreq] = useState(settings.feeFrequency);
+  const [autoEnabled, setAutoEnabled] = useState(settings.autoPayoffEnabled);
+  const [autoFreq, setAutoFreq] = useState(settings.autoPayoffFrequency);
+  const [autoDay, setAutoDay] = useState(String(settings.autoPayoffDayOfMonth));
+
+  // Regular payments form
+  const [newRpMember, setNewRpMember] = useState('');
+  const [newRpAmount, setNewRpAmount] = useState('');
+  const [newRpFreq, setNewRpFreq] = useState<string>('MONTHLY');
+  const [newRpNote, setNewRpNote] = useState('');
+  const [addingRp, setAddingRp] = useState(false);
+
+  async function saveSettings() {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/finance/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feeAmount: Number.parseFloat(fee.replace(',', '.')) || 0,
+          feeFrequency: feeFreq,
+          autoPayoffEnabled: autoEnabled,
+          autoPayoffFrequency: autoFreq,
+          autoPayoffDayOfMonth: Number.parseInt(autoDay) || 1,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json() as FinanceSettings;
+      setSettings(updated);
+      toast.success(t('settings.saved'));
+    } catch {
+      toast.error(t('settings.error'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function addRegularPayment() {
+    const amount = Number.parseFloat(newRpAmount.replace(',', '.'));
+    if (!newRpMember || Number.isNaN(amount) || amount <= 0) {
+      toast.error(t('error.invalidAmount'));
+      return;
+    }
+    setAddingRp(true);
+    try {
+      const res = await fetch('/api/finance/regular-payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId: Number.parseInt(newRpMember), amount, frequency: newRpFreq, note: newRpNote }),
+      });
+      if (!res.ok) throw new Error();
+      const created = await res.json() as RegularPayment;
+      setRegularPayments((prev) => [...prev, created]);
+      setNewRpMember('');
+      setNewRpAmount('');
+      setNewRpNote('');
+      toast.success(t('regularPayment.created'));
+    } catch {
+      toast.error(t('regularPayment.error'));
+    } finally {
+      setAddingRp(false);
+    }
+  }
+
+  async function toggleRpActive(rp: RegularPayment) {
+    try {
+      const res = await fetch(`/api/finance/regular-payments/${rp.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !rp.active }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json() as RegularPayment;
+      setRegularPayments((prev) => prev.map((p) => p.id === rp.id ? updated : p));
+    } catch {
+      toast.error(t('regularPayment.error'));
+    }
+  }
+
+  async function deleteRp(id: number) {
+    try {
+      const res = await fetch(`/api/finance/regular-payments/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setRegularPayments((prev) => prev.filter((p) => p.id !== id));
+      toast.success(t('regularPayment.deleted'));
+    } catch {
+      toast.error(t('regularPayment.error'));
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Club fee settings */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">{t('settings.clubFee')}</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <Label htmlFor="fee-amount">{t('settings.feeAmount')} (€)</Label>
+            <Input
+              id="fee-amount"
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={fee}
+              onChange={(e) => setFee(e.target.value)}
+              className="bg-white max-w-[160px]"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="fee-freq">{t('settings.feeFrequency')}</Label>
+            <select
+              id="fee-freq"
+              className="w-full max-w-[200px] rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+              value={feeFreq}
+              onChange={(e) => setFeeFreq(e.target.value)}
+            >
+              {FREQUENCIES.map((f) => (
+                <option key={f} value={f}>{t(`freq.${f}`)}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </section>
+
+      {/* Auto payoff settings */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">{t('settings.autoPayoff')}</h2>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setAutoEnabled((v) => !v)}
+            className="cursor-pointer"
+            aria-label={t('settings.autoPayoffToggle')}
+          >
+            {autoEnabled
+              ? <ToggleRight size={28} style={{ color: 'var(--kn-primary,#005982)' }} />
+              : <ToggleLeft size={28} className="text-gray-400" />}
+          </button>
+          <span className="text-sm">{t('settings.autoPayoffEnabled')}</span>
+        </div>
+        {autoEnabled && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="auto-freq">{t('settings.autoFrequency')}</Label>
+              <select
+                id="auto-freq"
+                className="w-full max-w-[200px] rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+                value={autoFreq}
+                onChange={(e) => setAutoFreq(e.target.value)}
+              >
+                {FREQ_NO_NONE.map((f) => (
+                  <option key={f} value={f}>{t(`freq.${f}`)}</option>
+                ))}
+              </select>
+            </div>
+            {(autoFreq === 'MONTHLY' || autoFreq === 'QUARTERLY' || autoFreq === 'YEARLY') && (
+              <div className="space-y-1">
+                <Label htmlFor="auto-day">{t('settings.dayOfMonth')}</Label>
+                <Input
+                  id="auto-day"
+                  type="number"
+                  min={1}
+                  max={28}
+                  value={autoDay}
+                  onChange={(e) => setAutoDay(e.target.value)}
+                  className="bg-white max-w-[100px]"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      <Button
+        onClick={saveSettings}
+        disabled={saving}
+        style={{ background: 'var(--kn-primary,#005982)' }}
+        className="text-white"
+      >
+        {saving ? t('settings.saving') : t('settings.save')}
+      </Button>
+
+      {/* Regular member payments */}
+      <section className="space-y-4 border-t pt-6">
+        <h2 className="text-lg font-semibold">{t('regularPayment.title')}</h2>
+        <p className="text-sm text-gray-500">{t('regularPayment.hint')}</p>
+
+        {/* Add form */}
+        <div className="rounded-lg border bg-gray-50 p-4 space-y-3">
+          <h3 className="text-sm font-semibold">{t('regularPayment.add')}</h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="space-y-1 col-span-2 sm:col-span-1">
+              <Label htmlFor="rp-member">{t('overview.member')}</Label>
+              <select
+                id="rp-member"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+                value={newRpMember}
+                onChange={(e) => setNewRpMember(e.target.value)}
+              >
+                <option value="">—</option>
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>{m.nickname}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="rp-amount">{t('payment.amount')} (€)</Label>
+              <Input
+                id="rp-amount"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={newRpAmount}
+                onChange={(e) => setNewRpAmount(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="rp-freq">{t('settings.feeFrequency')}</Label>
+              <select
+                id="rp-freq"
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+                value={newRpFreq}
+                onChange={(e) => setNewRpFreq(e.target.value)}
+              >
+                {FREQ_NO_NONE.map((f) => (
+                  <option key={f} value={f}>{t(`freq.${f}`)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="rp-note">{t('payment.note')}</Label>
+              <Input
+                id="rp-note"
+                type="text"
+                placeholder={t('payment.notePlaceholder')}
+                value={newRpNote}
+                onChange={(e) => setNewRpNote(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+          </div>
+          <Button
+            size="sm"
+            onClick={addRegularPayment}
+            disabled={addingRp}
+            style={{ background: 'var(--kn-primary,#005982)' }}
+            className="text-white gap-1"
+          >
+            <Plus size={14} />
+            {t('regularPayment.add')}
+          </Button>
+        </div>
+
+        {/* List */}
+        {regularPayments.length > 0 ? (
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  <th className="px-4 py-3">{t('overview.member')}</th>
+                  <th className="px-4 py-3">{t('payment.amount')}</th>
+                  <th className="px-4 py-3">{t('settings.feeFrequency')}</th>
+                  <th className="px-4 py-3">{t('payment.note')}</th>
+                  <th className="px-4 py-3">{t('regularPayment.active')}</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {regularPayments.map((rp) => (
+                  <tr key={rp.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="px-4 py-2.5 font-medium">{rp.member.nickname}</td>
+                    <td className="px-4 py-2.5 tabular-nums">{fmt(rp.amount)}</td>
+                    <td className="px-4 py-2.5">{t(`freq.${rp.frequency}`)}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{rp.note}</td>
+                    <td className="px-4 py-2.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleRpActive(rp)}
+                        className="cursor-pointer"
+                      >
+                        {rp.active
+                          ? <ToggleRight size={22} style={{ color: 'var(--kn-primary,#005982)' }} />
+                          : <ToggleLeft size={22} className="text-gray-400" />}
+                      </button>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
+                        onClick={() => deleteRp(rp.id)}
+                      >
+                        <Trash2 size={13} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 italic">{t('regularPayment.empty')}</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+// ─── Collectives Tab ──────────────────────────────────────────────────────────
+
+function CollectivesTab({
+  t, members, collectives, setCollectives, applyTxToBalance, transactions, setTransactions,
+}: {
+  t: (k: string) => string;
+  members: MemberSummary[];
+  collectives: CollectiveCharge[];
+  setCollectives: React.Dispatch<React.SetStateAction<CollectiveCharge[]>>;
+  applyTxToBalance: (id: number, amount: number) => void;
+  transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+}) {
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newAmount, setNewAmount] = useState('');
+  const [newNote, setNewNote] = useState('');
+  const [excludedMemberIds, setExcludedMemberIds] = useState<Set<number>>(new Set());
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+
+  async function createCollective() {
+    const amount = Number.parseFloat(newAmount.replace(',', '.'));
+    if (!newName.trim() || Number.isNaN(amount) || amount < 0) {
+      toast.error(t('collective.invalidInput'));
+      return;
+    }
+    try {
+      const res = await fetch('/api/finance/collectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newName.trim(),
+          defaultAmount: amount,
+          note: newNote,
+          memberIds: members.filter((m) => !excludedMemberIds.has(m.id)).map((m) => m.id),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const created = await res.json() as CollectiveCharge;
+      setCollectives((prev) => [created, ...prev]);
+      setCreating(false);
+      setNewName('');
+      setNewAmount('');
+      setNewNote('');
+      setExcludedMemberIds(new Set());
+      toast.success(t('collective.created'));
+    } catch {
+      toast.error(t('collective.error'));
+    }
+  }
+
+  async function toggleClosed(c: CollectiveCharge) {
+    try {
+      const res = await fetch(`/api/finance/collectives/${c.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ closed: !c.closed }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json() as CollectiveCharge;
+      setCollectives((prev) => prev.map((x) => x.id === c.id ? { ...x, closed: updated.closed } : x));
+    } catch {
+      toast.error(t('collective.error'));
+    }
+  }
+
+  async function deleteCollective(id: number) {
+    try {
+      const res = await fetch(`/api/finance/collectives/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error();
+      setCollectives((prev) => prev.filter((c) => c.id !== id));
+      toast.success(t('collective.deleted'));
+    } catch {
+      toast.error(t('collective.error'));
+    }
+  }
+
+  async function patchAssignment(collectiveId: number, memberId: number, action: 'pay' | 'unpay' | 'exclude' | 'include') {
+    try {
+      const res = await fetch(`/api/finance/collectives/${collectiveId}/assignments`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, action }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json() as AssignmentRow;
+
+      setCollectives((prev) => prev.map((c) => {
+        if (c.id !== collectiveId) return c;
+        return {
+          ...c,
+          assignments: c.assignments.map((a) => a.memberId === memberId ? { ...a, ...updated } : a),
+        };
+      }));
+
+      if (action === 'pay') {
+        applyTxToBalance(memberId, updated.amount);
+        const newTx: Transaction = {
+          id: Date.now(),
+          memberId,
+          type: 'COLLECTIVE',
+          amount: updated.amount,
+          note: '',
+          date: new Date().toISOString(),
+          payoffEventId: null,
+          member: members.find((m) => m.id === memberId) ?? null,
+        };
+        setTransactions((prev) => [newTx, ...prev]);
+      } else if (action === 'unpay') {
+        applyTxToBalance(memberId, -updated.amount);
+      }
+    } catch {
+      toast.error(t('collective.error'));
+    }
+  }
+
+  function toggleExpand(id: number) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Create button */}
+      {!creating && (
+        <Button
+          size="sm"
+          onClick={() => setCreating(true)}
+          style={{ background: 'var(--kn-primary,#005982)' }}
+          className="text-white gap-1"
+        >
+          <Plus size={14} />
+          {t('collective.create')}
+        </Button>
+      )}
+
+      {/* Create form */}
+      {creating && (
+        <div className="rounded-lg border bg-gray-50 p-4 space-y-4">
+          <h3 className="text-sm font-semibold">{t('collective.newTitle')}</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="space-y-1 sm:col-span-2">
+              <Label htmlFor="col-name">{t('collective.name')}</Label>
+              <Input
+                id="col-name"
+                type="text"
+                placeholder={t('collective.namePlaceholder')}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="col-amount">{t('collective.amount')} (€)</Label>
+              <Input
+                id="col-amount"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={newAmount}
+                onChange={(e) => setNewAmount(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="col-note">{t('payment.note')}</Label>
+            <Input
+              id="col-note"
+              type="text"
+              placeholder={t('payment.notePlaceholder')}
+              value={newNote}
+              onChange={(e) => setNewNote(e.target.value)}
+              className="bg-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>{t('collective.excludeMembers')}</Label>
+            <div className="max-h-36 overflow-y-auto rounded border divide-y text-sm bg-white">
+              {members.map((m) => (
+                <label key={m.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={excludedMemberIds.has(m.id)}
+                    onChange={(e) => {
+                      setExcludedMemberIds((prev) => {
+                        const next = new Set(prev);
+                        if (e.target.checked) next.add(m.id); else next.delete(m.id);
+                        return next;
+                      });
+                    }}
+                  />
+                  <span>{m.nickname}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={createCollective}
+              style={{ background: 'var(--kn-primary,#005982)' }}
+              className="text-white"
+            >
+              <Check size={14} />
+              {t('collective.save')}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setCreating(false)}>{t('cancel')}</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Collectives list */}
+      {collectives.length === 0 && !creating && (
+        <p className="text-sm text-gray-400 italic">{t('collective.empty')}</p>
+      )}
+
+      <div className="space-y-3">
+        {collectives.map((c) => {
+          const active = c.assignments.filter((a) => !a.excluded);
+          const paid = active.filter((a) => a.paidAt !== null);
+          const progress = active.length > 0 ? (paid.length / active.length) * 100 : 0;
+          const isExpanded = expanded.has(c.id);
+
+          return (
+            <div key={c.id} className={`rounded-lg border ${c.closed ? 'opacity-60' : ''}`}>
+              <div className="flex items-center gap-3 px-4 py-3">
+                <button
+                  type="button"
+                  className="flex-1 text-left cursor-pointer"
+                  onClick={() => toggleExpand(c.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm">{c.name}</span>
+                    <span className="text-xs text-gray-500 tabular-nums">{fmt(c.defaultAmount)} / {t('collective.perMember')}</span>
+                    {c.closed && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">{t('collective.closed')}</span>}
+                  </div>
+                  <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200">
+                    <div
+                      className="h-1.5 rounded-full bg-green-500 transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-400 mt-0.5">{paid.length} / {active.length} {t('collective.paid')}</span>
+                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => toggleClosed(c)}
+                    className="cursor-pointer p-1 rounded hover:bg-gray-100 text-xs text-gray-500"
+                    title={c.closed ? t('collective.reopen') : t('collective.close')}
+                  >
+                    {c.closed ? <Check size={14} /> : <X size={14} />}
+                  </button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
+                    onClick={() => deleteCollective(c.id)}
+                  >
+                    <Trash2 size={13} />
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(c.id)}
+                    className="cursor-pointer p-1 rounded hover:bg-gray-100"
+                  >
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="border-t">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-gray-50 text-left text-xs text-gray-500">
+                        <th className="px-4 py-2">{t('overview.member')}</th>
+                        <th className="px-4 py-2">{t('payment.amount')}</th>
+                        <th className="px-4 py-2">{t('collective.status')}</th>
+                        <th className="px-4 py-2"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {c.assignments.map((a) => (
+                        <tr key={a.id} className={`border-b last:border-0 ${a.excluded ? 'opacity-50' : ''}`}>
+                          <td className="px-4 py-2">{a.member.nickname}</td>
+                          <td className="px-4 py-2 tabular-nums">{fmt(a.amount)}</td>
+                          <td className="px-4 py-2">
+                            {a.excluded
+                              ? <span className="text-gray-400 text-xs">{t('collective.excluded')}</span>
+                              : a.paidAt
+                                ? <span className="text-green-700 text-xs font-medium">{t('collective.paidOn')} {fmtDate(a.paidAt)}</span>
+                                : <span className="text-amber-600 text-xs">{t('collective.pending')}</span>}
+                          </td>
+                          <td className="px-4 py-2">
+                            <div className="flex gap-1 justify-end">
+                              {!a.excluded && !a.paidAt && !c.closed && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-green-700 hover:bg-green-50 text-xs"
+                                  onClick={() => patchAssignment(c.id, a.memberId, 'pay')}
+                                >
+                                  <Check size={12} />
+                                  {t('collective.markPaid')}
+                                </Button>
+                              )}
+                              {!a.excluded && a.paidAt && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-amber-700 hover:bg-amber-50 text-xs"
+                                  onClick={() => patchAssignment(c.id, a.memberId, 'unpay')}
+                                >
+                                  {t('collective.markUnpaid')}
+                                </Button>
+                              )}
+                              {!a.excluded ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-gray-500 hover:bg-gray-100 text-xs"
+                                  onClick={() => patchAssignment(c.id, a.memberId, 'exclude')}
+                                >
+                                  {t('collective.exclude')}
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 px-2 text-gray-500 hover:bg-gray-100 text-xs"
+                                  onClick={() => patchAssignment(c.id, a.memberId, 'include')}
+                                >
+                                  {t('collective.include')}
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Log Tab ──────────────────────────────────────────────────────────────────
+
+function LogTab({
+  t, members, transactions, setTransactions,
+}: {
+  t: (k: string) => string;
+  members: MemberSummary[];
+  transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+}) {
+  const [filterMember, setFilterMember] = useState('');
+  const [filterFrom, setFilterFrom] = useState('');
+  const [filterTo, setFilterTo] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'CLUB_PURCHASE', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL'];
+
+  async function loadMore() {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (filterMember) params.set('memberId', filterMember);
+      if (filterFrom) params.set('from', filterFrom);
+      if (filterTo) params.set('to', filterTo);
+      if (filterType) params.set('type', filterType);
+      const res = await fetch(`/api/finance/transactions?${params.toString()}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json() as { transactions: Transaction[] };
+      setTransactions(data.transactions);
+    } catch {
+      toast.error(t('log.loadError'));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function deleteTx(id: number) {
+    try {
+      const res = await fetch(`/api/finance/transactions/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const body = await res.json() as { error?: string };
+        toast.error(body.error ?? t('log.deleteError'));
+        return;
+      }
+      setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+      toast.success(t('log.deleted'));
+    } catch {
+      toast.error(t('log.deleteError'));
+    }
+  }
+
+  // Client-side filtering on loaded data
+  const filtered = transactions.filter((tx) => {
+    if (filterMember && filterMember !== '0' && String(tx.memberId) !== filterMember) return false;
+    if (filterMember === '0' && tx.memberId !== null) return false;
+    if (filterType && tx.type !== filterType) return false;
+    if (filterFrom && tx.date < filterFrom) return false;
+    if (filterTo && tx.date > filterTo + 'T23:59:59') return false;
+    return true;
+  });
+
+  // Add payment for club purchase
+  const [showClubPurchase, setShowClubPurchase] = useState(false);
+  const [cpAmount, setCpAmount] = useState('');
+  const [cpNote, setCpNote] = useState('');
+
+  async function addClubPurchase() {
+    const amount = Number.parseFloat(cpAmount.replace(',', '.'));
+    if (Number.isNaN(amount) || amount <= 0) {
+      toast.error(t('error.invalidAmount'));
+      return;
+    }
+    try {
+      const res = await fetch('/api/finance/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'CLUB_PURCHASE', amount: -amount, note: cpNote }),
+      });
+      if (!res.ok) throw new Error();
+      const tx = await res.json() as Transaction;
+      setTransactions((prev) => [tx, ...prev]);
+      setShowClubPurchase(false);
+      setCpAmount('');
+      setCpNote('');
+      toast.success(t('clubPurchase.success'));
+    } catch {
+      toast.error(t('clubPurchase.error'));
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 items-end">
+        <div className="space-y-1">
+          <Label htmlFor="log-member">{t('overview.member')}</Label>
+          <select
+            id="log-member"
+            className="rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+            value={filterMember}
+            onChange={(e) => setFilterMember(e.target.value)}
+          >
+            <option value="">{t('log.allMembers')}</option>
+            <option value="0">{t('log.clubPurchases')}</option>
+            {members.map((m) => (
+              <option key={m.id} value={String(m.id)}>{m.nickname}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="log-type">{t('log.type')}</Label>
+          <select
+            id="log-type"
+            className="rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            <option value="">{t('log.allTypes')}</option>
+            {ALL_TX_TYPES.map((type) => (
+              <option key={type} value={type}>{t(`txType.${type}`)}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="log-from">{t('log.from')}</Label>
+          <Input
+            id="log-from"
+            type="date"
+            value={filterFrom}
+            onChange={(e) => setFilterFrom(e.target.value)}
+            className="bg-white"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="log-to">{t('log.to')}</Label>
+          <Input
+            id="log-to"
+            type="date"
+            value={filterTo}
+            onChange={(e) => setFilterTo(e.target.value)}
+            className="bg-white"
+          />
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={loadMore}
+          disabled={loading}
+          className="gap-1"
+        >
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          {t('log.refresh')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowClubPurchase(true)}
+          className="gap-1 ml-auto"
+        >
+          <Euro size={13} />
+          {t('clubPurchase.button')}
+        </Button>
+      </div>
+
+      {/* Table */}
+      {filtered.length === 0 ? (
+        <p className="text-sm text-gray-400 italic py-4">{t('log.empty')}</p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                <th className="px-4 py-3">{t('log.date')}</th>
+                <th className="px-4 py-3">{t('overview.member')}</th>
+                <th className="px-4 py-3">{t('log.type')}</th>
+                <th className="px-4 py-3 text-right">{t('payment.amount')}</th>
+                <th className="px-4 py-3">{t('payment.note')}</th>
+                <th className="px-4 py-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((tx) => (
+                <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
+                  <td className="px-4 py-2.5 font-medium">{tx.member?.nickname ?? t('log.clubLabel')}</td>
+                  <td className="px-4 py-2.5">
+                    <TxTypeBadge type={tx.type} t={t} />
+                  </td>
+                  <td className="px-4 py-2.5 text-right tabular-nums">
+                    <span className={tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}>
+                      {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-gray-500 max-w-[200px] truncate">{tx.note}</td>
+                  <td className="px-4 py-2.5">
+                    {tx.payoffEventId === null && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
+                        onClick={() => deleteTx(tx.id)}
+                      >
+                        <Trash2 size={13} />
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Club purchase modal */}
+      {showClubPurchase && (
+        <Modal onClose={() => setShowClubPurchase(false)} title={t('clubPurchase.title')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">{t('clubPurchase.hint')}</p>
+            <div className="space-y-1">
+              <Label htmlFor="cp-amount">{t('payment.amount')} (€)</Label>
+              <Input
+                id="cp-amount"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={cpAmount}
+                onChange={(e) => setCpAmount(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cp-note">{t('payment.note')}</Label>
+              <Input
+                id="cp-note"
+                type="text"
+                placeholder={t('payment.notePlaceholder')}
+                value={cpNote}
+                onChange={(e) => setCpNote(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowClubPurchase(false)}>{t('cancel')}</Button>
+              <Button
+                onClick={addClubPurchase}
+                style={{ background: 'var(--kn-primary,#005982)' }}
+                className="text-white"
+              >
+                <Check size={14} />
+                {t('clubPurchase.save')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ─── Shared Modal ─────────────────────────────────────────────────────────────
+
+function Modal({ children, title, onClose }: { children: React.ReactNode; title: string; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-xl bg-white shadow-xl p-6 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold">{title}</h3>
+          <button type="button" onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600">
+            <X size={18} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
