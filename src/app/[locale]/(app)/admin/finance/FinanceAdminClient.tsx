@@ -2104,8 +2104,12 @@ function Modal({ children, title, onClose, wide }: { readonly children: React.Re
   return createPortal(
     <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
       <div
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
         className={`w-full rounded-xl bg-white shadow-xl p-6 space-y-4 ${wide ? 'max-w-2xl' : 'max-w-md'}`}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold">{title}</h3>
