@@ -99,7 +99,7 @@ interface Props {
   readonly clubPaymentInfo: ClubPaymentInfo;
 }
 
-const FREQUENCIES = ['NONE', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'] as const;
+const FREQUENCIES = ['NONE', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'PER_SESSION'] as const;
 const FREQ_NO_NONE = ['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'] as const;
 const TX_TYPES = ['PAYMENT_IN', 'PAYMENT_OUT', 'MANUAL', 'CLUB_PURCHASE'] as const;
 
@@ -840,7 +840,7 @@ function OverviewTab({
         const demandText = lines.join('\n');
 
         return (
-          <Modal onClose={() => setShowDemand(false)} title={t('demand.title')}>
+          <Modal onClose={() => setShowDemand(false)} title={t('demand.title')} wide>
             {debtMembers.length === 0 && debtGuests.length === 0 ? (
               <div className="space-y-4">
                 <p className="text-sm text-gray-500 italic">{t('demand.empty')}</p>
@@ -2041,11 +2041,11 @@ function PaymentInfoTab({
 
 // ─── Shared Modal ─────────────────────────────────────────────────────────────
 
-function Modal({ children, title, onClose }: { children: React.ReactNode; title: string; onClose: () => void }) {
+function Modal({ children, title, onClose, wide }: { children: React.ReactNode; title: string; onClose: () => void; wide?: boolean }) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-xl bg-white shadow-xl p-6 space-y-4"
+        className={`w-full rounded-xl bg-white shadow-xl p-6 space-y-4 ${wide ? 'max-w-2xl' : 'max-w-md'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">

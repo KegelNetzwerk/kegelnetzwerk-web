@@ -33,6 +33,7 @@ enum FinanceFrequency {
   MONTHLY
   QUARTERLY
   YEARLY
+  PER_SESSION
 }
 
 enum FinanceTxType {
@@ -45,6 +46,7 @@ enum FinanceTxType {
   REGULAR_INCOME // auto payment-in included at payoff time
   RESET          // balance reset transaction
   MANUAL         // free-form manual adjustment
+  GUEST_FEE      // per-session fee charged to a guest at payoff time
 }
 
 // ─── Club ────────────────────────────────────────────────────────────────────
@@ -374,7 +376,8 @@ model Guest {
   firstName String   @default("")
   lastName  String   @default("")
 
-  results   Result[]
+  results              Result[]
+  financeTransactions  FinanceTransaction[]
 
   createdAt DateTime @default(now())
 
@@ -444,6 +447,7 @@ model ClubFinanceSettings {
   club                 Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
   feeAmount            Float             @default(0)
   feeFrequency         FinanceFrequency  @default(NONE)
+  guestFeeAmount       Float             @default(0)
   autoPayoffEnabled    Boolean           @default(false)
   autoPayoffFrequency  FinanceFrequency  @default(MONTHLY)
   autoPayoffDayOfMonth Int               @default(1)
@@ -472,6 +476,8 @@ model FinanceTransaction {
   club          Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
   memberId      Int?
   member        Member?         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  guestId       Int?
+  guest         Guest?          @relation(fields: [guestId], references: [id], onDelete: Cascade)
   type          FinanceTxType
   amount        Float           // positive = credit (member paid), negative = debit (member owes)
   note          String          @default("")

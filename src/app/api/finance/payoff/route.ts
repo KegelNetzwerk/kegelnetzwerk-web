@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { Role, FinanceTxType } from '@prisma/client';
+import { Role, FinanceTxType, Unit } from '@prisma/client';
 
 // GET /api/finance/payoff — preview what a payoff would generate
 export async function GET() {
@@ -115,6 +115,72 @@ export async function POST(req: NextRequest) {
   });
 
   const feeAmount = settings?.feeAmount ?? 0;
+  const feeFrequency = settings?.feeFrequency ?? 'NONE';
+  const guestFeeAmount = settings?.guestFeeAmount ?? 0;
+
+  // Count distinct sessions per member for PER_SESSION club fee
+  const memberSessionResults = feeFrequency === 'PER_SESSION' && feeAmount > 0
+    ? await prisma.result.findMany({
+        where: {
+          clubId: member.clubId,
+          memberId: { not: null },
+          ...(fromDate ? { date: { gte: fromDate, lt: toDate } } : { date: { lt: toDate } }),
+        },
+        select: { memberId: true, sessionGroup: true },
+        distinct: ['memberId', 'sessionGroup'],
+      })
+    : [];
+
+  const sessionsByMember = new Map<number, number>();
+  for (const r of memberSessionResults) {
+    if (!r.memberId) continue;
+    sessionsByMember.set(r.memberId, (sessionsByMember.get(r.memberId) ?? 0) + 1);
+  }
+
+  // Fetch guest euro-unit results since last payoff
+  const guestPenaltyResults = await prisma.result.findMany({
+    where: {
+      clubId: member.clubId,
+      guestId: { not: null },
+      part: { unit: Unit.EURO },
+      ...(fromDate ? { date: { gte: fromDate, lt: toDate } } : { date: { lt: toDate } }),
+    },
+    include: {
+      part: { select: { value: true, factor: true, bonus: true } },
+    },
+  });
+
+  const penaltiesByGuest = new Map<number, number>();
+  for (const r of guestPenaltyResults) {
+    if (!r.guestId) continue;
+    const penaltyAmount = r.value * r.part.factor + r.part.bonus;
+    penaltiesByGuest.set(r.guestId, (penaltiesByGuest.get(r.guestId) ?? 0) + penaltyAmount);
+  }
+
+  // Count distinct sessions per guest for GUEST_FEE
+  const guestSessionResults = guestFeeAmount > 0
+    ? await prisma.result.findMany({
+        where: {
+          clubId: member.clubId,
+          guestId: { not: null },
+          ...(fromDate ? { date: { gte: fromDate, lt: toDate } } : { date: { lt: toDate } }),
+        },
+        select: { guestId: true, sessionGroup: true },
+        distinct: ['guestId', 'sessionGroup'],
+      })
+    : [];
+
+  const sessionsByGuest = new Map<number, number>();
+  for (const r of guestSessionResults) {
+    if (!r.guestId) continue;
+    sessionsByGuest.set(r.guestId, (sessionsByGuest.get(r.guestId) ?? 0) + 1);
+  }
+
+  // Collect all guestIds that have any activity
+  const activeGuestIds = new Set([
+    ...penaltiesByGuest.keys(),
+    ...sessionsByGuest.keys(),
+  ]);
 
   // Create payoff event + all transactions in one transaction
   const result = await prisma.$transaction(async (tx) => {
@@ -128,7 +194,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const transactions: {
+    const memberTxData: {
       clubId: number;
       memberId: number;
       type: FinanceTxType;
@@ -142,7 +208,7 @@ export async function POST(req: NextRequest) {
       // Penalty: debit (negative = reduces credit)
       const penaltyTotal = penaltiesByMember.get(m.id) ?? 0;
       if (penaltyTotal > 0) {
-        transactions.push({
+        memberTxData.push({
           clubId: member.clubId,
           memberId: m.id,
           type: FinanceTxType.PENALTY,
@@ -153,23 +219,26 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Club fee: debit
+      // Club fee: debit (flat or per-session)
       if (feeAmount > 0) {
-        transactions.push({
-          clubId: member.clubId,
-          memberId: m.id,
-          type: FinanceTxType.CLUB_FEE,
-          amount: -feeAmount,
-          note: '',
-          payoffEventId: payoffEvent.id,
-          date: toDate,
-        });
+        const sessionCount = feeFrequency === 'PER_SESSION' ? (sessionsByMember.get(m.id) ?? 0) : 1;
+        if (sessionCount > 0) {
+          memberTxData.push({
+            clubId: member.clubId,
+            memberId: m.id,
+            type: FinanceTxType.CLUB_FEE,
+            amount: -Math.round(feeAmount * sessionCount * 100) / 100,
+            note: feeFrequency === 'PER_SESSION' ? `${sessionCount}x` : '',
+            payoffEventId: payoffEvent.id,
+            date: toDate,
+          });
+        }
       }
 
       // Regular income for this member: credit (positive)
       const rp = regularPayments.filter((p) => p.memberId === m.id);
       for (const p of rp) {
-        transactions.push({
+        memberTxData.push({
           clubId: member.clubId,
           memberId: m.id,
           type: FinanceTxType.REGULAR_INCOME,
@@ -181,7 +250,46 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    await tx.financeTransaction.createMany({ data: transactions });
+    const guestTxData: {
+      clubId: number;
+      guestId: number;
+      type: FinanceTxType;
+      amount: number;
+      note: string;
+      payoffEventId: number;
+      date: Date;
+    }[] = [];
+
+    for (const guestId of activeGuestIds) {
+      const penaltyTotal = penaltiesByGuest.get(guestId) ?? 0;
+      if (penaltyTotal > 0) {
+        guestTxData.push({
+          clubId: member.clubId,
+          guestId,
+          type: FinanceTxType.PENALTY,
+          amount: -Math.round(penaltyTotal * 100) / 100,
+          note: '',
+          payoffEventId: payoffEvent.id,
+          date: toDate,
+        });
+      }
+
+      const sessionCount = sessionsByGuest.get(guestId) ?? 0;
+      if (guestFeeAmount > 0 && sessionCount > 0) {
+        guestTxData.push({
+          clubId: member.clubId,
+          guestId,
+          type: FinanceTxType.GUEST_FEE,
+          amount: -Math.round(sessionCount * guestFeeAmount * 100) / 100,
+          note: `${sessionCount}x`,
+          payoffEventId: payoffEvent.id,
+          date: toDate,
+        });
+      }
+    }
+
+    await tx.financeTransaction.createMany({ data: memberTxData });
+    await tx.financeTransaction.createMany({ data: guestTxData });
 
     // Update lastPayoffAt
     await tx.clubFinanceSettings.upsert({
@@ -190,7 +298,7 @@ export async function POST(req: NextRequest) {
       update: { lastPayoffAt: toDate },
     });
 
-    return { payoffEventId: payoffEvent.id, txCount: transactions.length };
+    return { payoffEventId: payoffEvent.id, txCount: memberTxData.length + guestTxData.length };
   });
 
   return NextResponse.json(result);

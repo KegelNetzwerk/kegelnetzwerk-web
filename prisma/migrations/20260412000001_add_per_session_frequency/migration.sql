@@ -1,0 +1,1 @@
+ALTER TYPE "FinanceFrequency" ADD VALUE 'PER_SESSION';
