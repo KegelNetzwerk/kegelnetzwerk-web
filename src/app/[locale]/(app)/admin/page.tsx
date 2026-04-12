@@ -18,7 +18,7 @@ export default async function AdminPage() {
     { href: '/admin/results', icon: ClipboardList, label: t('results') },
     { href: '/secret-santa', icon: Gift, label: t('secretSanta') },
     { href: '/admin/finance', icon: Wallet, label: t('finance') },
-  ];
+  ].sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <div className="space-y-6">

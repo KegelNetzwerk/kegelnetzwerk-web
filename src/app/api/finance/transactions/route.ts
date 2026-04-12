@@ -3,13 +3,14 @@ import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Role, FinanceTxType } from '@prisma/client';
 
-// GET /api/finance/transactions?memberId=&from=&to=&type=&page=
+// GET /api/finance/transactions?memberId=&guestId=&from=&to=&type=&page=
 export async function GET(req: NextRequest) {
   const member = await getCurrentMember();
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const memberIdParam = searchParams.get('memberId');
+  const guestIdParam = searchParams.get('guestId');
   const from = searchParams.get('from');
   const to = searchParams.get('to');
   const type = searchParams.get('type');
@@ -24,11 +25,17 @@ export async function GET(req: NextRequest) {
   // For CLUB_PURCHASE (no memberId) admins can pass memberId=0
   const isClubPurchaseQuery = member.role === Role.ADMIN && memberIdParam === '0';
 
+  // Guest filter: admins can pass guestId=X to see a specific guest's transactions
+  const isGuestQuery = member.role === Role.ADMIN && guestIdParam && guestIdParam !== '0';
+  const targetGuestId = isGuestQuery ? Number.parseInt(guestIdParam!) : null;
+
   const where = {
     clubId: member.clubId,
-    ...(isClubPurchaseQuery
-      ? { memberId: null, type: FinanceTxType.CLUB_PURCHASE }
-      : { memberId: targetMemberId }),
+    ...(isGuestQuery
+      ? { guestId: targetGuestId }
+      : isClubPurchaseQuery
+        ? { memberId: null, guestId: null, type: FinanceTxType.CLUB_PURCHASE }
+        : { memberId: targetMemberId }),
     ...(from ? { date: { gte: new Date(from) } } : {}),
     ...(to ? { date: { lte: new Date(to) } } : {}),
     ...(type && Object.values(FinanceTxType).includes(type as FinanceTxType)
@@ -45,6 +52,7 @@ export async function GET(req: NextRequest) {
       take: pageSize,
       include: {
         member: { select: { id: true, nickname: true } },
+        guest: { select: { id: true, nickname: true } },
       },
     }),
   ]);

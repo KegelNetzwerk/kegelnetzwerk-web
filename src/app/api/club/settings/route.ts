@@ -78,3 +78,31 @@ export async function PUT(req: NextRequest) {
 
   return NextResponse.json(updated);
 }
+
+// PATCH /api/club/settings — update banking/payment info only (admin only)
+export async function PATCH(req: NextRequest) {
+  const current = await getCurrentMember();
+  if (!current || current.role !== Role.ADMIN) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const body = await req.json() as {
+    accountHolder?: string;
+    iban?: string;
+    bic?: string;
+    paypal?: string;
+  };
+
+  const updated = await prisma.club.update({
+    where: { id: current.clubId },
+    data: {
+      ...(body.accountHolder !== undefined ? { accountHolder: body.accountHolder } : {}),
+      ...(body.iban !== undefined ? { iban: body.iban } : {}),
+      ...(body.bic !== undefined ? { bic: body.bic } : {}),
+      ...(body.paypal !== undefined ? { paypal: body.paypal } : {}),
+    },
+    select: { accountHolder: true, iban: true, bic: true, paypal: true },
+  });
+
+  return NextResponse.json(updated);
+}

@@ -15,6 +15,7 @@ export async function GET() {
   return NextResponse.json(settings ?? {
     feeAmount: 0,
     feeFrequency: 'NONE',
+    guestFeeAmount: 0,
     autoPayoffEnabled: false,
     autoPayoffFrequency: 'MONTHLY',
     autoPayoffDayOfMonth: 1,
@@ -32,6 +33,7 @@ export async function PUT(req: NextRequest) {
   const body = await req.json() as {
     feeAmount?: number;
     feeFrequency?: string;
+    guestFeeAmount?: number;
     autoPayoffEnabled?: boolean;
     autoPayoffFrequency?: string;
     autoPayoffDayOfMonth?: number;
@@ -51,6 +53,7 @@ export async function PUT(req: NextRequest) {
       clubId: member.clubId,
       feeAmount: body.feeAmount ?? 0,
       feeFrequency,
+      guestFeeAmount: body.guestFeeAmount ?? 0,
       autoPayoffEnabled: body.autoPayoffEnabled ?? false,
       autoPayoffFrequency,
       autoPayoffDayOfMonth: Math.min(28, Math.max(1, body.autoPayoffDayOfMonth ?? 1)),
@@ -58,6 +61,7 @@ export async function PUT(req: NextRequest) {
     update: {
       feeAmount: body.feeAmount ?? 0,
       feeFrequency,
+      guestFeeAmount: body.guestFeeAmount ?? 0,
       autoPayoffEnabled: body.autoPayoffEnabled ?? false,
       autoPayoffFrequency,
       autoPayoffDayOfMonth: Math.min(28, Math.max(1, body.autoPayoffDayOfMonth ?? 1)),
