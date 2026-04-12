@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  AlertTriangle, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
+  AlertTriangle, Calendar, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
   Trash2, Wallet, Users, BarChart3, ListFilter, RotateCcw, X,
   Euro, TrendingUp, TrendingDown, ToggleLeft, ToggleRight, Info, CreditCard,
   FileText, Copy,
@@ -328,6 +328,7 @@ function OverviewTab({
   const [bulkModal, setBulkModal] = useState(false);
   const [showDemand, setShowDemand] = useState(false);
   const [demandCopied, setDemandCopied] = useState(false);
+  const [showSessionPayment, setShowSessionPayment] = useState(false);
 
   // Club purchase modal state
   const [showClubPurchase, setShowClubPurchase] = useState(false);
@@ -554,6 +555,15 @@ function OverviewTab({
         >
           <FileText size={14} />
           {t('demand.button')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setShowSessionPayment(true)}
+          className="gap-1.5"
+        >
+          <Calendar size={14} />
+          {t('sessionPayment.button')}
         </Button>
         <Button
           size="sm"
@@ -888,6 +898,16 @@ function OverviewTab({
       )}
 
       {/* Reset confirmation */}
+      {showSessionPayment && (
+        <SessionPaymentModal
+          t={t}
+          members={members}
+          guests={guests}
+          onClose={() => setShowSessionPayment(false)}
+          onSuccess={() => globalThis.location.reload()}
+        />
+      )}
+
       {resetConfirm !== null && (
         <Modal onClose={() => { setResetConfirm(null); setResetAllInput(''); }} title={t('reset.confirmTitle')}>
           <div className="space-y-4">
@@ -2095,6 +2115,254 @@ function PaymentInfoTab({
         {t('paymentInfo.save')}
       </Button>
     </div>
+  );
+}
+
+// ─── Session Payment Modal ────────────────────────────────────────────────────
+
+interface SessionInfo {
+  sessionGroup: number;
+  date: string;
+  attendeeCount: number;
+}
+
+interface SessionAttendees {
+  sessionGroup: number;
+  date: string | null;
+  members: { id: number; nickname: string }[];
+  guests: { id: number; nickname: string }[];
+}
+
+function SessionPaymentModal({
+  t, members: allMembers, guests: allGuests, onClose, onSuccess,
+}: {
+  readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
+  readonly members: MemberSummary[];
+  readonly guests: GuestSummary[];
+  readonly onClose: () => void;
+  readonly onSuccess: () => void;
+}) {
+  const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  const [selectedSession, setSelectedSession] = useState<number | null>(null);
+  const [attendees, setAttendees] = useState<SessionAttendees | null>(null);
+  const [loadingAttendees, setLoadingAttendees] = useState(false);
+  const [totalAmount, setTotalAmount] = useState('');
+  const [note, setNote] = useState('');
+  const [includedMemberIds, setIncludedMemberIds] = useState<Set<number>>(new Set());
+  const [includedGuestIds, setIncludedGuestIds] = useState<Set<number>>(new Set());
+  const [submitting, setSubmitting] = useState(false);
+
+  // Load sessions on mount
+  useEffect(() => {
+    fetch('/api/finance/session-payment')
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to load sessions');
+        return res.json() as Promise<{ sessions: SessionInfo[] }>;
+      })
+      .then((data) => setSessions(data.sessions))
+      .catch(() => toast.error(t('sessionPayment.loadError')))
+      .finally(() => setLoadingSessions(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleSessionChange(sessionGroup: number) {
+    setSelectedSession(sessionGroup);
+    setAttendees(null);
+    setIncludedMemberIds(new Set());
+    setIncludedGuestIds(new Set());
+    setLoadingAttendees(true);
+    try {
+      const res = await fetch(`/api/finance/session-payment?sessionGroup=${sessionGroup}`);
+      if (!res.ok) throw new Error('Failed to load attendees');
+      const data = await res.json() as SessionAttendees;
+      setAttendees(data);
+      setIncludedMemberIds(new Set(data.members.map((m) => m.id)));
+      setIncludedGuestIds(new Set(data.guests.map((g) => g.id)));
+    } catch {
+      toast.error(t('sessionPayment.loadError'));
+    } finally {
+      setLoadingAttendees(false);
+    }
+  }
+
+  async function submit() {
+    const amount = Number.parseFloat(totalAmount.replace(',', '.'));
+    if (Number.isNaN(amount) || amount <= 0) {
+      toast.error(t('error.invalidAmount'));
+      return;
+    }
+    const totalParticipants = includedMemberIds.size + includedGuestIds.size;
+    if (totalParticipants === 0) {
+      toast.error(t('sessionPayment.noAttendees'));
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/finance/session-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionGroup: selectedSession,
+          totalAmount: amount,
+          note,
+          includedMemberIds: Array.from(includedMemberIds),
+          includedGuestIds: Array.from(includedGuestIds),
+        }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+      toast.success(t('sessionPayment.success'));
+      onSuccess();
+    } catch {
+      toast.error(t('sessionPayment.error'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  const parsedAmount = Number.parseFloat(totalAmount.replace(',', '.'));
+  const checkedCount = includedMemberIds.size + includedGuestIds.size;
+  const perPerson = !Number.isNaN(parsedAmount) && parsedAmount > 0 && checkedCount > 0
+    ? Math.round((parsedAmount / checkedCount) * 100) / 100
+    : null;
+
+  return (
+    <Modal onClose={onClose} title={t('sessionPayment.title')} wide>
+      <div className="space-y-4">
+        {/* Session selector */}
+        <div className="space-y-1">
+          <Label htmlFor="sp-session">{t('sessionPayment.selectSession')}</Label>
+          {loadingSessions ? (
+            <p className="text-sm text-gray-400 italic">…</p>
+          ) : sessions.length === 0 ? (
+            <p className="text-sm text-gray-400 italic">{t('sessionPayment.noSessions')}</p>
+          ) : (
+            <select
+              id="sp-session"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+              value={selectedSession ?? ''}
+              onChange={(e) => {
+                const val = Number.parseInt(e.target.value);
+                if (!Number.isNaN(val)) handleSessionChange(val);
+              }}
+            >
+              <option value="">{t('sessionPayment.selectSessionPlaceholder')}</option>
+              {sessions.map((s) => (
+                <option key={s.sessionGroup} value={s.sessionGroup}>
+                  {`${fmtDate(s.date)} — ${s.attendeeCount} ${t('sessionPayment.attendees')}`}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
+        {/* Amount inputs */}
+        <div className="flex gap-4 items-end">
+          <div className="space-y-1 flex-1">
+            <Label htmlFor="sp-amount">{t('sessionPayment.totalAmount')} (€)</Label>
+            <Input
+              id="sp-amount"
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={totalAmount}
+              onChange={(e) => setTotalAmount(e.target.value)}
+              className="bg-white"
+            />
+          </div>
+          {perPerson !== null && (
+            <div className="text-sm text-gray-500 pb-2 shrink-0">
+              <span className="text-xs text-gray-400">{t('sessionPayment.perPerson')}: </span>
+              <span className="font-semibold tabular-nums text-red-700">−{fmt(perPerson)}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Note */}
+        <div className="space-y-1">
+          <Label htmlFor="sp-note">{t('payment.note')}</Label>
+          <Input
+            id="sp-note"
+            type="text"
+            placeholder={t('payment.notePlaceholder')}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            className="bg-white"
+          />
+        </div>
+
+        {/* Attendees */}
+        {loadingAttendees && (
+          <p className="text-sm text-gray-400 italic">…</p>
+        )}
+        {!loadingAttendees && attendees && (
+          <div className="space-y-2">
+            <Label>{t('sessionPayment.attendees')}</Label>
+            {attendees.members.length === 0 && attendees.guests.length === 0 ? (
+              <p className="text-sm text-gray-400 italic">{t('sessionPayment.noAttendees')}</p>
+            ) : (
+              <div className="rounded border divide-y max-h-56 overflow-y-auto text-sm bg-white">
+                {attendees.members.length > 0 && (
+                  <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50">
+                    {t('sessionPayment.members')}
+                  </div>
+                )}
+                {attendees.members.map((m) => (
+                  <label key={m.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={includedMemberIds.has(m.id)}
+                      onChange={(e) => {
+                        setIncludedMemberIds((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(m.id); else next.delete(m.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    <span>{m.nickname}</span>
+                  </label>
+                ))}
+                {attendees.guests.length > 0 && (
+                  <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50">
+                    {t('sessionPayment.guests')}
+                  </div>
+                )}
+                {attendees.guests.map((g) => (
+                  <label key={g.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={includedGuestIds.has(g.id)}
+                      onChange={(e) => {
+                        setIncludedGuestIds((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(g.id); else next.delete(g.id);
+                          return next;
+                        });
+                      }}
+                    />
+                    <span>{g.nickname}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2 justify-end pt-2">
+          <Button variant="outline" onClick={onClose}>{t('cancel')}</Button>
+          <Button
+            onClick={submit}
+            disabled={submitting || selectedSession === null || checkedCount === 0}
+            style={{ background: 'var(--kn-primary,#005982)' }}
+            className="text-white gap-1"
+          >
+            <Check size={14} />
+            {t('sessionPayment.confirm')}
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
