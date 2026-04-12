@@ -710,6 +710,23 @@
       "membersHeader": "Mitglieder:",
       "guestsHeader": "Gäste:"
     },
+    "sessionPayment": {
+      "button": "Sitzungszahlung",
+      "title": "Sitzungszahlung erstellen",
+      "selectSession": "Sitzung",
+      "selectSessionPlaceholder": "Sitzung auswählen …",
+      "totalAmount": "Gesamtbetrag",
+      "perPerson": "Pro Person",
+      "attendees": "Teilnehmer",
+      "members": "Mitglieder",
+      "guests": "Gäste",
+      "noSessions": "Keine Sitzungen gefunden.",
+      "noAttendees": "Keine Teilnehmer für diese Sitzung.",
+      "success": "Sitzungszahlung wurde gebucht.",
+      "error": "Fehler beim Buchen.",
+      "loadError": "Sitzungen konnten nicht geladen werden.",
+      "confirm": "Buchen"
+    },
     "error": {
       "invalidAmount": "Bitte einen gültigen Betrag eingeben"
     },

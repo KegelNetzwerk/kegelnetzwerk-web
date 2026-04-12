@@ -710,6 +710,23 @@
       "membersHeader": "Members:",
       "guestsHeader": "Guests:"
     },
+    "sessionPayment": {
+      "button": "Session Payment",
+      "title": "Create Session Payment",
+      "selectSession": "Session",
+      "selectSessionPlaceholder": "Select a session …",
+      "totalAmount": "Total Amount",
+      "perPerson": "Per Person",
+      "attendees": "Attendees",
+      "members": "Members",
+      "guests": "Guests",
+      "noSessions": "No sessions found.",
+      "noAttendees": "No attendees for this session.",
+      "success": "Session payment posted.",
+      "error": "Error posting session payment.",
+      "loadError": "Could not load sessions.",
+      "confirm": "Post"
+    },
     "error": {
       "invalidAmount": "Please enter a valid amount"
     },
