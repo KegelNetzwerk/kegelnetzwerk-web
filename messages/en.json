@@ -637,7 +637,10 @@
       "include": "Include",
       "totalAmount": "Total amount",
       "total": "Total",
-      "splitPreview": "Will be split: {perMember} per person ({count} members)"
+      "splitPreview": "Will be split: {perMember} per person ({count} members)",
+      "deleteConfirmTitle": "Delete Group Collection",
+      "deleteConfirm": "Are you sure you want to delete this group collection?",
+      "deleteConfirmOk": "Delete"
     },
     "clubPurchase": {
       "button": "Club Expense",

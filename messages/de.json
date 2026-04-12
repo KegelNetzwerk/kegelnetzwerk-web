@@ -637,7 +637,10 @@
       "include": "Einschließen",
       "totalAmount": "Gesamtbetrag",
       "total": "Gesamt",
-      "splitPreview": "Wird aufgeteilt: {perMember} pro Person ({count} Mitglieder)"
+      "splitPreview": "Wird aufgeteilt: {perMember} pro Person ({count} Mitglieder)",
+      "deleteConfirmTitle": "Sammelkasse löschen",
+      "deleteConfirm": "Soll diese Sammelkasse wirklich gelöscht werden?",
+      "deleteConfirmOk": "Löschen"
     },
     "clubPurchase": {
       "button": "Klubausgabe",
