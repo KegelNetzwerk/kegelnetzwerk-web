@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import {
   AlertTriangle, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
   Trash2, Wallet, Users, BarChart3, ListFilter, RotateCcw, X,
-  Euro, TrendingUp, TrendingDown, ToggleLeft, ToggleRight,
+  Euro, TrendingUp, TrendingDown, ToggleLeft, ToggleRight, Info, CreditCard,
+  FileText, Copy,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -17,10 +19,17 @@ import {
 interface FinanceSettings {
   feeAmount: number;
   feeFrequency: string;
+  guestFeeAmount: number;
   autoPayoffEnabled: boolean;
   autoPayoffFrequency: string;
   autoPayoffDayOfMonth: number;
   lastPayoffAt: string | null;
+}
+
+interface GuestSummary {
+  id: number;
+  nickname: string;
+  balance: number;
 }
 
 interface MemberSummary {
@@ -62,21 +71,32 @@ interface RegularPayment {
 interface Transaction {
   id: number;
   memberId: number | null;
+  guestId: number | null;
   type: string;
   amount: number;
   note: string;
   date: string;
   payoffEventId: number | null;
   member: { id: number; nickname: string } | null;
+  guest: { id: number; nickname: string } | null;
+}
+
+interface ClubPaymentInfo {
+  accountHolder: string;
+  iban: string;
+  bic: string;
+  paypal: string;
 }
 
 interface Props {
   readonly settings: FinanceSettings;
   readonly members: MemberSummary[];
+  readonly guests: GuestSummary[];
   readonly collectives: CollectiveCharge[];
   readonly regularPayments: RegularPayment[];
   readonly recentTransactions: Transaction[];
   readonly payoffDue: boolean;
+  readonly clubPaymentInfo: ClubPaymentInfo;
 }
 
 const FREQUENCIES = ['NONE', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'] as const;
@@ -102,7 +122,7 @@ function BalanceBadge({ balance }: { balance: number }) {
   );
 }
 
-function TxTypeBadge({ type, t }: { type: string; t: (k: string) => string }) {
+function TxTypeBadge({ type, t }: { type: string; t: (k: string, v?: Record<string, string | number | Date>) => string }) {
   const colors: Record<string, string> = {
     PENALTY: 'bg-red-100 text-red-700',
     CLUB_FEE: 'bg-orange-100 text-orange-700',
@@ -123,15 +143,17 @@ function TxTypeBadge({ type, t }: { type: string; t: (k: string) => string }) {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'settings' | 'collectives' | 'log';
+type Tab = 'overview' | 'settings' | 'collectives' | 'log' | 'payment-info';
 
 export default function FinanceAdminClient({
   settings: initialSettings,
   members,
+  guests,
   collectives: initialCollectives,
   regularPayments: initialRegularPayments,
   recentTransactions: initialTx,
   payoffDue,
+  clubPaymentInfo: initialPaymentInfo,
 }: Props) {
   const t = useTranslations('finance');
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -139,6 +161,7 @@ export default function FinanceAdminClient({
   const [collectives, setCollectives] = useState(initialCollectives);
   const [regularPayments, setRegularPayments] = useState(initialRegularPayments);
   const [transactions, setTransactions] = useState(initialTx);
+  const [paymentInfo, setPaymentInfo] = useState(initialPaymentInfo);
   const [memberBalances, setMemberBalances] = useState<Map<number, number>>(
     new Map(members.map((m) => [m.id, m.balance]))
   );
@@ -160,6 +183,7 @@ export default function FinanceAdminClient({
     { id: 'settings', label: t('tabs.settings'), icon: <BarChart3 size={15} /> },
     { id: 'collectives', label: t('tabs.collectives'), icon: <Users size={15} /> },
     { id: 'log', label: t('tabs.log'), icon: <ListFilter size={15} /> },
+    { id: 'payment-info', label: t('tabs.paymentInfo'), icon: <CreditCard size={15} /> },
   ];
 
   return (
@@ -189,12 +213,14 @@ export default function FinanceAdminClient({
         <OverviewTab
           t={t}
           members={members}
+          guests={guests}
           getBalance={getBalance}
           applyTxToBalance={applyTxToBalance}
           transactions={transactions}
           setTransactions={setTransactions}
           payoffDue={payoffDue}
           settings={settings}
+          paymentInfo={paymentInfo}
         />
       )}
       {activeTab === 'settings' && (
@@ -222,8 +248,16 @@ export default function FinanceAdminClient({
         <LogTab
           t={t}
           members={members}
+          guests={guests}
           transactions={transactions}
           setTransactions={setTransactions}
+        />
+      )}
+      {activeTab === 'payment-info' && (
+        <PaymentInfoTab
+          t={t}
+          paymentInfo={paymentInfo}
+          setPaymentInfo={setPaymentInfo}
         />
       )}
     </div>
@@ -233,22 +267,32 @@ export default function FinanceAdminClient({
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({
-  t, members, getBalance, applyTxToBalance,
-  transactions, setTransactions, payoffDue, settings,
+  t, members, guests, getBalance, applyTxToBalance,
+  transactions, setTransactions, payoffDue, settings, paymentInfo,
 }: {
-  t: (k: string) => string;
+  t: (k: string, v?: Record<string, string | number | Date>) => string;
   members: MemberSummary[];
+  guests: GuestSummary[];
   getBalance: (id: number) => number;
   applyTxToBalance: (id: number, amount: number) => void;
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   payoffDue: boolean;
   settings: FinanceSettings;
+  paymentInfo: ClubPaymentInfo;
 }) {
   const [payoffLoading, setPayoffLoading] = useState(false);
   const [resetConfirm, setResetConfirm] = useState<'all' | number | null>(null);
+  const [resetAllInput, setResetAllInput] = useState('');
   const [addPaymentFor, setAddPaymentFor] = useState<number | null>(null); // memberId
   const [bulkModal, setBulkModal] = useState(false);
+  const [showDemand, setShowDemand] = useState(false);
+  const [demandCopied, setDemandCopied] = useState(false);
+
+  // Club purchase modal state
+  const [showClubPurchase, setShowClubPurchase] = useState(false);
+  const [cpAmount, setCpAmount] = useState('');
+  const [cpNote, setCpNote] = useState('');
 
   // Quick payment modal state
   const [payAmount, setPayAmount] = useState('');
@@ -346,6 +390,31 @@ function OverviewTab({
       toast.error(t('reset.error'));
     } finally {
       setResetConfirm(null);
+      setResetAllInput('');
+    }
+  }
+
+  async function addClubPurchase() {
+    const amount = Number.parseFloat(cpAmount.replace(',', '.'));
+    if (Number.isNaN(amount) || amount <= 0) {
+      toast.error(t('error.invalidAmount'));
+      return;
+    }
+    try {
+      const res = await fetch('/api/finance/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'CLUB_PURCHASE', amount: -amount, note: cpNote }),
+      });
+      if (!res.ok) throw new Error();
+      const tx = await res.json() as Transaction;
+      setTransactions((prev) => [tx, ...prev]);
+      setShowClubPurchase(false);
+      setCpAmount('');
+      setCpNote('');
+      toast.success(t('clubPurchase.success'));
+    } catch {
+      toast.error(t('clubPurchase.error'));
     }
   }
 
@@ -393,7 +462,7 @@ function OverviewTab({
       </div>
 
       {/* Actions row */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button
           size="sm"
           variant="outline"
@@ -418,8 +487,26 @@ function OverviewTab({
         <Button
           size="sm"
           variant="outline"
-          onClick={() => setResetConfirm('all')}
-          className="gap-1.5 text-red-600 border-red-200 hover:bg-red-50"
+          onClick={() => setShowClubPurchase(true)}
+          className="gap-1.5"
+        >
+          <Euro size={14} />
+          {t('clubPurchase.button')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => { setShowDemand(true); setDemandCopied(false); }}
+          className="gap-1.5"
+        >
+          <FileText size={14} />
+          {t('demand.button')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => { setResetConfirm('all'); setResetAllInput(''); }}
+          className="gap-1.5 ml-auto text-red-600 border-red-200 hover:bg-red-50"
         >
           <RotateCcw size={14} />
           {t('reset.allButton')}
@@ -479,6 +566,30 @@ function OverviewTab({
           </tbody>
         </table>
       </div>
+
+      {/* Guests table */}
+      {guests.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                <th className="px-4 py-3">{t('overview.guest')}</th>
+                <th className="px-4 py-3 text-right">{t('overview.balance')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {guests.map((g) => (
+                <tr key={g.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <td className="px-4 py-2.5 font-medium">{g.nickname}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    <BalanceBadge balance={g.balance} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Add payment modal */}
       {addPaymentFor !== null && (
@@ -617,17 +728,160 @@ function OverviewTab({
         </Modal>
       )}
 
+      {/* Club purchase modal */}
+      {showClubPurchase && (
+        <Modal onClose={() => setShowClubPurchase(false)} title={t('clubPurchase.title')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">{t('clubPurchase.hint')}</p>
+            <div className="space-y-1">
+              <Label htmlFor="cp-amount-ov">{t('payment.amount')} (€)</Label>
+              <Input
+                id="cp-amount-ov"
+                type="text"
+                inputMode="decimal"
+                placeholder="0,00"
+                value={cpAmount}
+                onChange={(e) => setCpAmount(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="cp-note-ov">{t('payment.note')}</Label>
+              <Input
+                id="cp-note-ov"
+                type="text"
+                placeholder={t('payment.notePlaceholder')}
+                value={cpNote}
+                onChange={(e) => setCpNote(e.target.value)}
+                className="bg-white"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowClubPurchase(false)}>{t('cancel')}</Button>
+              <Button
+                onClick={addClubPurchase}
+                style={{ background: 'var(--kn-primary,#005982)' }}
+                className="text-white"
+              >
+                <Check size={14} />
+                {t('clubPurchase.save')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Payment demand modal */}
+      {showDemand && (() => {
+        const debtMembers = members
+          .map((m) => ({ nickname: m.nickname, balance: getBalance(m.id) }))
+          .filter((m) => m.balance < 0)
+          .sort((a, b) => a.nickname.localeCompare(b.nickname));
+        const debtGuests = guests
+          .filter((g) => g.balance < 0)
+          .sort((a, b) => a.nickname.localeCompare(b.nickname));
+
+        const rawPaypal = paymentInfo.paypal.trim();
+        const paypalBase = rawPaypal
+          ? rawPaypal.startsWith('http')
+            ? rawPaypal.replace(/\/$/, '')
+            : `https://paypal.me/${rawPaypal.replace(/^paypal\.me\//, '')}`
+          : '';
+
+        const today = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const lines: string[] = [];
+        lines.push(`${t('demand.title')} — ${today}`);
+        lines.push('');
+
+        if (debtMembers.length > 0) {
+          lines.push(t('demand.membersHeader'));
+          for (const m of debtMembers) {
+            const displayAmt = Math.abs(m.balance).toFixed(2).replace('.', ',');
+            let line = `• ${m.nickname}: ${displayAmt}€`;
+            if (paypalBase) line += `  →  ${paypalBase}/${Math.abs(m.balance).toFixed(2)}`;
+            lines.push(line);
+          }
+        }
+
+        if (debtGuests.length > 0) {
+          if (debtMembers.length > 0) lines.push('');
+          lines.push(t('demand.guestsHeader'));
+          for (const g of debtGuests) {
+            const displayAmt = Math.abs(g.balance).toFixed(2).replace('.', ',');
+            let line = `• ${g.nickname}: ${displayAmt}€`;
+            if (paypalBase) line += `  →  ${paypalBase}/${Math.abs(g.balance).toFixed(2)}`;
+            lines.push(line);
+          }
+        }
+
+        const demandText = lines.join('\n');
+
+        return (
+          <Modal onClose={() => setShowDemand(false)} title={t('demand.title')}>
+            {debtMembers.length === 0 && debtGuests.length === 0 ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500 italic">{t('demand.empty')}</p>
+                <div className="flex justify-end">
+                  <Button variant="outline" onClick={() => setShowDemand(false)}>{t('cancel')}</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <textarea
+                  readOnly
+                  value={demandText}
+                  rows={Math.min(20, lines.length + 2)}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono bg-gray-50 resize-none"
+                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                />
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setShowDemand(false)}>{t('cancel')}</Button>
+                  <Button
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(demandText);
+                      setDemandCopied(true);
+                      setTimeout(() => setDemandCopied(false), 2000);
+                    }}
+                    style={{ background: 'var(--kn-primary,#005982)' }}
+                    className="text-white gap-1"
+                  >
+                    {demandCopied ? <Check size={14} /> : <Copy size={14} />}
+                    <span>{demandCopied ? t('demand.copied') : t('demand.copy')}</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Modal>
+        );
+      })()}
+
       {/* Reset confirmation */}
       {resetConfirm !== null && (
-        <Modal onClose={() => setResetConfirm(null)} title={t('reset.confirmTitle')}>
+        <Modal onClose={() => { setResetConfirm(null); setResetAllInput(''); }} title={t('reset.confirmTitle')}>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              {resetConfirm === 'all' ? t('reset.confirmAll') : t('reset.confirmOne').replace('{name}', members.find((m) => m.id === resetConfirm)?.nickname ?? '')}
+              {resetConfirm === 'all'
+                ? t('reset.confirmAll')
+                : `${t('reset.confirmOnePre')} ${members.find((m) => m.id === resetConfirm)?.nickname ?? ''}${t('reset.confirmOnePost')}`}
             </p>
+            {resetConfirm === 'all' && (
+              <div className="space-y-1">
+                <Label htmlFor="reset-confirm-input">{t('reset.typeToConfirm')}</Label>
+                <Input
+                  id="reset-confirm-input"
+                  type="text"
+                  placeholder="reset all"
+                  value={resetAllInput}
+                  onChange={(e) => setResetAllInput(e.target.value)}
+                  className="bg-white font-mono"
+                />
+              </div>
+            )}
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setResetConfirm(null)}>{t('cancel')}</Button>
+              <Button variant="outline" onClick={() => { setResetConfirm(null); setResetAllInput(''); }}>{t('cancel')}</Button>
               <Button
                 variant="destructive"
+                disabled={resetConfirm === 'all' && resetAllInput !== 'reset all'}
                 onClick={() => doReset(resetConfirm === 'all' ? undefined : [resetConfirm as number])}
               >
                 {t('reset.confirm')}
@@ -645,7 +899,7 @@ function OverviewTab({
 function SettingsTab({
   t, settings, setSettings, members, regularPayments, setRegularPayments,
 }: {
-  t: (k: string) => string;
+  t: (k: string, v?: Record<string, string | number | Date>) => string;
   settings: FinanceSettings;
   setSettings: React.Dispatch<React.SetStateAction<FinanceSettings>>;
   members: MemberSummary[];
@@ -655,6 +909,7 @@ function SettingsTab({
   const [saving, setSaving] = useState(false);
   const [fee, setFee] = useState(String(settings.feeAmount));
   const [feeFreq, setFeeFreq] = useState(settings.feeFrequency);
+  const [guestFee, setGuestFee] = useState(String(settings.guestFeeAmount));
   const [autoEnabled, setAutoEnabled] = useState(settings.autoPayoffEnabled);
   const [autoFreq, setAutoFreq] = useState(settings.autoPayoffFrequency);
   const [autoDay, setAutoDay] = useState(String(settings.autoPayoffDayOfMonth));
@@ -675,6 +930,7 @@ function SettingsTab({
         body: JSON.stringify({
           feeAmount: Number.parseFloat(fee.replace(',', '.')) || 0,
           feeFrequency: feeFreq,
+          guestFeeAmount: Number.parseFloat(guestFee.replace(',', '.')) || 0,
           autoPayoffEnabled: autoEnabled,
           autoPayoffFrequency: autoFreq,
           autoPayoffDayOfMonth: Number.parseInt(autoDay) || 1,
@@ -775,6 +1031,18 @@ function SettingsTab({
               ))}
             </select>
           </div>
+          <div className="space-y-1">
+            <Label htmlFor="guest-fee-amount">{t('settings.guestFeeAmount')} (€)</Label>
+            <Input
+              id="guest-fee-amount"
+              type="text"
+              inputMode="decimal"
+              placeholder="0,00"
+              value={guestFee}
+              onChange={(e) => setGuestFee(e.target.value)}
+              className="bg-white max-w-[160px]"
+            />
+          </div>
         </div>
       </section>
 
@@ -793,6 +1061,12 @@ function SettingsTab({
               : <ToggleLeft size={28} className="text-gray-400" />}
           </button>
           <span className="text-sm">{t('settings.autoPayoffEnabled')}</span>
+          <span className="relative group inline-flex items-center">
+            <Info size={14} className="text-gray-400 cursor-help" />
+            <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-72 rounded-lg bg-gray-800 px-3 py-2 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 z-10 shadow-lg">
+              {t('settings.autoPayoffHint')}
+            </span>
+          </span>
         </div>
         {autoEnabled && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -968,7 +1242,7 @@ function SettingsTab({
 function CollectivesTab({
   t, members, collectives, setCollectives, applyTxToBalance, transactions, setTransactions,
 }: {
-  t: (k: string) => string;
+  t: (k: string, v?: Record<string, string | number | Date>) => string;
   members: MemberSummary[];
   collectives: CollectiveCharge[];
   setCollectives: React.Dispatch<React.SetStateAction<CollectiveCharge[]>>;
@@ -980,15 +1254,25 @@ function CollectivesTab({
   const [newName, setNewName] = useState('');
   const [newAmount, setNewAmount] = useState('');
   const [newNote, setNewNote] = useState('');
+  const [amountMode, setAmountMode] = useState<'per-member' | 'total'>('per-member');
   const [excludedMemberIds, setExcludedMemberIds] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
+  const includedCount = members.filter((m) => !excludedMemberIds.has(m.id)).length;
+  const parsedAmount = Number.parseFloat(newAmount.replace(',', '.'));
+  const perMemberPreview = amountMode === 'total' && includedCount > 0 && !Number.isNaN(parsedAmount)
+    ? Math.round((parsedAmount / includedCount) * 100) / 100
+    : null;
+
   async function createCollective() {
-    const amount = Number.parseFloat(newAmount.replace(',', '.'));
-    if (!newName.trim() || Number.isNaN(amount) || amount < 0) {
+    const raw = Number.parseFloat(newAmount.replace(',', '.'));
+    if (!newName.trim() || Number.isNaN(raw) || raw < 0) {
       toast.error(t('collective.invalidInput'));
       return;
     }
+    const amount = amountMode === 'total' && includedCount > 0
+      ? Math.round((raw / includedCount) * 100) / 100
+      : raw;
     try {
       const res = await fetch('/api/finance/collectives', {
         method: 'POST',
@@ -997,7 +1281,7 @@ function CollectivesTab({
           name: newName.trim(),
           defaultAmount: amount,
           note: newNote,
-          memberIds: members.filter((m) => !excludedMemberIds.has(m.id)).map((m) => m.id),
+          excludedMemberIds: Array.from(excludedMemberIds),
         }),
       });
       if (!res.ok) throw new Error();
@@ -1063,12 +1347,14 @@ function CollectivesTab({
         const newTx: Transaction = {
           id: Date.now(),
           memberId,
+          guestId: null,
           type: 'COLLECTIVE',
           amount: updated.amount,
           note: '',
           date: new Date().toISOString(),
           payoffEventId: null,
           member: members.find((m) => m.id === memberId) ?? null,
+          guest: null,
         };
         setTransactions((prev) => [newTx, ...prev]);
       } else if (action === 'unpay') {
@@ -1119,16 +1405,42 @@ function CollectivesTab({
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="col-amount">{t('collective.amount')} (€)</Label>
-              <Input
-                id="col-amount"
-                type="text"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={newAmount}
-                onChange={(e) => setNewAmount(e.target.value)}
-                className="bg-white"
-              />
+              <Label>
+                {amountMode === 'per-member' ? t('collective.amount') : t('collective.totalAmount')}
+                <span className="text-gray-400"> (€)</span>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="col-amount"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={newAmount}
+                  onChange={(e) => setNewAmount(e.target.value)}
+                  className="bg-white"
+                />
+                <div className="flex rounded border border-gray-300 overflow-hidden text-xs shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setAmountMode('per-member')}
+                    className={`px-2 py-1.5 cursor-pointer ${amountMode === 'per-member' ? 'bg-[var(--kn-primary,#005982)] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    {t('collective.perMember')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAmountMode('total')}
+                    className={`px-2 py-1.5 cursor-pointer border-l border-gray-300 ${amountMode === 'total' ? 'bg-[var(--kn-primary,#005982)] text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+                  >
+                    {t('collective.total')}
+                  </button>
+                </div>
+              </div>
+              {amountMode === 'total' && perMemberPreview !== null && (
+                <p className="text-xs text-gray-500">
+                  {t('collective.splitPreview', { perMember: fmt(perMemberPreview), count: includedCount })}
+                </p>
+              )}
             </div>
           </div>
           <div className="space-y-1">
@@ -1144,7 +1456,7 @@ function CollectivesTab({
           </div>
           <div className="space-y-2">
             <Label>{t('collective.excludeMembers')}</Label>
-            <div className="max-h-36 overflow-y-auto rounded border divide-y text-sm bg-white">
+            <div className="max-h-[264px] overflow-y-auto rounded border divide-y text-sm bg-white">
               {members.map((m) => (
                 <label key={m.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
                   <input
@@ -1322,10 +1634,11 @@ function CollectivesTab({
 // ─── Log Tab ──────────────────────────────────────────────────────────────────
 
 function LogTab({
-  t, members, transactions, setTransactions,
+  t, members, guests, transactions, setTransactions,
 }: {
-  t: (k: string) => string;
+  t: (k: string, v?: Record<string, string | number | Date>) => string;
   members: MemberSummary[];
+  guests: GuestSummary[];
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
 }) {
@@ -1334,14 +1647,22 @@ function LogTab({
   const [filterTo, setFilterTo] = useState('');
   const [filterType, setFilterType] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pageSize, setPageSize] = useState(50);
+  const [page, setPage] = useState(0);
+  const [deletePendingId, setDeletePendingId] = useState<number | null>(null);
 
-  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'CLUB_PURCHASE', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL'];
+  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'CLUB_PURCHASE', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL', 'GUEST_FEE'];
 
+  // filterMember values: '' = all, '0' = club purchases, 'g:N' = guest id N, 'N' = member id N
   async function loadMore() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (filterMember) params.set('memberId', filterMember);
+      if (filterMember.startsWith('g:')) {
+        params.set('guestId', filterMember.slice(2));
+      } else if (filterMember) {
+        params.set('memberId', filterMember);
+      }
       if (filterFrom) params.set('from', filterFrom);
       if (filterTo) params.set('to', filterTo);
       if (filterType) params.set('type', filterType);
@@ -1356,59 +1677,43 @@ function LogTab({
     }
   }
 
-  async function deleteTx(id: number) {
+  async function confirmDeleteTx() {
+    if (deletePendingId === null) return;
     try {
-      const res = await fetch(`/api/finance/transactions/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/finance/transactions/${deletePendingId}`, { method: 'DELETE' });
       if (!res.ok) {
         const body = await res.json() as { error?: string };
         toast.error(body.error ?? t('log.deleteError'));
         return;
       }
-      setTransactions((prev) => prev.filter((tx) => tx.id !== id));
+      setTransactions((prev) => prev.filter((tx) => tx.id !== deletePendingId));
       toast.success(t('log.deleted'));
     } catch {
       toast.error(t('log.deleteError'));
+    } finally {
+      setDeletePendingId(null);
     }
   }
 
   // Client-side filtering on loaded data
   const filtered = transactions.filter((tx) => {
-    if (filterMember && filterMember !== '0' && String(tx.memberId) !== filterMember) return false;
-    if (filterMember === '0' && tx.memberId !== null) return false;
+    if (filterMember.startsWith('g:')) {
+      const gid = Number(filterMember.slice(2));
+      if (tx.guestId !== gid) return false;
+    } else if (filterMember === '0') {
+      if (tx.memberId !== null || tx.guestId !== null) return false;
+    } else if (filterMember) {
+      if (String(tx.memberId) !== filterMember) return false;
+    }
     if (filterType && tx.type !== filterType) return false;
     if (filterFrom && tx.date < filterFrom) return false;
     if (filterTo && tx.date > filterTo + 'T23:59:59') return false;
     return true;
   });
 
-  // Add payment for club purchase
-  const [showClubPurchase, setShowClubPurchase] = useState(false);
-  const [cpAmount, setCpAmount] = useState('');
-  const [cpNote, setCpNote] = useState('');
-
-  async function addClubPurchase() {
-    const amount = Number.parseFloat(cpAmount.replace(',', '.'));
-    if (Number.isNaN(amount) || amount <= 0) {
-      toast.error(t('error.invalidAmount'));
-      return;
-    }
-    try {
-      const res = await fetch('/api/finance/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'CLUB_PURCHASE', amount: -amount, note: cpNote }),
-      });
-      if (!res.ok) throw new Error();
-      const tx = await res.json() as Transaction;
-      setTransactions((prev) => [tx, ...prev]);
-      setShowClubPurchase(false);
-      setCpAmount('');
-      setCpNote('');
-      toast.success(t('clubPurchase.success'));
-    } catch {
-      toast.error(t('clubPurchase.error'));
-    }
-  }
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages - 1);
+  const paginated = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize);
 
   return (
     <div className="space-y-4">
@@ -1420,13 +1725,22 @@ function LogTab({
             id="log-member"
             className="rounded border border-gray-300 px-3 py-2 text-sm bg-white"
             value={filterMember}
-            onChange={(e) => setFilterMember(e.target.value)}
+            onChange={(e) => { setFilterMember(e.target.value); setPage(0); }}
           >
             <option value="">{t('log.allMembers')}</option>
             <option value="0">{t('log.clubPurchases')}</option>
-            {members.map((m) => (
-              <option key={m.id} value={String(m.id)}>{m.nickname}</option>
-            ))}
+            <optgroup label={t('overview.member')}>
+              {members.map((m) => (
+                <option key={m.id} value={String(m.id)}>{m.nickname}</option>
+              ))}
+            </optgroup>
+            {guests.length > 0 && (
+              <optgroup label={t('overview.guest')}>
+                {guests.map((g) => (
+                  <option key={g.id} value={`g:${g.id}`}>{g.nickname}</option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </div>
         <div className="space-y-1">
@@ -1435,7 +1749,7 @@ function LogTab({
             id="log-type"
             className="rounded border border-gray-300 px-3 py-2 text-sm bg-white"
             value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
+            onChange={(e) => { setFilterType(e.target.value); setPage(0); }}
           >
             <option value="">{t('log.allTypes')}</option>
             {ALL_TX_TYPES.map((type) => (
@@ -1449,7 +1763,7 @@ function LogTab({
             id="log-from"
             type="date"
             value={filterFrom}
-            onChange={(e) => setFilterFrom(e.target.value)}
+            onChange={(e) => { setFilterFrom(e.target.value); setPage(0); }}
             className="bg-white"
           />
         </div>
@@ -1459,9 +1773,22 @@ function LogTab({
             id="log-to"
             type="date"
             value={filterTo}
-            onChange={(e) => setFilterTo(e.target.value)}
+            onChange={(e) => { setFilterTo(e.target.value); setPage(0); }}
             className="bg-white"
           />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="log-pagesize">{t('log.perPage')}</Label>
+          <select
+            id="log-pagesize"
+            className="rounded border border-gray-300 px-3 py-2 text-sm bg-white"
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }}
+          >
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={250}>250</option>
+          </select>
         </div>
         <Button
           size="sm"
@@ -1473,103 +1800,119 @@ function LogTab({
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
           {t('log.refresh')}
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowClubPurchase(true)}
-          className="gap-1 ml-auto"
-        >
-          <Euro size={13} />
-          {t('clubPurchase.button')}
-        </Button>
       </div>
 
       {/* Table */}
       {filtered.length === 0 ? (
         <p className="text-sm text-gray-400 italic py-4">{t('log.empty')}</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                <th className="px-4 py-3">{t('log.date')}</th>
-                <th className="px-4 py-3">{t('overview.member')}</th>
-                <th className="px-4 py-3">{t('log.type')}</th>
-                <th className="px-4 py-3 text-right">{t('payment.amount')}</th>
-                <th className="px-4 py-3">{t('payment.note')}</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((tx) => (
-                <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
-                  <td className="px-4 py-2.5 font-medium">{tx.member?.nickname ?? t('log.clubLabel')}</td>
-                  <td className="px-4 py-2.5">
-                    <TxTypeBadge type={tx.type} t={t} />
-                  </td>
-                  <td className="px-4 py-2.5 text-right tabular-nums">
-                    <span className={tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}>
-                      {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-gray-500 max-w-[200px] truncate">{tx.note}</td>
-                  <td className="px-4 py-2.5">
-                    {tx.payoffEventId === null && (
+        <>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  <th className="px-4 py-3">{t('log.date')}</th>
+                  <th className="px-4 py-3">{t('overview.member')}</th>
+                  <th className="px-4 py-3">{t('log.type')}</th>
+                  <th className="px-4 py-3 text-right">{t('payment.amount')}</th>
+                  <th className="px-4 py-3">{t('payment.note')}</th>
+                  <th className="px-4 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.map((tx) => (
+                  <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
+                    <td className="px-4 py-2.5 font-medium">{tx.member?.nickname ?? tx.guest?.nickname ?? t('log.clubLabel')}</td>
+                    <td className="px-4 py-2.5">
+                      <TxTypeBadge type={tx.type} t={t} />
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">
+                      <span className={tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}>
+                        {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-gray-500 max-w-[200px] truncate">{tx.note}</td>
+                    <td className="px-4 py-2.5">
                       <Button
                         size="sm"
                         variant="ghost"
                         className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
-                        onClick={() => deleteTx(tx.id)}
+                        onClick={() => setDeletePendingId(tx.id)}
                       >
                         <Trash2 size={13} />
                       </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>
+                {safePage * pageSize + 1}–{Math.min((safePage + 1) * pageSize, filtered.length)}
+                <span> / </span>
+                {filtered.length}
+              </span>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage(0)}
+                  disabled={safePage === 0}
+                  className="px-2"
+                >
+                  {'«'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={safePage === 0}
+                  className="px-2"
+                >
+                  {'‹'}
+                </Button>
+                <span className="flex items-center px-3 font-medium">
+                  {safePage + 1} / {totalPages}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  disabled={safePage >= totalPages - 1}
+                  className="px-2"
+                >
+                  {'›'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setPage(totalPages - 1)}
+                  disabled={safePage >= totalPages - 1}
+                  className="px-2"
+                >
+                  {'»'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Club purchase modal */}
-      {showClubPurchase && (
-        <Modal onClose={() => setShowClubPurchase(false)} title={t('clubPurchase.title')}>
+      {/* Delete confirmation modal */}
+      {deletePendingId !== null && (
+        <Modal onClose={() => setDeletePendingId(null)} title={t('log.deleteConfirmTitle')}>
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">{t('clubPurchase.hint')}</p>
-            <div className="space-y-1">
-              <Label htmlFor="cp-amount">{t('payment.amount')} (€)</Label>
-              <Input
-                id="cp-amount"
-                type="text"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={cpAmount}
-                onChange={(e) => setCpAmount(e.target.value)}
-                className="bg-white"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="cp-note">{t('payment.note')}</Label>
-              <Input
-                id="cp-note"
-                type="text"
-                placeholder={t('payment.notePlaceholder')}
-                value={cpNote}
-                onChange={(e) => setCpNote(e.target.value)}
-                className="bg-white"
-              />
-            </div>
+            <p className="text-sm text-gray-600">{t('log.deleteConfirm')}</p>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowClubPurchase(false)}>{t('cancel')}</Button>
-              <Button
-                onClick={addClubPurchase}
-                style={{ background: 'var(--kn-primary,#005982)' }}
-                className="text-white"
-              >
-                <Check size={14} />
-                {t('clubPurchase.save')}
+              <Button variant="outline" onClick={() => setDeletePendingId(null)}>{t('cancel')}</Button>
+              <Button variant="destructive" onClick={confirmDeleteTx}>
+                <Trash2 size={14} />
+                {t('log.deleteConfirmOk')}
               </Button>
             </div>
           </div>
@@ -1579,10 +1922,104 @@ function LogTab({
   );
 }
 
+// ─── Payment Info Tab ─────────────────────────────────────────────────────────
+
+function PaymentInfoTab({
+  t, paymentInfo, setPaymentInfo,
+}: {
+  t: (k: string, v?: Record<string, string | number | Date>) => string;
+  paymentInfo: ClubPaymentInfo;
+  setPaymentInfo: React.Dispatch<React.SetStateAction<ClubPaymentInfo>>;
+}) {
+  const [accountHolder, setAccountHolder] = useState(paymentInfo.accountHolder);
+  const [iban, setIban] = useState(paymentInfo.iban);
+  const [bic, setBic] = useState(paymentInfo.bic);
+  const [paypal, setPaypal] = useState(paymentInfo.paypal);
+  const [saving, setSaving] = useState(false);
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/club/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ accountHolder, iban, bic, paypal }),
+      });
+      if (!res.ok) throw new Error();
+      const updated = await res.json() as ClubPaymentInfo;
+      setPaymentInfo(updated);
+      toast.success(t('paymentInfo.saved'));
+    } catch {
+      toast.error(t('paymentInfo.error'));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6 max-w-lg">
+      <p className="text-sm text-gray-500">{t('paymentInfo.hint')}</p>
+      <div className="space-y-4">
+        <div className="space-y-1">
+          <Label htmlFor="pi-holder">{t('paymentInfo.accountHolder')}</Label>
+          <Input
+            id="pi-holder"
+            type="text"
+            value={accountHolder}
+            onChange={(e) => setAccountHolder(e.target.value)}
+            className="bg-white"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="pi-iban">IBAN</Label>
+          <Input
+            id="pi-iban"
+            type="text"
+            value={iban}
+            onChange={(e) => setIban(e.target.value)}
+            className="bg-white font-mono"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="pi-bic">BIC</Label>
+          <Input
+            id="pi-bic"
+            type="text"
+            value={bic}
+            onChange={(e) => setBic(e.target.value)}
+            className="bg-white font-mono"
+          />
+        </div>
+        <div className="space-y-1">
+          <Label htmlFor="pi-paypal">{t('paymentInfo.paypalLabel')}</Label>
+          <Input
+            id="pi-paypal"
+            type="text"
+            placeholder="username or https://paypal.me/..."
+            value={paypal}
+            onChange={(e) => setPaypal(e.target.value)}
+            className="bg-white"
+          />
+          <p className="text-xs text-gray-400">{t('paymentInfo.paypalHint')}</p>
+        </div>
+      </div>
+      <Button
+        onClick={save}
+        disabled={saving}
+        style={{ background: 'var(--kn-primary,#005982)' }}
+        className="text-white gap-1"
+      >
+        <Check size={14} />
+        {t('paymentInfo.save')}
+      </Button>
+    </div>
+  );
+}
+
 // ─── Shared Modal ─────────────────────────────────────────────────────────────
 
 function Modal({ children, title, onClose }: { children: React.ReactNode; title: string; onClose: () => void }) {
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
         className="w-full max-w-md rounded-xl bg-white shadow-xl p-6 space-y-4"
@@ -1596,6 +2033,7 @@ function Modal({ children, title, onClose }: { children: React.ReactNode; title:
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
