@@ -733,7 +733,8 @@
       "success": "Sitzungszahlung wurde gebucht.",
       "error": "Fehler beim Buchen.",
       "loadError": "Sitzungen konnten nicht geladen werden.",
-      "confirm": "Buchen"
+      "confirm": "Buchen",
+      "sessionLabel": "Sitzung vom {date}"
     },
     "error": {
       "invalidAmount": "Bitte einen gültigen Betrag eingeben"
