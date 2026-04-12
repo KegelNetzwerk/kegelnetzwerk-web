@@ -152,6 +152,7 @@ export async function POST(req: NextRequest) {
     type: FinanceTxType.SESSION_PAYMENT,
     amount: perPerson,
     note: txNote,
+    sessionGroup,
     date: txDate,
   }));
 
@@ -161,6 +162,7 @@ export async function POST(req: NextRequest) {
     type: FinanceTxType.SESSION_PAYMENT,
     amount: perPerson,
     note: txNote,
+    sessionGroup,
     date: txDate,
   }));
 

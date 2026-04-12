@@ -77,6 +77,8 @@ interface Transaction {
   note: string;
   date: string;
   payoffEventId: number | null;
+  sessionGroup: number | null;
+  sessionDate: string | null;
   member: { id: number; nickname: string } | null;
   guest: { id: number; nickname: string } | null;
 }
@@ -1434,6 +1436,8 @@ function CollectivesTab({
           note: '',
           date: new Date().toISOString(),
           payoffEventId: null,
+          sessionGroup: null,
+          sessionDate: null,
           member: members.find((m) => m.id === memberId) ?? null,
           guest: null,
         };
@@ -1982,7 +1986,14 @@ function LogTab({
                         {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-gray-500 max-w-[200px] truncate">{tx.note}</td>
+                    <td className="px-4 py-2.5 text-gray-500 max-w-[200px]">
+                      {tx.type === 'SESSION_PAYMENT' && tx.sessionDate && (
+                        <div className="text-xs font-medium text-cyan-700 mb-0.5">
+                          {t('sessionPayment.sessionLabel', { date: fmtDate(tx.sessionDate) })}
+                        </div>
+                      )}
+                      <span className="truncate block">{tx.note}</span>
+                    </td>
                     <td className="px-4 py-2.5">
                       <Button
                         size="sm"

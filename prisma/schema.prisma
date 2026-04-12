@@ -482,6 +482,7 @@ model FinanceTransaction {
   type          FinanceTxType
   amount        Float           // positive = credit (member paid), negative = debit (member owes)
   note          String          @default("")
+  sessionGroup  Int?            // set for SESSION_PAYMENT to link back to the game session
   payoffEventId Int?
   payoffEvent   PayoffEvent?    @relation(fields: [payoffEventId], references: [id], onDelete: SetNull)
   collectiveId  Int?

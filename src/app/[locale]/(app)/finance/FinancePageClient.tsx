@@ -16,6 +16,8 @@ interface Transaction {
   note: string;
   date: string;
   payoffEventId: number | null;
+  sessionGroup: number | null;
+  sessionDate: string | null;
 }
 
 interface ClubPaymentInfo {
@@ -319,7 +321,14 @@ export default function FinancePageClient({
                       {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
                     </span>
                   </td>
-                  <td className="px-4 py-2.5 text-gray-500">{tx.note}</td>
+                  <td className="px-4 py-2.5 text-gray-500">
+                    {tx.type === 'SESSION_PAYMENT' && tx.sessionDate && (
+                      <div className="text-xs font-medium text-cyan-700 mb-0.5">
+                        {t('sessionPayment.sessionLabel', { date: fmtDate(tx.sessionDate) })}
+                      </div>
+                    )}
+                    {tx.note}
+                  </td>
                 </tr>
               ))}
             </tbody>

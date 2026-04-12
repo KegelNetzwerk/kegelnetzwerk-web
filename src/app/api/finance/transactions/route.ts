@@ -57,7 +57,34 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
-  return NextResponse.json({ transactions, total, page, pageSize });
+  // For SESSION_PAYMENT transactions, look up the session date from the Result table
+  const sessionGroups = [
+    ...new Set(
+      transactions
+        .filter((tx) => tx.type === FinanceTxType.SESSION_PAYMENT && tx.sessionGroup !== null)
+        .map((tx) => tx.sessionGroup as number)
+    ),
+  ];
+  const sessionDateMap: Record<number, string> = {};
+  if (sessionGroups.length > 0) {
+    const sessionDates = await prisma.result.groupBy({
+      by: ['sessionGroup'],
+      where: { clubId: member.clubId, sessionGroup: { in: sessionGroups } },
+      _min: { date: true },
+    });
+    for (const s of sessionDates) {
+      if (s._min.date) {
+        sessionDateMap[s.sessionGroup] = s._min.date.toISOString();
+      }
+    }
+  }
+
+  const enriched = transactions.map((tx) => ({
+    ...tx,
+    sessionDate: tx.sessionGroup !== null ? (sessionDateMap[tx.sessionGroup] ?? null) : null,
+  }));
+
+  return NextResponse.json({ transactions: enriched, total, page, pageSize });
 }
 
 // POST /api/finance/transactions — create a single transaction (admin only)
