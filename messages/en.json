@@ -548,6 +548,7 @@
       "trigger": "Run Payoff",
       "due": "Payoff is due",
       "lastOn": "Last payoff:",
+      "confirmText": "Run a payoff now? Penalties, fees, and regular payments will be posted automatically.",
       "success": "Payoff completed successfully",
       "error": "Error running payoff"
     },

@@ -548,6 +548,7 @@
       "trigger": "Abrechnung starten",
       "due": "Abrechnung fällig",
       "lastOn": "Letzte Abrechnung:",
+      "confirmText": "Soll jetzt eine Abrechnung durchgeführt werden? Strafen, Beiträge und regelmäßige Zahlungen werden automatisch verbucht.",
       "success": "Abrechnung erfolgreich durchgeführt",
       "error": "Fehler bei der Abrechnung"
     },
