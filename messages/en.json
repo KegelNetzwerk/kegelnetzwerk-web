@@ -689,7 +689,14 @@
       "viewingMember": "Viewing member",
       "deleteConfirmTitle": "Delete Transaction",
       "deleteConfirm": "Are you sure you want to delete this transaction?",
-      "deleteConfirmOk": "Delete"
+      "deleteConfirmOk": "Delete",
+      "clearButton": "Clear Log",
+      "clearTitle": "Clear Log",
+      "clearConfirmText": "This will permanently delete all transactions. Balances of all members and guests will be reset to zero. Payoff history, collective charge payments, and session payment records will also be reset.",
+      "clearTypeToConfirm": "Type \"clear log\" to confirm",
+      "clearConfirmOk": "Clear Log",
+      "clearSuccess": "Log cleared.",
+      "clearError": "Error clearing the log."
     },
     "paymentInfo": {
       "title": "Payment Information",

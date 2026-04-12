@@ -689,7 +689,14 @@
       "viewingMember": "Mitglied anzeigen",
       "deleteConfirmTitle": "Buchung löschen",
       "deleteConfirm": "Soll diese Buchung wirklich gelöscht werden?",
-      "deleteConfirmOk": "Löschen"
+      "deleteConfirmOk": "Löschen",
+      "clearButton": "Protokoll löschen",
+      "clearTitle": "Protokoll löschen",
+      "clearConfirmText": "Dadurch werden alle Buchungen unwiderruflich gelöscht. Guthaben und Schulden aller Mitglieder und Gäste werden auf 0 zurückgesetzt. Abrechnungen, Sammelkassen-Zahlungen und der Zahlungsaufforderungs-Verlauf werden ebenfalls zurückgesetzt.",
+      "clearTypeToConfirm": "Zur Bestätigung \"clear log\" eingeben",
+      "clearConfirmOk": "Protokoll löschen",
+      "clearSuccess": "Protokoll wurde gelöscht.",
+      "clearError": "Fehler beim Löschen des Protokolls."
     },
     "paymentInfo": {
       "title": "Zahlungsinformationen",
