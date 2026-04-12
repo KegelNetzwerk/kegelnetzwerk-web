@@ -47,6 +47,7 @@ enum FinanceTxType {
   RESET          // balance reset transaction
   MANUAL         // free-form manual adjustment
   GUEST_FEE      // per-session fee charged to a guest at payoff time
+  SESSION_PAYMENT // split bill for a session charged to all attendees
 }
 
 // ─── Club ────────────────────────────────────────────────────────────────────

@@ -149,7 +149,7 @@ export async function POST(req: NextRequest) {
   const memberTxData = includedMemberIds.map((memberId) => ({
     clubId: member.clubId,
     memberId,
-    type: FinanceTxType.COLLECTIVE,
+    type: FinanceTxType.SESSION_PAYMENT,
     amount: perPerson,
     note: txNote,
     date: txDate,
@@ -158,7 +158,7 @@ export async function POST(req: NextRequest) {
   const guestTxData = includedGuestIds.map((guestId) => ({
     clubId: member.clubId,
     guestId,
-    type: FinanceTxType.COLLECTIVE,
+    type: FinanceTxType.SESSION_PAYMENT,
     amount: perPerson,
     note: txNote,
     date: txDate,

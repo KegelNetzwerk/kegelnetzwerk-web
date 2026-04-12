@@ -51,6 +51,7 @@ function TxTypeBadge({ type, t }: { readonly type: string; readonly t: (k: strin
     PAYMENT_OUT: 'bg-red-100 text-red-700',
     CLUB_PURCHASE: 'bg-gray-100 text-gray-600',
     COLLECTIVE: 'bg-blue-100 text-blue-700',
+    SESSION_PAYMENT: 'bg-cyan-100 text-cyan-700',
     REGULAR_INCOME: 'bg-teal-100 text-teal-700',
     RESET: 'bg-purple-100 text-purple-700',
     MANUAL: 'bg-yellow-100 text-yellow-700',
@@ -82,7 +83,7 @@ export default function FinancePageClient({
   const [filterType, setFilterType] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL'];
+  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL', 'SESSION_PAYMENT'];
 
   async function loadHistory(targetMemberId: number) {
     setLoading(true);
