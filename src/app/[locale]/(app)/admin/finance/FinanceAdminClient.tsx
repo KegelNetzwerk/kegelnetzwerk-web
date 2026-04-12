@@ -1950,20 +1950,51 @@ function LogTab({
       )}
 
       {/* Delete confirmation modal */}
-      {deletePendingId !== null && (
-        <Modal onClose={() => setDeletePendingId(null)} title={t('log.deleteConfirmTitle')}>
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">{t('log.deleteConfirm')}</p>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setDeletePendingId(null)}>{t('cancel')}</Button>
-              <Button variant="destructive" onClick={confirmDeleteTx}>
-                <Trash2 size={14} />
-                {t('log.deleteConfirmOk')}
-              </Button>
+      {deletePendingId !== null && (() => {
+        const tx = transactions.find((x) => x.id === deletePendingId);
+        return (
+          <Modal onClose={() => setDeletePendingId(null)} title={t('log.deleteConfirmTitle')}>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">{t('log.deleteConfirm')}</p>
+              {tx && (
+                <div className="rounded-lg border bg-gray-50 px-4 py-3 text-sm space-y-1">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">{t('log.date')}</span>
+                    <span className="font-medium">{fmtDate(tx.date)}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">{t('overview.member')}</span>
+                    <span className="font-medium">{tx.member?.nickname ?? tx.guest?.nickname ?? t('log.clubLabel')}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">{t('log.type')}</span>
+                    <TxTypeBadge type={tx.type} t={t} />
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">{t('payment.amount')}</span>
+                    <span className={`font-semibold tabular-nums ${tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
+                    </span>
+                  </div>
+                  {tx.note && (
+                    <div className="flex justify-between gap-4">
+                      <span className="text-gray-500">{t('payment.note')}</span>
+                      <span className="text-gray-700 text-right">{tx.note}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setDeletePendingId(null)}>{t('cancel')}</Button>
+                <Button variant="destructive" onClick={confirmDeleteTx}>
+                  <Trash2 size={14} />
+                  {t('log.deleteConfirmOk')}
+                </Button>
+              </div>
             </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
     </div>
   );
 }
