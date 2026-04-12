@@ -660,7 +660,8 @@
       "REGULAR_INCOME": "Regular Payment",
       "RESET": "Reset",
       "MANUAL": "Manual",
-      "GUEST_FEE": "Guest Fee"
+      "GUEST_FEE": "Guest Fee",
+      "SESSION_PAYMENT": "Session Payment"
     },
     "freq": {
       "NONE": "None",
