@@ -1274,7 +1274,12 @@ function SettingsTab({
               <tbody>
                 {regularPayments.map((rp) => (
                   <tr key={rp.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-2.5 font-medium">{rp.member.nickname}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <AvatarImg pic={members.find((m) => m.id === rp.memberId)?.pic} nickname={rp.member.nickname} />
+                        <span className="font-medium">{rp.member.nickname}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-2.5 tabular-nums">{fmt(rp.amount)}</td>
                     <td className="px-4 py-2.5">{t(`freq.${rp.frequency}`)}</td>
                     <td className="px-4 py-2.5 text-gray-500">{rp.note}</td>
@@ -1752,6 +1757,9 @@ function LogTab({
   const [pageSize, setPageSize] = useState(50);
   const [page, setPage] = useState(0);
   const [deletePendingId, setDeletePendingId] = useState<number | null>(null);
+  const [showClearLog, setShowClearLog] = useState(false);
+  const [clearLogInput, setClearLogInput] = useState('');
+  const [clearingLog, setClearingLog] = useState(false);
 
   const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'CLUB_PURCHASE', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL', 'GUEST_FEE', 'SESSION_PAYMENT'];
 
@@ -1794,6 +1802,26 @@ function LogTab({
       toast.error(t('log.deleteError'));
     } finally {
       setDeletePendingId(null);
+    }
+  }
+
+  async function clearLog() {
+    setClearingLog(true);
+    try {
+      const res = await fetch('/api/finance/log/clear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'clear log' }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+      toast.success(t('log.clearSuccess'));
+      globalThis.location.reload();
+    } catch {
+      toast.error(t('log.clearError'));
+    } finally {
+      setClearingLog(false);
+      setShowClearLog(false);
+      setClearLogInput('');
     }
   }
 
@@ -1902,6 +1930,15 @@ function LogTab({
         >
           <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
           {t('log.refresh')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => { setShowClearLog(true); setClearLogInput(''); }}
+          className="gap-1 ml-auto text-red-600 border-red-200 hover:bg-red-50"
+        >
+          <Trash2 size={13} />
+          {t('log.clearButton')}
         </Button>
       </div>
 
@@ -2054,6 +2091,37 @@ function LogTab({
               <Button variant="destructive" onClick={confirmDeleteTx}>
                 <Trash2 size={14} />
                 {t('log.deleteConfirmOk')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Clear log confirmation modal */}
+      {showClearLog && (
+        <Modal onClose={() => { setShowClearLog(false); setClearLogInput(''); }} title={t('log.clearTitle')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">{t('log.clearConfirmText')}</p>
+            <div className="space-y-1">
+              <Label htmlFor="clear-log-input">{t('log.clearTypeToConfirm')}</Label>
+              <Input
+                id="clear-log-input"
+                type="text"
+                placeholder="clear log"
+                value={clearLogInput}
+                onChange={(e) => setClearLogInput(e.target.value)}
+                className="bg-white font-mono"
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => { setShowClearLog(false); setClearLogInput(''); }}>{t('cancel')}</Button>
+              <Button
+                variant="destructive"
+                disabled={clearLogInput !== 'clear log' || clearingLog}
+                onClick={clearLog}
+              >
+                <Trash2 size={14} />
+                {t('log.clearConfirmOk')}
               </Button>
             </div>
           </div>
