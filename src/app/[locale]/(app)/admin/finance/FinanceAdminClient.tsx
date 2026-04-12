@@ -541,6 +541,15 @@ function OverviewTab({
         <Button
           size="sm"
           variant="outline"
+          onClick={() => setShowSessionPayment(true)}
+          className="gap-1.5"
+        >
+          <Calendar size={14} />
+          {t('sessionPayment.button')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
           onClick={() => setShowClubPurchase(true)}
           className="gap-1.5"
         >
@@ -555,15 +564,6 @@ function OverviewTab({
         >
           <FileText size={14} />
           {t('demand.button')}
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowSessionPayment(true)}
-          className="gap-1.5"
-        >
-          <Calendar size={14} />
-          {t('sessionPayment.button')}
         </Button>
         <Button
           size="sm"
