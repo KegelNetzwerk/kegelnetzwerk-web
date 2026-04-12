@@ -113,6 +113,17 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
+function AvatarImg({ pic, nickname }: { readonly pic?: string; readonly nickname: string }) {
+  const hasPic = pic && pic !== 'none';
+  return (
+    <div className="shrink-0 w-7 h-7 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center text-gray-500 text-xs font-semibold select-none">
+      {hasPic
+        ? <img src={pic} alt={nickname} className="w-full h-full object-cover" />
+        : <span>{nickname.charAt(0).toUpperCase()}</span>}
+    </div>
+  );
+}
+
 function BalanceBadge({ balance }: { readonly balance: number }) {
   let color: string;
   if (balance > 0) {
@@ -590,7 +601,12 @@ function OverviewTab({
           <tbody>
             {members.map((m) => (
               <tr key={m.id} className="border-b last:border-0 hover:bg-gray-50">
-                <td className="px-4 py-2.5 font-medium">{m.nickname}</td>
+                <td className="px-4 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <AvatarImg pic={m.pic} nickname={m.nickname} />
+                    <span className="font-medium">{m.nickname}</span>
+                  </div>
+                </td>
                 <td className="px-4 py-2.5 text-right">
                   <BalanceBadge balance={getBalance(m.id)} />
                 </td>
@@ -644,7 +660,12 @@ function OverviewTab({
             <tbody>
               {guests.map((g) => (
                 <tr key={g.id} className="border-b last:border-0 hover:bg-gray-50">
-                  <td className="px-4 py-2.5 font-medium">{g.nickname}</td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <AvatarImg nickname={g.nickname} />
+                      <span className="font-medium">{g.nickname}</span>
+                    </div>
+                  </td>
                   <td className="px-4 py-2.5 text-right">
                     <BalanceBadge balance={g.balance} />
                   </td>
@@ -771,6 +792,7 @@ function OverviewTab({
                         });
                       }}
                     />
+                    <AvatarImg pic={m.pic} nickname={m.nickname} />
                     <span>{m.nickname}</span>
                   </label>
                 ))}
@@ -1524,6 +1546,7 @@ function CollectivesTab({
                       });
                     }}
                   />
+                  <AvatarImg pic={m.pic} nickname={m.nickname} />
                   <span>{m.nickname}</span>
                 </label>
               ))}
@@ -1621,7 +1644,12 @@ function CollectivesTab({
                     <tbody>
                       {c.assignments.map((a) => (
                         <tr key={a.id} className={`border-b last:border-0 ${a.excluded ? 'opacity-50' : ''}`}>
-                          <td className="px-4 py-2">{a.member.nickname}</td>
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-2">
+                              <AvatarImg pic={members.find((m) => m.id === a.memberId)?.pic} nickname={a.member.nickname} />
+                              <span>{a.member.nickname}</span>
+                            </div>
+                          </td>
                           <td className="px-4 py-2 tabular-nums">{fmt(a.amount)}</td>
                           <td className="px-4 py-2">
                             {a.excluded && <span className="text-gray-400 text-xs">{t('collective.excluded')}</span>}
@@ -1898,7 +1926,17 @@ function LogTab({
                 {paginated.map((tx) => (
                   <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50">
                     <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
-                    <td className="px-4 py-2.5 font-medium">{tx.member?.nickname ?? tx.guest?.nickname ?? t('log.clubLabel')}</td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex items-center gap-2">
+                        {(tx.memberId !== null || tx.guestId !== null) && (
+                          <AvatarImg
+                            pic={tx.memberId !== null ? members.find((m) => m.id === tx.memberId)?.pic : undefined}
+                            nickname={tx.member?.nickname ?? tx.guest?.nickname ?? ''}
+                          />
+                        )}
+                        <span className="font-medium">{tx.member?.nickname ?? tx.guest?.nickname ?? t('log.clubLabel')}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-2.5">
                       <TxTypeBadge type={tx.type} t={t} />
                     </td>
@@ -2321,6 +2359,7 @@ function SessionPaymentModal({
                         });
                       }}
                     />
+                    <AvatarImg pic={allMembers.find((x) => x.id === m.id)?.pic} nickname={m.nickname} />
                     <span>{m.nickname}</span>
                   </label>
                 ))}
@@ -2342,6 +2381,7 @@ function SessionPaymentModal({
                         });
                       }}
                     />
+                    <AvatarImg nickname={g.nickname} />
                     <span>{g.nickname}</span>
                   </label>
                 ))}
