@@ -26,13 +26,14 @@ export async function PUT(
 
   const body = await req.json() as { name?: string; note?: string; closed?: boolean };
 
+  const data: { name?: string; note?: string; closed?: boolean } = {};
+  if (body.name !== undefined) data.name = body.name.trim();
+  if (body.note !== undefined) data.note = body.note;
+  if (body.closed !== undefined) data.closed = body.closed;
+
   const updated = await prisma.collectiveCharge.update({
     where: { id: collectiveId },
-    data: {
-      ...(body.name !== undefined ? { name: body.name.trim() } : {}),
-      ...(body.note !== undefined ? { note: body.note } : {}),
-      ...(body.closed !== undefined ? { closed: body.closed } : {}),
-    },
+    data,
   });
 
   return NextResponse.json(updated);

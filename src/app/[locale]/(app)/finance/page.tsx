@@ -8,7 +8,7 @@ export default async function FinancePage() {
   const member = await getCurrentMember();
   if (!member) redirect('/login');
 
-  const [balanceResult, transactions, allMembers] = await Promise.all([
+  const [balanceResult, transactions, allMembers, club] = await Promise.all([
     prisma.financeTransaction.aggregate({
       where: { memberId: member.id },
       _sum: { amount: true },
@@ -26,6 +26,10 @@ export default async function FinancePage() {
           orderBy: { nickname: 'asc' },
         })
       : Promise.resolve([] as { id: number; nickname: string }[]),
+    prisma.club.findUnique({
+      where: { id: member.clubId },
+      select: { accountHolder: true, iban: true, bic: true, paypal: true },
+    }),
   ]);
 
   const balance = Math.round(((balanceResult._sum.amount ?? 0) * 100)) / 100;
@@ -36,8 +40,9 @@ export default async function FinancePage() {
       memberNickname={member.nickname}
       isAdmin={member.role === Role.ADMIN}
       initialBalance={balance}
-      initialTransactions={JSON.parse(JSON.stringify(transactions))}
+      initialTransactions={JSON.parse(JSON.stringify(transactions))} // NOSONAR
       allMembers={allMembers}
+      clubPaymentInfo={club ?? { accountHolder: '', iban: '', bic: '', paypal: '' }}
     />
   );
 }

@@ -43,7 +43,7 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function TxTypeBadge({ type, t }: { type: string; t: (k: string) => string }) {
+function TxTypeBadge({ type, t }: { readonly type: string; readonly t: (k: string) => string }) {
   const colors: Record<string, string> = {
     PENALTY: 'bg-red-100 text-red-700',
     CLUB_FEE: 'bg-orange-100 text-orange-700',
@@ -97,7 +97,7 @@ export default function FinancePageClient({
         fetch(`/api/finance/transactions?memberId=${targetMemberId}&page=1`),
       ]);
 
-      if (!txRes.ok) throw new Error();
+      if (!txRes.ok) throw new Error('Failed to load transactions');
       const data = await txRes.json() as { transactions: Transaction[] };
       setTransactions(data.transactions);
 
@@ -120,7 +120,7 @@ export default function FinancePageClient({
     setLoading(true);
     try {
       const res = await fetch(`/api/finance/transactions?memberId=${id}`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Failed to load member history');
       const data = await res.json() as { transactions: Transaction[] };
       setTransactions(data.transactions);
       const total = data.transactions.reduce((s, tx) => s + tx.amount, 0);
@@ -139,9 +139,22 @@ export default function FinancePageClient({
     return true;
   });
 
-  const balanceColor = balance > 0 ? 'text-green-700' : balance < 0 ? 'text-red-700' : 'text-gray-500';
-  const balanceBorderColor = balance > 0 ? '#15803d' : balance < 0 ? '#b91c1c' : 'var(--kn-primary,#005982)';
-  const balanceLabel = balance > 0 ? t('balance.inCredit') : balance < 0 ? t('balance.owes') : t('balance.zero');
+  let balanceColor: string;
+  let balanceBorderColor: string;
+  let balanceLabel: string;
+  if (balance > 0) {
+    balanceColor = 'text-green-700';
+    balanceBorderColor = '#15803d';
+    balanceLabel = t('balance.inCredit');
+  } else if (balance < 0) {
+    balanceColor = 'text-red-700';
+    balanceBorderColor = '#b91c1c';
+    balanceLabel = t('balance.owes');
+  } else {
+    balanceColor = 'text-gray-500';
+    balanceBorderColor = 'var(--kn-primary,#005982)';
+    balanceLabel = t('balance.zero');
+  }
 
   const hasPaymentInfo = clubPaymentInfo.iban || clubPaymentInfo.paypal;
 

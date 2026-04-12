@@ -8,11 +8,20 @@ export default async function AdminFinancePage() {
   const member = await getCurrentMember();
   if (!member || member.role !== Role.ADMIN) redirect('/');
 
-  const [settings, members, collectives, regularPayments, recentTx] = await Promise.all([
+  const [settings, club, members, guests, collectives, regularPayments, recentTx] = await Promise.all([
     prisma.clubFinanceSettings.findUnique({ where: { clubId: member.clubId } }),
+    prisma.club.findUnique({
+      where: { id: member.clubId },
+      select: { accountHolder: true, iban: true, bic: true, paypal: true },
+    }),
     prisma.member.findMany({
       where: { clubId: member.clubId },
       select: { id: true, nickname: true, pic: true },
+      orderBy: { nickname: 'asc' },
+    }),
+    prisma.guest.findMany({
+      where: { clubId: member.clubId },
+      select: { id: true, nickname: true },
       orderBy: { nickname: 'asc' },
     }),
     prisma.collectiveCharge.findMany({
@@ -34,7 +43,10 @@ export default async function AdminFinancePage() {
       where: { clubId: member.clubId },
       orderBy: { date: 'desc' },
       take: 100,
-      include: { member: { select: { id: true, nickname: true } } },
+      include: {
+        member: { select: { id: true, nickname: true } },
+        guest: { select: { id: true, nickname: true } },
+      },
     }),
   ]);
 
@@ -51,6 +63,19 @@ export default async function AdminFinancePage() {
     balance: Math.round((balanceMap.get(m.id) ?? 0) * 100) / 100,
   }));
 
+  // Compute balances per guest
+  const guestBalanceRows = await prisma.financeTransaction.groupBy({
+    by: ['guestId'],
+    where: { clubId: member.clubId, guestId: { not: null } },
+    _sum: { amount: true },
+  });
+  const guestBalanceMap = new Map(guestBalanceRows.map((r) => [r.guestId, r._sum.amount ?? 0]));
+
+  const guestsWithBalance = guests.map((g) => ({
+    ...g,
+    balance: Math.round((guestBalanceMap.get(g.id) ?? 0) * 100) / 100,
+  }));
+
   // Determine if a payoff is due
   const now = new Date();
   let payoffDue = false;
@@ -61,21 +86,25 @@ export default async function AdminFinancePage() {
     payoffDue = true;
   }
 
+  const settingsSerialized = JSON.parse(JSON.stringify(settings ?? { // NOSONAR
+    feeAmount: 0, feeFrequency: 'NONE', guestFeeAmount: 0,
+    autoPayoffEnabled: false, autoPayoffFrequency: 'MONTHLY',
+    autoPayoffDayOfMonth: 1, lastPayoffAt: null,
+  }));
+  const collectivesSerialized = JSON.parse(JSON.stringify(collectives)); // NOSONAR
+  const regularPaymentsSerialized = JSON.parse(JSON.stringify(regularPayments)); // NOSONAR
+  const recentTxSerialized = JSON.parse(JSON.stringify(recentTx)); // NOSONAR
+
   return (
     <FinanceAdminClient
-      settings={JSON.parse(JSON.stringify(settings ?? {
-        feeAmount: 0,
-        feeFrequency: 'NONE',
-        autoPayoffEnabled: false,
-        autoPayoffFrequency: 'MONTHLY',
-        autoPayoffDayOfMonth: 1,
-        lastPayoffAt: null,
-      }))}
+      settings={settingsSerialized}
       members={membersWithBalance}
-      collectives={JSON.parse(JSON.stringify(collectives))}
-      regularPayments={JSON.parse(JSON.stringify(regularPayments))}
-      recentTransactions={JSON.parse(JSON.stringify(recentTx))}
+      guests={guestsWithBalance}
+      collectives={collectivesSerialized}
+      regularPayments={regularPaymentsSerialized}
+      recentTransactions={recentTxSerialized}
       payoffDue={payoffDue}
+      clubPaymentInfo={club ?? { accountHolder: '', iban: '', bic: '', paypal: '' }}
     />
   );
 }

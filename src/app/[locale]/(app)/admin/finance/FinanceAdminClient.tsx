@@ -113,8 +113,15 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function BalanceBadge({ balance }: { balance: number }) {
-  const color = balance > 0 ? 'text-green-700 bg-green-50' : balance < 0 ? 'text-red-700 bg-red-50' : 'text-gray-500 bg-gray-100';
+function BalanceBadge({ balance }: { readonly balance: number }) {
+  let color: string;
+  if (balance > 0) {
+    color = 'text-green-700 bg-green-50';
+  } else if (balance < 0) {
+    color = 'text-red-700 bg-red-50';
+  } else {
+    color = 'text-gray-500 bg-gray-100';
+  }
   return (
     <span className={`inline-block rounded px-2 py-0.5 text-xs font-semibold tabular-nums ${color}`}>
       {balance > 0 ? '+' : ''}{fmt(balance)}
@@ -122,7 +129,7 @@ function BalanceBadge({ balance }: { balance: number }) {
   );
 }
 
-function TxTypeBadge({ type, t }: { type: string; t: (k: string, v?: Record<string, string | number | Date>) => string }) {
+function TxTypeBadge({ type, t }: { readonly type: string; readonly t: (k: string, v?: Record<string, string | number | Date>) => string }) {
   const colors: Record<string, string> = {
     PENALTY: 'bg-red-100 text-red-700',
     CLUB_FEE: 'bg-orange-100 text-orange-700',
@@ -139,6 +146,38 @@ function TxTypeBadge({ type, t }: { type: string; t: (k: string, v?: Record<stri
       {t(`txType.${type}`)}
     </span>
   );
+}
+
+function buildDemandText(
+  t: (k: string) => string,
+  debtMembers: { nickname: string; balance: number }[],
+  debtGuests: { nickname: string; balance: number }[],
+  paypalBase: string,
+): string {
+  const today = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const lines: string[] = [];
+  lines.push(`${t('demand.title')} — ${today}`);
+  lines.push('');
+  if (debtMembers.length > 0) {
+    lines.push(t('demand.membersHeader'));
+    for (const m of debtMembers) {
+      const displayAmt = Math.abs(m.balance).toFixed(2).replace('.', ',');
+      let line = `• ${m.nickname}: ${displayAmt}€`;
+      if (paypalBase) line += `  →  ${paypalBase}/${Math.abs(m.balance).toFixed(2)}`;
+      lines.push(line);
+    }
+  }
+  if (debtGuests.length > 0) {
+    if (debtMembers.length > 0) lines.push('');
+    lines.push(t('demand.guestsHeader'));
+    for (const g of debtGuests) {
+      const displayAmt = Math.abs(g.balance).toFixed(2).replace('.', ',');
+      let line = `• ${g.nickname}: ${displayAmt}€`;
+      if (paypalBase) line += `  →  ${paypalBase}/${Math.abs(g.balance).toFixed(2)}`;
+      lines.push(line);
+    }
+  }
+  return lines.join('\n');
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -270,16 +309,16 @@ function OverviewTab({
   t, members, guests, getBalance, applyTxToBalance,
   transactions, setTransactions, payoffDue, settings, paymentInfo,
 }: {
-  t: (k: string, v?: Record<string, string | number | Date>) => string;
-  members: MemberSummary[];
-  guests: GuestSummary[];
-  getBalance: (id: number) => number;
-  applyTxToBalance: (id: number, amount: number) => void;
-  transactions: Transaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-  payoffDue: boolean;
-  settings: FinanceSettings;
-  paymentInfo: ClubPaymentInfo;
+  readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
+  readonly members: MemberSummary[];
+  readonly guests: GuestSummary[];
+  readonly getBalance: (id: number) => number;
+  readonly applyTxToBalance: (id: number, amount: number) => void;
+  readonly transactions: Transaction[];
+  readonly setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  readonly payoffDue: boolean;
+  readonly settings: FinanceSettings;
+  readonly paymentInfo: ClubPaymentInfo;
 }) {
   const [payoffLoading, setPayoffLoading] = useState(false);
   const [showPayoffConfirm, setShowPayoffConfirm] = useState(false);
@@ -309,14 +348,29 @@ function OverviewTab({
   const totalCredit = members.filter((m) => getBalance(m.id) > 0).reduce((s, m) => s + getBalance(m.id), 0);
   const totalDebt = members.filter((m) => getBalance(m.id) < 0).reduce((s, m) => s + getBalance(m.id), 0);
 
+  const debtMembers = members
+    .map((m) => ({ nickname: m.nickname, balance: getBalance(m.id) }))
+    .filter((m) => m.balance < 0)
+    .sort((a, b) => a.nickname.localeCompare(b.nickname));
+  const debtGuests = guests
+    .filter((g) => g.balance < 0)
+    .sort((a, b) => a.nickname.localeCompare(b.nickname));
+  const rawPaypal = paymentInfo.paypal.trim();
+  const paypalBase = rawPaypal
+    ? rawPaypal.startsWith('http')
+      ? rawPaypal.replace(/\/$/, '')
+      : `https://paypal.me/${rawPaypal.replace(/^paypal\.me\//, '')}`
+    : '';
+  const demandText = buildDemandText(t, debtMembers, debtGuests, paypalBase);
+
   async function triggerPayoff() {
     setPayoffLoading(true);
     try {
       const res = await fetch('/api/finance/payoff', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       toast.success(t('payoff.success'));
       // Reload page to get fresh data
-      window.location.reload();
+      globalThis.location.reload();
     } catch {
       toast.error(t('payoff.error'));
     } finally {
@@ -338,7 +392,7 @@ function OverviewTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId: addPaymentFor, type: payType, amount: signedAmount, note: payNote }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const tx = await res.json() as Transaction;
       setTransactions((prev) => [tx, ...prev]);
       applyTxToBalance(addPaymentFor, signedAmount);
@@ -369,9 +423,9 @@ function OverviewTab({
           excludedMemberIds: Array.from(excludedIds),
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       toast.success(t('bulk.success'));
-      window.location.reload();
+      globalThis.location.reload();
     } catch {
       toast.error(t('bulk.error'));
     }
@@ -384,9 +438,9 @@ function OverviewTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: true, ...(memberIds ? { memberIds } : {}) }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       toast.success(t('reset.success'));
-      window.location.reload();
+      globalThis.location.reload();
     } catch {
       toast.error(t('reset.error'));
     } finally {
@@ -407,7 +461,7 @@ function OverviewTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'CLUB_PURCHASE', amount: -amount, note: cpNote }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const tx = await res.json() as Transaction;
       setTransactions((prev) => [tx, ...prev]);
       setShowClubPurchase(false);
@@ -795,88 +849,43 @@ function OverviewTab({
       )}
 
       {/* Payment demand modal */}
-      {showDemand && (() => {
-        const debtMembers = members
-          .map((m) => ({ nickname: m.nickname, balance: getBalance(m.id) }))
-          .filter((m) => m.balance < 0)
-          .sort((a, b) => a.nickname.localeCompare(b.nickname));
-        const debtGuests = guests
-          .filter((g) => g.balance < 0)
-          .sort((a, b) => a.nickname.localeCompare(b.nickname));
-
-        const rawPaypal = paymentInfo.paypal.trim();
-        const paypalBase = rawPaypal
-          ? rawPaypal.startsWith('http')
-            ? rawPaypal.replace(/\/$/, '')
-            : `https://paypal.me/${rawPaypal.replace(/^paypal\.me\//, '')}`
-          : '';
-
-        const today = new Date().toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const lines: string[] = [];
-        lines.push(`${t('demand.title')} — ${today}`);
-        lines.push('');
-
-        if (debtMembers.length > 0) {
-          lines.push(t('demand.membersHeader'));
-          for (const m of debtMembers) {
-            const displayAmt = Math.abs(m.balance).toFixed(2).replace('.', ',');
-            let line = `• ${m.nickname}: ${displayAmt}€`;
-            if (paypalBase) line += `  →  ${paypalBase}/${Math.abs(m.balance).toFixed(2)}`;
-            lines.push(line);
-          }
-        }
-
-        if (debtGuests.length > 0) {
-          if (debtMembers.length > 0) lines.push('');
-          lines.push(t('demand.guestsHeader'));
-          for (const g of debtGuests) {
-            const displayAmt = Math.abs(g.balance).toFixed(2).replace('.', ',');
-            let line = `• ${g.nickname}: ${displayAmt}€`;
-            if (paypalBase) line += `  →  ${paypalBase}/${Math.abs(g.balance).toFixed(2)}`;
-            lines.push(line);
-          }
-        }
-
-        const demandText = lines.join('\n');
-
-        return (
-          <Modal onClose={() => setShowDemand(false)} title={t('demand.title')} wide>
-            {debtMembers.length === 0 && debtGuests.length === 0 ? (
-              <div className="space-y-4">
-                <p className="text-sm text-gray-500 italic">{t('demand.empty')}</p>
-                <div className="flex justify-end">
-                  <Button variant="outline" onClick={() => setShowDemand(false)}>{t('cancel')}</Button>
-                </div>
+      {showDemand && (
+        <Modal onClose={() => setShowDemand(false)} title={t('demand.title')} wide>
+          {debtMembers.length === 0 && debtGuests.length === 0 ? (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500 italic">{t('demand.empty')}</p>
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={() => setShowDemand(false)}>{t('cancel')}</Button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <textarea
-                  readOnly
-                  value={demandText}
-                  rows={Math.min(20, lines.length + 2)}
-                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono bg-gray-50 resize-none"
-                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                />
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={() => setShowDemand(false)}>{t('cancel')}</Button>
-                  <Button
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(demandText);
-                      setDemandCopied(true);
-                      setTimeout(() => setDemandCopied(false), 2000);
-                    }}
-                    style={{ background: 'var(--kn-primary,#005982)' }}
-                    className="text-white gap-1"
-                  >
-                    {demandCopied ? <Check size={14} /> : <Copy size={14} />}
-                    <span>{demandCopied ? t('demand.copied') : t('demand.copy')}</span>
-                  </Button>
-                </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <textarea
+                readOnly
+                value={demandText}
+                rows={Math.min(20, demandText.split('\n').length + 2)}
+                className="w-full rounded border border-gray-300 px-3 py-2 text-sm font-mono bg-gray-50 resize-none"
+                onClick={(e) => e.currentTarget.select()}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowDemand(false)}>{t('cancel')}</Button>
+                <Button
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(demandText);
+                    setDemandCopied(true);
+                    setTimeout(() => setDemandCopied(false), 2000);
+                  }}
+                  style={{ background: 'var(--kn-primary,#005982)' }}
+                  className="text-white gap-1"
+                >
+                  {demandCopied ? <Check size={14} /> : <Copy size={14} />}
+                  <span>{demandCopied ? t('demand.copied') : t('demand.copy')}</span>
+                </Button>
               </div>
-            )}
-          </Modal>
-        );
-      })()}
+            </div>
+          )}
+        </Modal>
+      )}
 
       {/* Reset confirmation */}
       {resetConfirm !== null && (
@@ -922,12 +931,12 @@ function OverviewTab({
 function SettingsTab({
   t, settings, setSettings, members, regularPayments, setRegularPayments,
 }: {
-  t: (k: string, v?: Record<string, string | number | Date>) => string;
-  settings: FinanceSettings;
-  setSettings: React.Dispatch<React.SetStateAction<FinanceSettings>>;
-  members: MemberSummary[];
-  regularPayments: RegularPayment[];
-  setRegularPayments: React.Dispatch<React.SetStateAction<RegularPayment[]>>;
+  readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
+  readonly settings: FinanceSettings;
+  readonly setSettings: React.Dispatch<React.SetStateAction<FinanceSettings>>;
+  readonly members: MemberSummary[];
+  readonly regularPayments: RegularPayment[];
+  readonly setRegularPayments: React.Dispatch<React.SetStateAction<RegularPayment[]>>;
 }) {
   const [saving, setSaving] = useState(false);
   const [fee, setFee] = useState(String(settings.feeAmount));
@@ -959,7 +968,7 @@ function SettingsTab({
           autoPayoffDayOfMonth: Number.parseInt(autoDay) || 1,
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const updated = await res.json() as FinanceSettings;
       setSettings(updated);
       toast.success(t('settings.saved'));
@@ -983,7 +992,7 @@ function SettingsTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId: Number.parseInt(newRpMember), amount, frequency: newRpFreq, note: newRpNote }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const created = await res.json() as RegularPayment;
       setRegularPayments((prev) => [...prev, created]);
       setNewRpMember('');
@@ -1004,7 +1013,7 @@ function SettingsTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: !rp.active }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const updated = await res.json() as RegularPayment;
       setRegularPayments((prev) => prev.map((p) => p.id === rp.id ? updated : p));
     } catch {
@@ -1015,7 +1024,7 @@ function SettingsTab({
   async function deleteRp(id: number) {
     try {
       const res = await fetch(`/api/finance/regular-payments/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       setRegularPayments((prev) => prev.filter((p) => p.id !== id));
       toast.success(t('regularPayment.deleted'));
     } catch {
@@ -1265,13 +1274,13 @@ function SettingsTab({
 function CollectivesTab({
   t, members, collectives, setCollectives, applyTxToBalance, transactions, setTransactions,
 }: {
-  t: (k: string, v?: Record<string, string | number | Date>) => string;
-  members: MemberSummary[];
-  collectives: CollectiveCharge[];
-  setCollectives: React.Dispatch<React.SetStateAction<CollectiveCharge[]>>;
-  applyTxToBalance: (id: number, amount: number) => void;
-  transactions: Transaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
+  readonly members: MemberSummary[];
+  readonly collectives: CollectiveCharge[];
+  readonly setCollectives: React.Dispatch<React.SetStateAction<CollectiveCharge[]>>;
+  readonly applyTxToBalance: (id: number, amount: number) => void;
+  readonly transactions: Transaction[];
+  readonly setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
 }) {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
@@ -1308,7 +1317,7 @@ function CollectivesTab({
           excludedMemberIds: Array.from(excludedMemberIds),
         }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const created = await res.json() as CollectiveCharge;
       setCollectives((prev) => [created, ...prev]);
       setCreating(false);
@@ -1329,7 +1338,7 @@ function CollectivesTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ closed: !c.closed }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const updated = await res.json() as CollectiveCharge;
       setCollectives((prev) => prev.map((x) => x.id === c.id ? { ...x, closed: updated.closed } : x));
     } catch {
@@ -1340,7 +1349,7 @@ function CollectivesTab({
   async function deleteCollective(id: number) {
     try {
       const res = await fetch(`/api/finance/collectives/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       setCollectives((prev) => prev.filter((c) => c.id !== id));
       toast.success(t('collective.deleted'));
     } catch {
@@ -1355,7 +1364,7 @@ function CollectivesTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId, action }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const updated = await res.json() as AssignmentRow;
 
       setCollectives((prev) => prev.map((c) => {
@@ -1594,11 +1603,9 @@ function CollectivesTab({
                           <td className="px-4 py-2">{a.member.nickname}</td>
                           <td className="px-4 py-2 tabular-nums">{fmt(a.amount)}</td>
                           <td className="px-4 py-2">
-                            {a.excluded
-                              ? <span className="text-gray-400 text-xs">{t('collective.excluded')}</span>
-                              : a.paidAt
-                                ? <span className="text-green-700 text-xs font-medium">{t('collective.paidOn')} {fmtDate(a.paidAt)}</span>
-                                : <span className="text-amber-600 text-xs">{t('collective.pending')}</span>}
+                            {a.excluded && <span className="text-gray-400 text-xs">{t('collective.excluded')}</span>}
+                            {!a.excluded && a.paidAt && <span className="text-green-700 text-xs font-medium">{t('collective.paidOn')} {fmtDate(a.paidAt)}</span>}
+                            {!a.excluded && !a.paidAt && <span className="text-amber-600 text-xs">{t('collective.pending')}</span>}
                           </td>
                           <td className="px-4 py-2">
                             <div className="flex gap-1 justify-end">
@@ -1682,11 +1689,11 @@ function CollectivesTab({
 function LogTab({
   t, members, guests, transactions, setTransactions,
 }: {
-  t: (k: string, v?: Record<string, string | number | Date>) => string;
-  members: MemberSummary[];
-  guests: GuestSummary[];
-  transactions: Transaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
+  readonly members: MemberSummary[];
+  readonly guests: GuestSummary[];
+  readonly transactions: Transaction[];
+  readonly setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
 }) {
   const [filterMember, setFilterMember] = useState('');
   const [filterFrom, setFilterFrom] = useState('');
@@ -1713,7 +1720,7 @@ function LogTab({
       if (filterTo) params.set('to', filterTo);
       if (filterType) params.set('type', filterType);
       const res = await fetch(`/api/finance/transactions?${params.toString()}`);
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const data = await res.json() as { transactions: Transaction[] };
       setTransactions(data.transactions);
     } catch {
@@ -1760,6 +1767,7 @@ function LogTab({
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages - 1);
   const paginated = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize);
+  const txToDelete = deletePendingId !== null ? transactions.find((x) => x.id === deletePendingId) : null;
 
   return (
     <div className="space-y-4">
@@ -1950,51 +1958,48 @@ function LogTab({
       )}
 
       {/* Delete confirmation modal */}
-      {deletePendingId !== null && (() => {
-        const tx = transactions.find((x) => x.id === deletePendingId);
-        return (
-          <Modal onClose={() => setDeletePendingId(null)} title={t('log.deleteConfirmTitle')}>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">{t('log.deleteConfirm')}</p>
-              {tx && (
-                <div className="rounded-lg border bg-gray-50 px-4 py-3 text-sm space-y-1">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-gray-500">{t('log.date')}</span>
-                    <span className="font-medium">{fmtDate(tx.date)}</span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-gray-500">{t('overview.member')}</span>
-                    <span className="font-medium">{tx.member?.nickname ?? tx.guest?.nickname ?? t('log.clubLabel')}</span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-gray-500">{t('log.type')}</span>
-                    <TxTypeBadge type={tx.type} t={t} />
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-gray-500">{t('payment.amount')}</span>
-                    <span className={`font-semibold tabular-nums ${tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                      {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
-                    </span>
-                  </div>
-                  {tx.note && (
-                    <div className="flex justify-between gap-4">
-                      <span className="text-gray-500">{t('payment.note')}</span>
-                      <span className="text-gray-700 text-right">{tx.note}</span>
-                    </div>
-                  )}
+      {deletePendingId !== null && (
+        <Modal onClose={() => setDeletePendingId(null)} title={t('log.deleteConfirmTitle')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">{t('log.deleteConfirm')}</p>
+            {txToDelete && (
+              <div className="rounded-lg border bg-gray-50 px-4 py-3 text-sm space-y-1">
+                <div className="flex justify-between gap-4">
+                  <span className="text-gray-500">{t('log.date')}</span>
+                  <span className="font-medium">{fmtDate(txToDelete.date)}</span>
                 </div>
-              )}
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setDeletePendingId(null)}>{t('cancel')}</Button>
-                <Button variant="destructive" onClick={confirmDeleteTx}>
-                  <Trash2 size={14} />
-                  {t('log.deleteConfirmOk')}
-                </Button>
+                <div className="flex justify-between gap-4">
+                  <span className="text-gray-500">{t('overview.member')}</span>
+                  <span className="font-medium">{txToDelete.member?.nickname ?? txToDelete.guest?.nickname ?? t('log.clubLabel')}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-gray-500">{t('log.type')}</span>
+                  <TxTypeBadge type={txToDelete.type} t={t} />
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-gray-500">{t('payment.amount')}</span>
+                  <span className={`font-semibold tabular-nums ${txToDelete.amount >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    {txToDelete.amount >= 0 ? '+' : ''}{fmt(txToDelete.amount)}
+                  </span>
+                </div>
+                {txToDelete.note && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-gray-500">{t('payment.note')}</span>
+                    <span className="text-gray-700 text-right">{txToDelete.note}</span>
+                  </div>
+                )}
               </div>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDeletePendingId(null)}>{t('cancel')}</Button>
+              <Button variant="destructive" onClick={confirmDeleteTx}>
+                <Trash2 size={14} />
+                {t('log.deleteConfirmOk')}
+              </Button>
             </div>
-          </Modal>
-        );
-      })()}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -2004,9 +2009,9 @@ function LogTab({
 function PaymentInfoTab({
   t, paymentInfo, setPaymentInfo,
 }: {
-  t: (k: string, v?: Record<string, string | number | Date>) => string;
-  paymentInfo: ClubPaymentInfo;
-  setPaymentInfo: React.Dispatch<React.SetStateAction<ClubPaymentInfo>>;
+  readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
+  readonly paymentInfo: ClubPaymentInfo;
+  readonly setPaymentInfo: React.Dispatch<React.SetStateAction<ClubPaymentInfo>>;
 }) {
   const [accountHolder, setAccountHolder] = useState(paymentInfo.accountHolder);
   const [iban, setIban] = useState(paymentInfo.iban);
@@ -2022,7 +2027,7 @@ function PaymentInfoTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accountHolder, iban, bic, paypal }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const updated = await res.json() as ClubPaymentInfo;
       setPaymentInfo(updated);
       toast.success(t('paymentInfo.saved'));
@@ -2095,9 +2100,9 @@ function PaymentInfoTab({
 
 // ─── Shared Modal ─────────────────────────────────────────────────────────────
 
-function Modal({ children, title, onClose, wide }: { children: React.ReactNode; title: string; onClose: () => void; wide?: boolean }) {
+function Modal({ children, title, onClose, wide }: { readonly children: React.ReactNode; readonly title: string; readonly onClose: () => void; readonly wide?: boolean }) {
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+    <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
       <div
         className={`w-full rounded-xl bg-white shadow-xl p-6 space-y-4 ${wide ? 'max-w-2xl' : 'max-w-md'}`}
         onClick={(e) => e.stopPropagation()}

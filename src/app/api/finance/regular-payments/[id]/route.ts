@@ -33,16 +33,17 @@ export async function PUT(
 
   const allFrequencies = Object.values(FinanceFrequency) as string[];
 
+  const data: { amount?: number; frequency?: FinanceFrequency; note?: string; active?: boolean } = {};
+  if (body.amount !== undefined) data.amount = body.amount;
+  if (body.frequency && allFrequencies.includes(body.frequency) && body.frequency !== FinanceFrequency.NONE) {
+    data.frequency = body.frequency as FinanceFrequency;
+  }
+  if (body.note !== undefined) data.note = body.note;
+  if (body.active !== undefined) data.active = body.active;
+
   const updated = await prisma.regularMemberPayment.update({
     where: { id: paymentId },
-    data: {
-      ...(body.amount !== undefined ? { amount: body.amount } : {}),
-      ...(body.frequency && allFrequencies.includes(body.frequency) && body.frequency !== FinanceFrequency.NONE
-        ? { frequency: body.frequency as FinanceFrequency }
-        : {}),
-      ...(body.note !== undefined ? { note: body.note } : {}),
-      ...(body.active !== undefined ? { active: body.active } : {}),
-    },
+    data,
     include: { member: { select: { id: true, nickname: true } } },
   });
 
