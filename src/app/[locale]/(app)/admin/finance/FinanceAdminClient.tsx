@@ -282,6 +282,7 @@ function OverviewTab({
   paymentInfo: ClubPaymentInfo;
 }) {
   const [payoffLoading, setPayoffLoading] = useState(false);
+  const [showPayoffConfirm, setShowPayoffConfirm] = useState(false);
   const [resetConfirm, setResetConfirm] = useState<'all' | number | null>(null);
   const [resetAllInput, setResetAllInput] = useState('');
   const [addPaymentFor, setAddPaymentFor] = useState<number | null>(null); // memberId
@@ -300,7 +301,7 @@ function OverviewTab({
   const [payType, setPayType] = useState<'PAYMENT_IN' | 'PAYMENT_OUT'>('PAYMENT_IN');
 
   // Bulk modal state
-  const [bulkType, setBulkType] = useState<'PAYMENT_IN' | 'PAYMENT_OUT' | 'MANUAL'>('MANUAL');
+  const [bulkType, setBulkType] = useState<'PAYMENT_IN' | 'PAYMENT_OUT'>('PAYMENT_IN');
   const [bulkAmount, setBulkAmount] = useState('');
   const [bulkNote, setBulkNote] = useState('');
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
@@ -434,7 +435,7 @@ function OverviewTab({
           </div>
           <Button
             size="sm"
-            onClick={triggerPayoff}
+            onClick={() => setShowPayoffConfirm(true)}
             disabled={payoffLoading}
             style={{ background: 'var(--kn-primary,#005982)' }}
             className="text-white shrink-0"
@@ -466,24 +467,22 @@ function OverviewTab({
         <Button
           size="sm"
           variant="outline"
+          onClick={() => setShowPayoffConfirm(true)}
+          disabled={payoffLoading}
+          className="gap-1.5 text-green-700 border-green-300 hover:bg-green-50"
+        >
+          <RefreshCw size={14} className={payoffLoading ? 'animate-spin' : ''} />
+          {t('payoff.trigger')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
           onClick={() => setBulkModal(true)}
           className="gap-1.5"
         >
           <Users size={14} />
-          {t('bulk.button')}
+          {t('bulk.title')}
         </Button>
-        {!payoffDue && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={triggerPayoff}
-            disabled={payoffLoading}
-            className="gap-1.5"
-          >
-            <RefreshCw size={14} className={payoffLoading ? 'animate-spin' : ''} />
-            {t('payoff.trigger')}
-          </Button>
-        )}
         <Button
           size="sm"
           variant="outline"
@@ -666,7 +665,6 @@ function OverviewTab({
               >
                 <option value="PAYMENT_IN">{t('txType.PAYMENT_IN')}</option>
                 <option value="PAYMENT_OUT">{t('txType.PAYMENT_OUT')}</option>
-                <option value="MANUAL">{t('txType.MANUAL')}</option>
               </select>
             </div>
             <div className="space-y-1">
@@ -765,6 +763,31 @@ function OverviewTab({
               >
                 <Check size={14} />
                 {t('clubPurchase.save')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Payoff confirmation modal */}
+      {showPayoffConfirm && (
+        <Modal onClose={() => setShowPayoffConfirm(false)} title={t('payoff.trigger')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">{t('payoff.confirmText')}</p>
+            {settings.lastPayoffAt && (
+              <p className="text-xs text-gray-400">
+                {t('payoff.lastOn')} {fmtDate(settings.lastPayoffAt)}
+              </p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowPayoffConfirm(false)}>{t('cancel')}</Button>
+              <Button
+                onClick={() => { setShowPayoffConfirm(false); triggerPayoff(); }}
+                disabled={payoffLoading}
+                className="gap-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                <RefreshCw size={14} className={payoffLoading ? 'animate-spin' : ''} />
+                {t('payoff.trigger')}
               </Button>
             </div>
           </div>
