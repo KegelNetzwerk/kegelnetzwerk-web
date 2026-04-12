@@ -587,7 +587,7 @@
       "clubFee": "Klubbeitrag",
       "feeAmount": "Betrag",
       "feeFrequency": "Häufigkeit",
-      "guestFeeAmount": "Gastgebühr pro Session",
+      "guestFeeAmount": "Gastgebühr pro Sitzung",
       "autoPayoff": "Automatische Abrechnung",
       "autoPayoffToggle": "Automatische Abrechnung umschalten",
       "autoPayoffEnabled": "Automatische Abrechnung aktivieren",
@@ -664,7 +664,8 @@
       "WEEKLY": "Wöchentlich",
       "MONTHLY": "Monatlich",
       "QUARTERLY": "Vierteljährlich",
-      "YEARLY": "Jährlich"
+      "YEARLY": "Jährlich",
+      "PER_SESSION": "Pro Sitzung"
     },
     "log": {
       "allMembers": "Alle Mitglieder",

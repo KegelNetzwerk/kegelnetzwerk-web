@@ -664,7 +664,8 @@
       "WEEKLY": "Weekly",
       "MONTHLY": "Monthly",
       "QUARTERLY": "Quarterly",
-      "YEARLY": "Yearly"
+      "YEARLY": "Yearly",
+      "PER_SESSION": "Per Session"
     },
     "log": {
       "allMembers": "All Members",
