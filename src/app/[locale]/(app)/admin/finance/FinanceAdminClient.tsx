@@ -1280,6 +1280,7 @@ function CollectivesTab({
   const [amountMode, setAmountMode] = useState<'per-member' | 'total'>('per-member');
   const [excludedMemberIds, setExcludedMemberIds] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
   const includedCount = members.filter((m) => !excludedMemberIds.has(m.id)).length;
   const parsedAmount = Number.parseFloat(newAmount.replace(',', '.'));
@@ -1535,7 +1536,10 @@ function CollectivesTab({
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-sm">{c.name}</span>
-                    <span className="text-xs text-gray-500 tabular-nums">{fmt(c.defaultAmount)} / {t('collective.perMember')}</span>
+                    <span className="text-xs text-gray-500 tabular-nums">
+                      {fmt(c.defaultAmount)} / {t('collective.perMember')}
+                      <span className="text-gray-400"> · {fmt(Math.round(c.defaultAmount * active.length * 100) / 100)} {t('collective.total')}</span>
+                    </span>
                     {c.closed && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">{t('collective.closed')}</span>}
                   </div>
                   <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-200">
@@ -1559,7 +1563,7 @@ function CollectivesTab({
                     size="sm"
                     variant="ghost"
                     className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
-                    onClick={() => deleteCollective(c.id)}
+                    onClick={() => setDeleteConfirmId(c.id)}
                   >
                     <Trash2 size={13} />
                   </Button>
@@ -1650,6 +1654,25 @@ function CollectivesTab({
           );
         })}
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteConfirmId !== null && (
+        <Modal onClose={() => setDeleteConfirmId(null)} title={t('collective.deleteConfirmTitle')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">{t('collective.deleteConfirm')}</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>{t('cancel')}</Button>
+              <Button
+                variant="destructive"
+                onClick={() => { deleteCollective(deleteConfirmId); setDeleteConfirmId(null); }}
+              >
+                <Trash2 size={14} />
+                {t('collective.deleteConfirmOk')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }

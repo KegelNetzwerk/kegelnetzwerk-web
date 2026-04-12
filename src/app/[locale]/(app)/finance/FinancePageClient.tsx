@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, CreditCard, ExternalLink } from 'lucide-react';
 
 interface Transaction {
   id: number;
@@ -18,6 +18,13 @@ interface Transaction {
   payoffEventId: number | null;
 }
 
+interface ClubPaymentInfo {
+  accountHolder: string;
+  iban: string;
+  bic: string;
+  paypal: string;
+}
+
 interface Props {
   readonly memberId: number;
   readonly memberNickname: string;
@@ -25,6 +32,7 @@ interface Props {
   readonly initialBalance: number;
   readonly initialTransactions: Transaction[];
   readonly allMembers: { id: number; nickname: string }[];
+  readonly clubPaymentInfo: ClubPaymentInfo;
 }
 
 function fmt(amount: number): string {
@@ -61,6 +69,7 @@ export default function FinancePageClient({
   initialBalance,
   initialTransactions,
   allMembers,
+  clubPaymentInfo,
 }: Props) {
   const t = useTranslations('finance');
 
@@ -131,7 +140,17 @@ export default function FinancePageClient({
   });
 
   const balanceColor = balance > 0 ? 'text-green-700' : balance < 0 ? 'text-red-700' : 'text-gray-500';
+  const balanceBorderColor = balance > 0 ? '#15803d' : balance < 0 ? '#b91c1c' : 'var(--kn-primary,#005982)';
   const balanceLabel = balance > 0 ? t('balance.inCredit') : balance < 0 ? t('balance.owes') : t('balance.zero');
+
+  const hasPaymentInfo = clubPaymentInfo.iban || clubPaymentInfo.paypal;
+
+  // Build PayPal.me URL: if user entered a handle/URL, normalize it
+  const paypalUrl = clubPaymentInfo.paypal
+    ? clubPaymentInfo.paypal.startsWith('http')
+      ? clubPaymentInfo.paypal
+      : `https://paypal.me/${clubPaymentInfo.paypal.replace(/^@/, '')}`
+    : '';
 
   return (
     <div className="space-y-6">
@@ -160,13 +179,56 @@ export default function FinancePageClient({
         )}
       </div>
 
-      {/* Balance card */}
-      <div className="rounded-xl border-2 p-6 text-center max-w-xs" style={{ borderColor: 'var(--kn-primary,#005982)' }}>
-        <div className="text-sm text-gray-500 mb-1">{t('balance.label')} — <span className="font-medium">{viewMemberName}</span></div>
-        <div className={`text-4xl font-extrabold tabular-nums ${balanceColor}`}>
-          {balance > 0 ? '+' : ''}{fmt(balance)}
+      {/* Balance card + payment info row */}
+      <div className="flex flex-wrap gap-4 items-center">
+        {/* Balance card */}
+        <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: balanceBorderColor }}>
+          <div className="text-sm text-gray-500 mb-1">{t('balance.label')} — <span className="font-medium">{viewMemberName}</span></div>
+          <div className={`text-4xl font-extrabold tabular-nums ${balanceColor}`}>
+            {balance > 0 ? '+' : ''}{fmt(balance)}
+          </div>
+          <div className="text-sm text-gray-400 mt-1">{balanceLabel}</div>
         </div>
-        <div className="text-sm text-gray-400 mt-1">{balanceLabel}</div>
+
+        {/* Payment info (shown when balance is negative and info is configured) */}
+        {balance < 0 && hasPaymentInfo && (
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-1.5 font-semibold text-gray-700 mb-1">
+              <CreditCard size={15} />
+              <span>{t('paymentInfo.title')}</span>
+            </div>
+            {clubPaymentInfo.accountHolder && (
+              <div>
+                <span className="text-gray-400 text-xs">{t('paymentInfo.accountHolder')}: </span>
+                <span className="font-medium">{clubPaymentInfo.accountHolder}</span>
+              </div>
+            )}
+            {clubPaymentInfo.iban && (
+              <div>
+                <span className="text-gray-400 text-xs">IBAN: </span>
+                <span className="font-mono font-medium tracking-wide">{clubPaymentInfo.iban}</span>
+              </div>
+            )}
+            {clubPaymentInfo.bic && (
+              <div>
+                <span className="text-gray-400 text-xs">BIC: </span>
+                <span className="font-mono font-medium">{clubPaymentInfo.bic}</span>
+              </div>
+            )}
+            {paypalUrl && (
+              <a
+                href={`${paypalUrl}/${Math.abs(balance).toFixed(2)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-white text-xs font-semibold"
+                style={{ background: '#003087' }}
+              >
+                <ExternalLink size={12} />
+                {t('paymentInfo.payNowPaypal', { amount: fmt(Math.abs(balance)) })}
+              </a>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Filters */}
