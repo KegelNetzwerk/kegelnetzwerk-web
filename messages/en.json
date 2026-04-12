@@ -108,13 +108,13 @@
   },
   "publicLanding": {
     "hero": "Welcome to KegelNetzwerk",
-    "heroSub": "The platform for bowling clubs",
+    "heroSub": "The platform for Kegeln clubs",
     "loginPrompt": "Are you a member?",
     "loginButton": "Sign In",
     "noClubs": "No clubs registered yet.",
     "memberCount": "{count} members",
     "whatIsTitle": "What is KegelNetzwerk?",
-    "whatIsPara1": "KegelNetzwerk is a platform that helps bowling clubs organise their club life simply and digitally. In just a few clicks you can present your club online, define your own game rules and penalties, and have scores calculated automatically — with no calculation errors.",
+    "whatIsPara1": "KegelNetzwerk is a platform that helps Kegeln clubs organise their club life simply and digitally. In just a few clicks you can present your club online, define your own game rules and penalties, and have scores calculated automatically — with no calculation errors.",
     "feature1": "Public club profile with member list",
     "feature2": "Manage your own game rules & penalties",
     "feature3": "Automatic score calculation",
@@ -526,7 +526,8 @@
       "overview": "Overview",
       "settings": "Settings",
       "collectives": "Group Collections",
-      "log": "Log"
+      "log": "Log",
+      "paymentInfo": "Payment Info"
     },
     "balance": {
       "label": "Balance",
@@ -539,6 +540,7 @@
       "totalDebt": "Total Outstanding",
       "members": "Members",
       "member": "Member",
+      "guest": "Guest",
       "balance": "Balance",
       "actions": "Actions"
     },
@@ -573,15 +575,18 @@
       "member": "Reset Balance",
       "confirmTitle": "Reset Balance",
       "confirmAll": "Reset all member balances to zero? This cannot be undone.",
-      "confirmOne": "Reset the balance of {name} to zero?",
       "confirm": "Reset",
       "success": "Balance(s) reset",
-      "error": "Error resetting balance"
+      "error": "Error resetting balance",
+      "confirmOnePre": "Reset the balance of",
+      "confirmOnePost": " to zero?",
+      "typeToConfirm": "Type \"reset all\" to confirm"
     },
     "settings": {
       "clubFee": "Club Fee",
       "feeAmount": "Amount",
       "feeFrequency": "Frequency",
+      "guestFeeAmount": "Guest Fee per Session",
       "autoPayoff": "Automatic Payoff",
       "autoPayoffToggle": "Toggle automatic payoff",
       "autoPayoffEnabled": "Enable automatic payoff",
@@ -590,7 +595,8 @@
       "save": "Save Settings",
       "saving": "Saving...",
       "saved": "Settings saved",
-      "error": "Error saving settings"
+      "error": "Error saving settings",
+      "autoPayoffHint": "Automatically marks a payoff as due when the configured date is reached. The payoff will be shown as due on the next load of the Finance page and can then be triggered with one click."
     },
     "regularPayment": {
       "title": "Regular Payments",
@@ -606,7 +612,7 @@
       "create": "New Group Collection",
       "newTitle": "Create Group Collection",
       "name": "Name",
-      "namePlaceholder": "e.g. Club Trip 2026",
+      "namePlaceholder": "e.g. Kegeltour 2026",
       "amount": "Amount per member",
       "save": "Create",
       "created": "Group collection created",
@@ -627,7 +633,10 @@
       "markPaid": "Mark as paid",
       "markUnpaid": "Mark as unpaid",
       "exclude": "Exclude",
-      "include": "Include"
+      "include": "Include",
+      "totalAmount": "Total amount",
+      "total": "Total",
+      "splitPreview": "Will be split: {perMember} per person ({count} members)"
     },
     "clubPurchase": {
       "button": "Club Expense",
@@ -646,7 +655,8 @@
       "COLLECTIVE": "Group Collection",
       "REGULAR_INCOME": "Regular Payment",
       "RESET": "Reset",
-      "MANUAL": "Manual"
+      "MANUAL": "Manual",
+      "GUEST_FEE": "Guest Fee"
     },
     "freq": {
       "NONE": "None",
@@ -663,13 +673,37 @@
       "from": "From",
       "to": "To",
       "refresh": "Refresh",
+      "perPage": "Per page",
       "empty": "No transactions found.",
       "date": "Date",
       "clubLabel": "Club",
       "deleted": "Transaction deleted",
       "deleteError": "Error deleting",
       "loadError": "Error loading",
-      "viewingMember": "Viewing member"
+      "viewingMember": "Viewing member",
+      "deleteConfirmTitle": "Delete Transaction",
+      "deleteConfirm": "Are you sure you want to delete this transaction?",
+      "deleteConfirmOk": "Delete"
+    },
+    "paymentInfo": {
+      "title": "Payment Information",
+      "hint": "This information is shown to members with an outstanding balance.",
+      "accountHolder": "Account Holder",
+      "paypalLabel": "PayPal.me Username",
+      "paypalHint": "Username (e.g. clubname) or full URL",
+      "save": "Save",
+      "saved": "Payment information saved",
+      "error": "Error saving",
+      "payNowPaypal": "Pay {amount} via PayPal"
+    },
+    "demand": {
+      "button": "Create Payment Demand",
+      "title": "Payment Demand",
+      "copy": "Copy to Clipboard",
+      "copied": "Copied!",
+      "empty": "No outstanding balances.",
+      "membersHeader": "Members:",
+      "guestsHeader": "Guests:"
     },
     "error": {
       "invalidAmount": "Please enter a valid amount"

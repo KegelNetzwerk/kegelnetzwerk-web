@@ -104,7 +104,7 @@
     "logout": "Abmelden",
     "browseClubs": "Klubs entdecken",
     "login": "Anmelden",
-    "finance": "Kasse"
+    "finance": "Konto"
   },
   "publicLanding": {
     "hero": "Willkommen bei KegelNetzwerk",
@@ -114,7 +114,7 @@
     "noClubs": "Noch keine Klubs registriert.",
     "memberCount": "{count} Mitglieder",
     "whatIsTitle": "Was ist das KegelNetzwerk?",
-    "whatIsPara1": "Das KegelNetzwerk ist eine Plattform, die Kegelklubs dabei unterstützt, ihren Vereinsalltag einfach und digital zu organisieren. In wenigen Klicks kannst du deinen Klub im Internet präsentieren, eigene Spielregeln und Strafen hinterlegen und die Punkte automatisch berechnen lassen – ganz ohne Rechenfehler.",
+    "whatIsPara1": "Das KegelNetzwerk ist eine Plattform, die Kegelklubs dabei unterstützt, ihren Kluballtag einfach und digital zu organisieren. In wenigen Klicks kannst du deinen Klub im Internet präsentieren, eigene Spielregeln und Strafen hinterlegen und die Punkte automatisch berechnen lassen – ganz ohne Rechenfehler.",
     "feature1": "Öffentliches Klubprofil mit Mitgliederliste",
     "feature2": "Eigene Spielregeln & Strafen verwalten",
     "feature3": "Automatische Punkteberechnung",
@@ -526,7 +526,8 @@
       "overview": "Übersicht",
       "settings": "Einstellungen",
       "collectives": "Sammelkassen",
-      "log": "Protokoll"
+      "log": "Protokoll",
+      "paymentInfo": "Zahlungsinformationen"
     },
     "balance": {
       "label": "Kontostand",
@@ -539,6 +540,7 @@
       "totalDebt": "Gesamt Ausstehend",
       "members": "Mitglieder",
       "member": "Mitglied",
+      "guest": "Gast",
       "balance": "Kontostand",
       "actions": "Aktionen"
     },
@@ -573,15 +575,18 @@
       "member": "Konto zurücksetzen",
       "confirmTitle": "Kontostand zurücksetzen",
       "confirmAll": "Sollen alle Kontostände auf 0 gesetzt werden? Dies kann nicht rückgängig gemacht werden.",
-      "confirmOne": "Soll der Kontostand von {name} auf 0 gesetzt werden?",
       "confirm": "Zurücksetzen",
       "success": "Kontostand(e) zurückgesetzt",
-      "error": "Fehler beim Zurücksetzen"
+      "error": "Fehler beim Zurücksetzen",
+      "confirmOnePre": "Soll der Kontostand von",
+      "confirmOnePost": " auf 0 gesetzt werden?",
+      "typeToConfirm": "Gib \"reset all\" ein, um zu bestätigen"
     },
     "settings": {
-      "clubFee": "Vereinsbeitrag",
+      "clubFee": "Klubbeitrag",
       "feeAmount": "Betrag",
       "feeFrequency": "Häufigkeit",
+      "guestFeeAmount": "Gastgebühr pro Session",
       "autoPayoff": "Automatische Abrechnung",
       "autoPayoffToggle": "Automatische Abrechnung umschalten",
       "autoPayoffEnabled": "Automatische Abrechnung aktivieren",
@@ -590,7 +595,8 @@
       "save": "Einstellungen speichern",
       "saving": "Speichert...",
       "saved": "Einstellungen gespeichert",
-      "error": "Fehler beim Speichern"
+      "error": "Fehler beim Speichern",
+      "autoPayoffHint": "Führt automatisch eine Abrechnung durch, wenn das konfigurierte Datum erreicht ist. Die Abrechnung wird beim nächsten Laden der Finanzseite als fällig angezeigt und kann dann mit einem Klick ausgeführt werden."
     },
     "regularPayment": {
       "title": "Regelmäßige Zahlungen",
@@ -606,7 +612,7 @@
       "create": "Neue Sammelkasse",
       "newTitle": "Sammelkasse anlegen",
       "name": "Bezeichnung",
-      "namePlaceholder": "z. B. Vereinsausflug 2026",
+      "namePlaceholder": "z. B. Kegeltour 2026",
       "amount": "Betrag pro Mitglied",
       "save": "Anlegen",
       "created": "Sammelkasse angelegt",
@@ -627,12 +633,15 @@
       "markPaid": "Als bezahlt markieren",
       "markUnpaid": "Als unbezahlt markieren",
       "exclude": "Ausschließen",
-      "include": "Einschließen"
+      "include": "Einschließen",
+      "totalAmount": "Gesamtbetrag",
+      "total": "Gesamt",
+      "splitPreview": "Wird aufgeteilt: {perMember} pro Person ({count} Mitglieder)"
     },
     "clubPurchase": {
-      "button": "Vereinsausgabe",
-      "title": "Vereinsausgabe erfassen",
-      "hint": "Erfasst eine Ausgabe des Vereins ohne Mitgliederzuordnung.",
+      "button": "Klubausgabe",
+      "title": "Klubausgabe erfassen",
+      "hint": "Erfasst eine Ausgabe des Klubs ohne Mitgliederzuordnung.",
       "save": "Speichern",
       "success": "Ausgabe gespeichert",
       "error": "Fehler beim Speichern"
@@ -642,11 +651,12 @@
       "CLUB_FEE": "Beitrag",
       "PAYMENT_IN": "Einzahlung",
       "PAYMENT_OUT": "Abbuchung",
-      "CLUB_PURCHASE": "Vereinsausgabe",
+      "CLUB_PURCHASE": "Klubausgabe",
       "COLLECTIVE": "Sammelkasse",
       "REGULAR_INCOME": "Regelmäßige Zahlung",
       "RESET": "Zurückgesetzt",
-      "MANUAL": "Manuell"
+      "MANUAL": "Manuell",
+      "GUEST_FEE": "Gastgebühr"
     },
     "freq": {
       "NONE": "Keine",
@@ -657,19 +667,43 @@
     },
     "log": {
       "allMembers": "Alle Mitglieder",
-      "clubPurchases": "Vereinsausgaben",
+      "clubPurchases": "Klubausgaben",
       "type": "Typ",
       "allTypes": "Alle Typen",
       "from": "Von",
       "to": "Bis",
       "refresh": "Laden",
+      "perPage": "Pro Seite",
       "empty": "Keine Buchungen gefunden.",
       "date": "Datum",
-      "clubLabel": "Verein",
+      "clubLabel": "Klub",
       "deleted": "Buchung gelöscht",
       "deleteError": "Fehler beim Löschen",
       "loadError": "Fehler beim Laden",
-      "viewingMember": "Mitglied anzeigen"
+      "viewingMember": "Mitglied anzeigen",
+      "deleteConfirmTitle": "Buchung löschen",
+      "deleteConfirm": "Soll diese Buchung wirklich gelöscht werden?",
+      "deleteConfirmOk": "Löschen"
+    },
+    "paymentInfo": {
+      "title": "Zahlungsinformationen",
+      "hint": "Diese Informationen werden Mitgliedern mit offenem Saldo angezeigt.",
+      "accountHolder": "Kontoinhaber",
+      "paypalLabel": "PayPal.me Benutzername",
+      "paypalHint": "Benutzername (z. B. vereinname) oder vollständige URL",
+      "save": "Speichern",
+      "saved": "Zahlungsinformationen gespeichert",
+      "error": "Fehler beim Speichern",
+      "payNowPaypal": "Jetzt {amount} via PayPal bezahlen"
+    },
+    "demand": {
+      "button": "Zahlungsaufforderung erstellen",
+      "title": "Zahlungsaufforderung",
+      "copy": "In Zwischenablage kopieren",
+      "copied": "Kopiert!",
+      "empty": "Keine ausstehenden Beträge.",
+      "membersHeader": "Mitglieder:",
+      "guestsHeader": "Gäste:"
     },
     "error": {
       "invalidAmount": "Bitte einen gültigen Betrag eingeben"
