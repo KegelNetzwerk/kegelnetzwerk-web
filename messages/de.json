@@ -734,7 +734,7 @@
       "error": "Fehler beim Buchen.",
       "loadError": "Sitzungen konnten nicht geladen werden.",
       "confirm": "Buchen",
-      "sessionLabel": "({date})"
+      "sessionLabel": "{date}"
     },
     "error": {
       "invalidAmount": "Bitte einen gültigen Betrag eingeben"
