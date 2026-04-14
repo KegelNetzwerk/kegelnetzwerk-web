@@ -3,6 +3,23 @@ import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Role, FinanceTxType } from '@prisma/client';
 
+async function validateAdmin(params: Promise<{ id: string }>) {
+  const member = await getCurrentMember();
+  if (!member || member.role !== Role.ADMIN) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+  const { id } = await params;
+  const collectiveId = Number.parseInt(id);
+  const collective = await prisma.collectiveCharge.findUnique({
+    where: { id: collectiveId },
+    select: { clubId: true, defaultAmount: true },
+  });
+  if (!collective || collective.clubId !== member.clubId) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+  return { member, collectiveId, collective };
+}
+
 // GET /api/finance/collectives/[id]/assignments — list assignments
 export async function GET(
   _req: NextRequest,
@@ -36,21 +53,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const member = await getCurrentMember();
-  if (!member || member.role !== Role.ADMIN) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  const { id } = await params;
-  const collectiveId = Number.parseInt(id);
-
-  const collective = await prisma.collectiveCharge.findUnique({
-    where: { id: collectiveId },
-    select: { clubId: true },
-  });
-  if (!collective || collective.clubId !== member.clubId) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const v = await validateAdmin(params);
+  if (v instanceof NextResponse) return v;
+  const { member, collectiveId } = v;
 
   const body = await req.json() as {
     memberId: number;
@@ -130,21 +135,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const member = await getCurrentMember();
-  if (!member || member.role !== Role.ADMIN) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
-  const { id } = await params;
-  const collectiveId = Number.parseInt(id);
-
-  const collective = await prisma.collectiveCharge.findUnique({
-    where: { id: collectiveId },
-    select: { clubId: true, defaultAmount: true },
-  });
-  if (!collective || collective.clubId !== member.clubId) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const v = await validateAdmin(params);
+  if (v instanceof NextResponse) return v;
+  const { member, collectiveId, collective } = v;
 
   const body = await req.json() as { memberId: number; amount?: number };
 

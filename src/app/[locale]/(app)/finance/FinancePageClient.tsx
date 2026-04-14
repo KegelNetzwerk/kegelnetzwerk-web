@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RefreshCw, CreditCard, ExternalLink } from 'lucide-react';
+import TxTypeCell from '@/components/finance/TxTypeCell';
 
 interface Transaction {
   id: number;
@@ -45,25 +46,6 @@ function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function TxTypeBadge({ type, t }: { readonly type: string; readonly t: (k: string) => string }) {
-  const colors: Record<string, string> = {
-    PENALTY: 'bg-red-100 text-red-700',
-    CLUB_FEE: 'bg-orange-100 text-orange-700',
-    PAYMENT_IN: 'bg-green-100 text-green-700',
-    PAYMENT_OUT: 'bg-red-100 text-red-700',
-    CLUB_PURCHASE: 'bg-gray-100 text-gray-600',
-    COLLECTIVE: 'bg-blue-100 text-blue-700',
-    SESSION_PAYMENT: 'bg-cyan-100 text-cyan-700',
-    REGULAR_INCOME: 'bg-teal-100 text-teal-700',
-    RESET: 'bg-purple-100 text-purple-700',
-    MANUAL: 'bg-yellow-100 text-yellow-700',
-  };
-  return (
-    <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${colors[type] ?? 'bg-gray-100 text-gray-600'}`}>
-      {t(`txType.${type}`)}
-    </span>
-  );
-}
 
 export default function FinancePageClient({
   memberId,
@@ -313,16 +295,7 @@ export default function FinancePageClient({
               {filtered.map((tx) => (
                 <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50">
                   <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
-                  <td className="px-4 py-2.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <TxTypeBadge type={tx.type} t={t} />
-                      {tx.type === 'SESSION_PAYMENT' && tx.sessionDate && (
-                        <span className="text-xs text-cyan-700">
-                          {t('sessionPayment.sessionLabel', { date: fmtDate(tx.sessionDate) })}
-                        </span>
-                      )}
-                    </div>
-                  </td>
+                  <TxTypeCell type={tx.type} sessionDate={tx.sessionDate} />
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     <span className={tx.amount >= 0 ? 'text-green-700 font-medium' : 'text-red-700 font-medium'}>
                       {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}

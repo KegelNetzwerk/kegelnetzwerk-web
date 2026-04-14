@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { buildPayoffDateFilter } from '@/lib/finance-utils';
 import { Role, FinanceTxType, Unit } from '@prisma/client';
+
+async function getPayoffWindow(clubId: number) {
+  const settings = await prisma.clubFinanceSettings.findUnique({ where: { clubId } });
+  return { settings, fromDate: settings?.lastPayoffAt ?? null, toDate: new Date() };
+}
 
 // GET /api/finance/payoff — preview what a payoff would generate
 export async function GET() {
@@ -10,21 +16,11 @@ export async function GET() {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const settings = await prisma.clubFinanceSettings.findUnique({
-    where: { clubId: member.clubId },
-  });
-
-  const fromDate = settings?.lastPayoffAt ?? null;
-  const toDate = new Date();
+  const { settings, fromDate, toDate } = await getPayoffWindow(member.clubId);
 
   // Pending euro penalties since last payoff
   const penaltyResults = await prisma.result.findMany({
-    where: {
-      clubId: member.clubId,
-      memberId: { not: null },
-      part: { unit: 'EURO' },
-      ...(fromDate ? { date: { gte: fromDate, lt: toDate } } : { date: { lt: toDate } }),
-    },
+    where: { clubId: member.clubId, memberId: { not: null }, part: { unit: 'EURO' }, ...buildPayoffDateFilter(fromDate, toDate) },
     include: {
       member: { select: { id: true, nickname: true } },
       part: { select: { value: true, factor: true, bonus: true } },
@@ -77,24 +73,12 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json() as { note?: string };
 
-  const settings = await prisma.clubFinanceSettings.findUnique({
-    where: { clubId: member.clubId },
-  });
-
-  const fromDate = settings?.lastPayoffAt ?? null;
-  const toDate = new Date();
+  const { settings, fromDate, toDate } = await getPayoffWindow(member.clubId);
 
   // Fetch euro-unit results since last payoff
   const penaltyResults = await prisma.result.findMany({
-    where: {
-      clubId: member.clubId,
-      memberId: { not: null },
-      part: { unit: 'EURO' },
-      ...(fromDate ? { date: { gte: fromDate, lt: toDate } } : { date: { lt: toDate } }),
-    },
-    include: {
-      part: { select: { value: true, factor: true, bonus: true } },
-    },
+    where: { clubId: member.clubId, memberId: { not: null }, part: { unit: 'EURO' }, ...buildPayoffDateFilter(fromDate, toDate) },
+    include: { part: { select: { value: true, factor: true, bonus: true } } },
   });
 
   const penaltiesByMember = new Map<number, number>();
@@ -124,7 +108,7 @@ export async function POST(req: NextRequest) {
         where: {
           clubId: member.clubId,
           memberId: { not: null },
-          ...(fromDate ? { date: { gte: fromDate, lt: toDate } } : { date: { lt: toDate } }),
+          ...buildPayoffDateFilter(fromDate, toDate),
         },
         select: { memberId: true, sessionGroup: true },
         distinct: ['memberId', 'sessionGroup'],
@@ -143,7 +127,7 @@ export async function POST(req: NextRequest) {
       clubId: member.clubId,
       guestId: { not: null },
       part: { unit: Unit.EURO },
-      ...(fromDate ? { date: { gte: fromDate, lt: toDate } } : { date: { lt: toDate } }),
+      ...buildPayoffDateFilter(fromDate, toDate),
     },
     include: {
       part: { select: { value: true, factor: true, bonus: true } },
@@ -163,7 +147,7 @@ export async function POST(req: NextRequest) {
         where: {
           clubId: member.clubId,
           guestId: { not: null },
-          ...(fromDate ? { date: { gte: fromDate, lt: toDate } } : { date: { lt: toDate } }),
+          ...buildPayoffDateFilter(fromDate, toDate),
         },
         select: { guestId: true, sessionGroup: true },
         distinct: ['guestId', 'sessionGroup'],

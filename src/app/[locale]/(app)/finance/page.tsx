@@ -1,5 +1,6 @@
 import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { enrichWithSessionDates } from '@/lib/finance-utils';
 import { redirect } from 'next/navigation';
 import { Role } from '@prisma/client';
 import FinancePageClient from './FinancePageClient';
@@ -34,27 +35,7 @@ export default async function FinancePage() {
 
   const balance = Math.round(((balanceResult._sum.amount ?? 0) * 100)) / 100;
 
-  // Enrich SESSION_PAYMENT transactions with session date from Result table
-  const sessionGroups = [...new Set(
-    transactions
-      .filter((tx) => tx.type === 'SESSION_PAYMENT' && tx.sessionGroup !== null)
-      .map((tx) => tx.sessionGroup as number),
-  )];
-  const sessionDateMap: Record<number, string> = {};
-  if (sessionGroups.length > 0) {
-    const sessionDates = await prisma.result.groupBy({
-      by: ['sessionGroup'],
-      where: { clubId: member.clubId, sessionGroup: { in: sessionGroups } },
-      _min: { date: true },
-    });
-    for (const s of sessionDates) {
-      if (s._min.date) sessionDateMap[s.sessionGroup] = s._min.date.toISOString();
-    }
-  }
-  const transactionsEnriched = transactions.map((tx) => ({
-    ...tx,
-    sessionDate: tx.sessionGroup !== null ? (sessionDateMap[tx.sessionGroup] ?? null) : null,
-  }));
+  const transactionsEnriched = await enrichWithSessionDates(transactions, member.clubId);
 
   return (
     <FinancePageClient

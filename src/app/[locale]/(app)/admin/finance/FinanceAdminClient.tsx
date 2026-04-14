@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import TxTypeCell from '@/components/finance/TxTypeCell';
 import {
   AlertTriangle, Calendar, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
   Trash2, Wallet, Users, BarChart3, ListFilter, RotateCcw, X,
@@ -1978,16 +1979,7 @@ function LogTab({
                         <span className="font-medium">{tx.member?.nickname ?? tx.guest?.nickname ?? t('log.clubLabel')}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <TxTypeBadge type={tx.type} t={t} />
-                        {tx.type === 'SESSION_PAYMENT' && tx.sessionDate && (
-                          <span className="text-xs text-cyan-700">
-                            {t('sessionPayment.sessionLabel', { date: fmtDate(tx.sessionDate) })}
-                          </span>
-                        )}
-                      </div>
-                    </td>
+                    <TxTypeCell type={tx.type} sessionDate={tx.sessionDate} />
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       <span className={tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}>
                         {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
