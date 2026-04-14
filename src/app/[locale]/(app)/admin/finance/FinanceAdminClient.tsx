@@ -1979,12 +1979,14 @@ function LogTab({
                       </div>
                     </td>
                     <td className="px-4 py-2.5">
-                      <TxTypeBadge type={tx.type} t={t} />
-                      {tx.type === 'SESSION_PAYMENT' && tx.sessionDate && (
-                        <div className="text-xs text-cyan-700 mt-0.5">
-                          {t('sessionPayment.sessionLabel', { date: fmtDate(tx.sessionDate) })}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <TxTypeBadge type={tx.type} t={t} />
+                        {tx.type === 'SESSION_PAYMENT' && tx.sessionDate && (
+                          <span className="text-xs text-cyan-700">
+                            {t('sessionPayment.sessionLabel', { date: fmtDate(tx.sessionDate) })}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       <span className={tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}>

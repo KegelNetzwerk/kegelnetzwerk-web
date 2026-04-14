@@ -314,12 +314,14 @@ export default function FinancePageClient({
                 <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50">
                   <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
                   <td className="px-4 py-2.5">
-                    <TxTypeBadge type={tx.type} t={t} />
-                    {tx.type === 'SESSION_PAYMENT' && tx.sessionDate && (
-                      <div className="text-xs text-cyan-700 mt-0.5">
-                        {t('sessionPayment.sessionLabel', { date: fmtDate(tx.sessionDate) })}
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <TxTypeBadge type={tx.type} t={t} />
+                      {tx.type === 'SESSION_PAYMENT' && tx.sessionDate && (
+                        <span className="text-xs text-cyan-700">
+                          {t('sessionPayment.sessionLabel', { date: fmtDate(tx.sessionDate) })}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-2.5 text-right tabular-nums">
                     <span className={tx.amount >= 0 ? 'text-green-700 font-medium' : 'text-red-700 font-medium'}>
