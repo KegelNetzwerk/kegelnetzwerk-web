@@ -86,6 +86,28 @@ export default async function AdminFinancePage() {
     payoffDue = true;
   }
 
+  // Enrich SESSION_PAYMENT transactions with session date from Result table
+  const sessionGroups = [...new Set(
+    recentTx
+      .filter((tx) => tx.type === 'SESSION_PAYMENT' && tx.sessionGroup !== null)
+      .map((tx) => tx.sessionGroup as number),
+  )];
+  const sessionDateMap: Record<number, string> = {};
+  if (sessionGroups.length > 0) {
+    const sessionDates = await prisma.result.groupBy({
+      by: ['sessionGroup'],
+      where: { clubId: member.clubId, sessionGroup: { in: sessionGroups } },
+      _min: { date: true },
+    });
+    for (const s of sessionDates) {
+      if (s._min.date) sessionDateMap[s.sessionGroup] = s._min.date.toISOString();
+    }
+  }
+  const recentTxEnriched = recentTx.map((tx) => ({
+    ...tx,
+    sessionDate: tx.sessionGroup !== null ? (sessionDateMap[tx.sessionGroup] ?? null) : null,
+  }));
+
   const settingsSerialized = JSON.parse(JSON.stringify(settings ?? { // NOSONAR
     feeAmount: 0, feeFrequency: 'NONE', guestFeeAmount: 0,
     autoPayoffEnabled: false, autoPayoffFrequency: 'MONTHLY',
@@ -93,7 +115,7 @@ export default async function AdminFinancePage() {
   }));
   const collectivesSerialized = JSON.parse(JSON.stringify(collectives)); // NOSONAR
   const regularPaymentsSerialized = JSON.parse(JSON.stringify(regularPayments)); // NOSONAR
-  const recentTxSerialized = JSON.parse(JSON.stringify(recentTx)); // NOSONAR
+  const recentTxSerialized = JSON.parse(JSON.stringify(recentTxEnriched)); // NOSONAR
 
   return (
     <FinanceAdminClient
