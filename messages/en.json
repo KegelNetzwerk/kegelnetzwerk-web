@@ -734,7 +734,7 @@
       "error": "Error posting session payment.",
       "loadError": "Could not load sessions.",
       "confirm": "Post",
-      "sessionLabel": "Session on {date}"
+      "sessionLabel": "({date})"
     },
     "error": {
       "invalidAmount": "Please enter a valid amount"
