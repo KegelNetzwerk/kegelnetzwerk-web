@@ -552,6 +552,15 @@
       "success": "Abrechnung erfolgreich durchgeführt",
       "error": "Fehler bei der Abrechnung"
     },
+    "accountedUntil": {
+      "button": "Bereits abgerechnet bis",
+      "title": "Bereits abgerechnet bis",
+      "hint": "Setzt das Datum, bis zu dem alle Strafen als bereits abgerechnet gelten. Strafen vor diesem Datum werden bei der nächsten Abrechnung nicht mehr berücksichtigt.",
+      "date": "Datum",
+      "save": "Speichern",
+      "success": "Datum gespeichert",
+      "error": "Fehler beim Speichern"
+    },
     "payment": {
       "in": "Einzahlung",
       "out": "Abbuchung",

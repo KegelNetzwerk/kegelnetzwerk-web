@@ -552,6 +552,15 @@
       "success": "Payoff completed successfully",
       "error": "Error running payoff"
     },
+    "accountedUntil": {
+      "button": "Bereits abgerechnet bis",
+      "title": "Already accounted until",
+      "hint": "Sets the date until which all penalties are treated as already accounted for. Penalties before this date will not be included in the next payoff.",
+      "date": "Date",
+      "save": "Save",
+      "success": "Date saved",
+      "error": "Failed to save"
+    },
     "payment": {
       "in": "Payment In",
       "out": "Charge / Debit",
