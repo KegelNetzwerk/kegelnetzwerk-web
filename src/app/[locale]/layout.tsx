@@ -18,7 +18,7 @@ const dmSans = DM_Sans({
 
 export const metadata: Metadata = {
   title: 'KegelNetzwerk',
-  description: 'Bowling club management platform',
+  description: 'Kegeln club management platform',
 };
 
 interface LocaleLayoutProps {

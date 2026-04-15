@@ -103,7 +103,8 @@
     "editProfile": "Profil bearbeiten",
     "logout": "Abmelden",
     "browseClubs": "Klubs entdecken",
-    "login": "Anmelden"
+    "login": "Anmelden",
+    "finance": "Konto"
   },
   "publicLanding": {
     "hero": "Willkommen bei KegelNetzwerk",
@@ -113,7 +114,7 @@
     "noClubs": "Noch keine Klubs registriert.",
     "memberCount": "{count} Mitglieder",
     "whatIsTitle": "Was ist das KegelNetzwerk?",
-    "whatIsPara1": "Das KegelNetzwerk ist eine Plattform, die Kegelklubs dabei unterstützt, ihren Vereinsalltag einfach und digital zu organisieren. In wenigen Klicks kannst du deinen Klub im Internet präsentieren, eigene Spielregeln und Strafen hinterlegen und die Punkte automatisch berechnen lassen – ganz ohne Rechenfehler.",
+    "whatIsPara1": "Das KegelNetzwerk ist eine Plattform, die Kegelklubs dabei unterstützt, ihren Kluballtag einfach und digital zu organisieren. In wenigen Klicks kannst du deinen Klub im Internet präsentieren, eigene Spielregeln und Strafen hinterlegen und die Punkte automatisch berechnen lassen – ganz ohne Rechenfehler.",
     "feature1": "Öffentliches Klubprofil mit Mitgliederliste",
     "feature2": "Eigene Spielregeln & Strafen verwalten",
     "feature3": "Automatische Punkteberechnung",
@@ -459,7 +460,8 @@
     "members": "Mitglieder & Gäste",
     "games": "Spiele & Strafen",
     "results": "Ergebnisse bearbeiten",
-    "secretSanta": "Wichteln"
+    "secretSanta": "Wichteln",
+    "finance": "Finanzen"
   },
   "secretSanta": {
     "title": "Wichteln",
@@ -516,5 +518,236 @@
       "saveFailed": "Kommentar konnte nicht gespeichert werden.",
       "captchaFailed": "Captcha-Überprüfung fehlgeschlagen. Bitte erneut versuchen."
     }
+  },
+  "finance": {
+    "adminTitle": "Finanzverwaltung",
+    "memberTitle": "Mein Konto",
+    "tabs": {
+      "overview": "Übersicht",
+      "settings": "Einstellungen",
+      "collectives": "Sammelkassen",
+      "log": "Protokoll",
+      "paymentInfo": "Zahlungsinformationen"
+    },
+    "balance": {
+      "label": "Kontostand",
+      "inCredit": "Guthaben",
+      "owes": "Ausstehend",
+      "zero": "Ausgeglichen"
+    },
+    "overview": {
+      "totalCredit": "Gesamt Guthaben",
+      "totalDebt": "Gesamt Ausstehend",
+      "members": "Mitglieder",
+      "member": "Mitglied",
+      "guest": "Gast",
+      "balance": "Kontostand",
+      "actions": "Aktionen"
+    },
+    "payoff": {
+      "trigger": "Abrechnung starten",
+      "due": "Abrechnung fällig",
+      "lastOn": "Letzte Abrechnung:",
+      "confirmText": "Soll jetzt eine Abrechnung durchgeführt werden? Strafen, Beiträge und regelmäßige Zahlungen werden automatisch verbucht.",
+      "success": "Abrechnung erfolgreich durchgeführt",
+      "error": "Fehler bei der Abrechnung"
+    },
+    "accountedUntil": {
+      "button": "Bereits abgerechnet bis",
+      "title": "Bereits abgerechnet bis",
+      "hint": "Setzt das Datum, bis zu dem alle Strafen als bereits abgerechnet gelten. Strafen vor diesem Datum werden bei der nächsten Abrechnung nicht mehr berücksichtigt.",
+      "date": "Datum",
+      "save": "Speichern",
+      "success": "Datum gespeichert",
+      "error": "Fehler beim Speichern"
+    },
+    "payment": {
+      "in": "Einzahlung",
+      "out": "Abbuchung",
+      "amount": "Betrag",
+      "note": "Notiz",
+      "notePlaceholder": "Optionale Beschreibung",
+      "type": "Typ",
+      "save": "Speichern",
+      "success": "Zahlung gespeichert",
+      "error": "Fehler beim Speichern"
+    },
+    "bulk": {
+      "button": "Für alle Mitglieder",
+      "title": "Zahlung für alle Mitglieder",
+      "exclude": "Mitglieder ausschließen",
+      "apply": "Anwenden",
+      "success": "Zahlung für alle gespeichert",
+      "error": "Fehler beim Speichern"
+    },
+    "reset": {
+      "allButton": "Alle Konten zurücksetzen",
+      "member": "Konto zurücksetzen",
+      "confirmTitle": "Kontostand zurücksetzen",
+      "confirmAll": "Sollen alle Kontostände auf 0 gesetzt werden? Dies kann nicht rückgängig gemacht werden.",
+      "confirm": "Zurücksetzen",
+      "success": "Kontostand(e) zurückgesetzt",
+      "error": "Fehler beim Zurücksetzen",
+      "confirmOnePre": "Soll der Kontostand von",
+      "confirmOnePost": " auf 0 gesetzt werden?",
+      "typeToConfirm": "Gib \"reset all\" ein, um zu bestätigen"
+    },
+    "settings": {
+      "clubFee": "Klubbeitrag",
+      "feeAmount": "Betrag",
+      "feeFrequency": "Häufigkeit",
+      "guestFeeAmount": "Gastgebühr pro Sitzung",
+      "autoPayoff": "Automatische Abrechnung",
+      "autoPayoffToggle": "Automatische Abrechnung umschalten",
+      "autoPayoffEnabled": "Automatische Abrechnung aktivieren",
+      "autoFrequency": "Häufigkeit",
+      "dayOfMonth": "Tag des Monats",
+      "save": "Einstellungen speichern",
+      "saving": "Speichert...",
+      "saved": "Einstellungen gespeichert",
+      "error": "Fehler beim Speichern",
+      "autoPayoffHint": "Führt automatisch eine Abrechnung durch, wenn das konfigurierte Datum erreicht ist. Die Abrechnung wird beim nächsten Laden der Finanzseite als fällig angezeigt und kann dann mit einem Klick ausgeführt werden."
+    },
+    "regularPayment": {
+      "title": "Regelmäßige Zahlungen",
+      "hint": "Mitglieder die regelmäßig einen festen Betrag einzahlen. Diese werden bei der nächsten Abrechnung automatisch gutgeschrieben.",
+      "add": "Zahlung hinzufügen",
+      "active": "Aktiv",
+      "created": "Regelmäßige Zahlung angelegt",
+      "deleted": "Regelmäßige Zahlung gelöscht",
+      "empty": "Keine regelmäßigen Zahlungen konfiguriert.",
+      "error": "Fehler beim Speichern"
+    },
+    "collective": {
+      "create": "Neue Sammelkasse",
+      "newTitle": "Sammelkasse anlegen",
+      "name": "Bezeichnung",
+      "namePlaceholder": "z. B. Kegeltour 2026",
+      "amount": "Betrag pro Mitglied",
+      "save": "Anlegen",
+      "created": "Sammelkasse angelegt",
+      "deleted": "Sammelkasse gelöscht",
+      "empty": "Keine Sammelkassen vorhanden.",
+      "error": "Fehler",
+      "invalidInput": "Bitte Name und gültigen Betrag eingeben",
+      "excludeMembers": "Mitglieder ausschließen",
+      "perMember": "pro Person",
+      "paid": "bezahlt",
+      "closed": "Geschlossen",
+      "close": "Schließen",
+      "reopen": "Wieder öffnen",
+      "status": "Status",
+      "excluded": "Ausgeschlossen",
+      "pending": "Ausstehend",
+      "paidOn": "Bezahlt am",
+      "markPaid": "Als bezahlt markieren",
+      "markUnpaid": "Als unbezahlt markieren",
+      "exclude": "Ausschließen",
+      "include": "Einschließen",
+      "totalAmount": "Gesamtbetrag",
+      "total": "Gesamt",
+      "splitPreview": "Wird aufgeteilt: {perMember} pro Person ({count} Mitglieder)",
+      "deleteConfirmTitle": "Sammelkasse löschen",
+      "deleteConfirm": "Soll diese Sammelkasse wirklich gelöscht werden?",
+      "deleteConfirmOk": "Löschen"
+    },
+    "clubPurchase": {
+      "button": "Klubausgabe",
+      "title": "Klubausgabe erfassen",
+      "hint": "Erfasst eine Ausgabe des Klubs ohne Mitgliederzuordnung.",
+      "save": "Speichern",
+      "success": "Ausgabe gespeichert",
+      "error": "Fehler beim Speichern"
+    },
+    "txType": {
+      "PENALTY": "Strafe",
+      "CLUB_FEE": "Beitrag",
+      "PAYMENT_IN": "Einzahlung",
+      "PAYMENT_OUT": "Abbuchung",
+      "CLUB_PURCHASE": "Klubausgabe",
+      "COLLECTIVE": "Sammelkasse",
+      "REGULAR_INCOME": "Regelmäßige Zahlung",
+      "RESET": "Zurückgesetzt",
+      "MANUAL": "Manuell",
+      "GUEST_FEE": "Gastgebühr",
+      "SESSION_PAYMENT": "Sitzungszahlung"
+    },
+    "freq": {
+      "NONE": "Keine",
+      "WEEKLY": "Wöchentlich",
+      "MONTHLY": "Monatlich",
+      "QUARTERLY": "Vierteljährlich",
+      "YEARLY": "Jährlich",
+      "PER_SESSION": "Pro Sitzung"
+    },
+    "log": {
+      "allMembers": "Alle Mitglieder",
+      "clubPurchases": "Klubausgaben",
+      "type": "Typ",
+      "allTypes": "Alle Typen",
+      "from": "Von",
+      "to": "Bis",
+      "refresh": "Laden",
+      "perPage": "Pro Seite",
+      "empty": "Keine Buchungen gefunden.",
+      "date": "Datum",
+      "clubLabel": "Klub",
+      "deleted": "Buchung gelöscht",
+      "deleteError": "Fehler beim Löschen",
+      "loadError": "Fehler beim Laden",
+      "viewingMember": "Mitglied anzeigen",
+      "deleteConfirmTitle": "Buchung löschen",
+      "deleteConfirm": "Soll diese Buchung wirklich gelöscht werden?",
+      "deleteConfirmOk": "Löschen",
+      "clearButton": "Protokoll löschen",
+      "clearTitle": "Protokoll löschen",
+      "clearConfirmText": "Dadurch werden alle Buchungen unwiderruflich gelöscht. Guthaben und Schulden aller Mitglieder und Gäste werden auf 0 zurückgesetzt. Abrechnungen, Sammelkassen-Zahlungen und der Zahlungsaufforderungs-Verlauf werden ebenfalls zurückgesetzt.",
+      "clearTypeToConfirm": "Zur Bestätigung \"clear log\" eingeben",
+      "clearConfirmOk": "Protokoll löschen",
+      "clearSuccess": "Protokoll wurde gelöscht.",
+      "clearError": "Fehler beim Löschen des Protokolls."
+    },
+    "paymentInfo": {
+      "title": "Zahlungsinformationen",
+      "hint": "Diese Informationen werden Mitgliedern mit offenem Saldo angezeigt.",
+      "accountHolder": "Kontoinhaber",
+      "paypalLabel": "PayPal.me Benutzername",
+      "paypalHint": "Benutzername (z. B. vereinname) oder vollständige URL",
+      "save": "Speichern",
+      "saved": "Zahlungsinformationen gespeichert",
+      "error": "Fehler beim Speichern",
+      "payNowPaypal": "Jetzt {amount} via PayPal bezahlen"
+    },
+    "demand": {
+      "button": "Zahlungsaufforderung erstellen",
+      "title": "Zahlungsaufforderung",
+      "copy": "In Zwischenablage kopieren",
+      "copied": "Kopiert!",
+      "empty": "Keine ausstehenden Beträge.",
+      "membersHeader": "Mitglieder:",
+      "guestsHeader": "Gäste:"
+    },
+    "sessionPayment": {
+      "button": "Sitzungszahlung",
+      "title": "Sitzungszahlung erstellen",
+      "selectSession": "Sitzung",
+      "selectSessionPlaceholder": "Sitzung auswählen …",
+      "totalAmount": "Gesamtbetrag",
+      "perPerson": "Pro Person",
+      "attendees": "Teilnehmer",
+      "members": "Mitglieder",
+      "guests": "Gäste",
+      "noSessions": "Keine Sitzungen gefunden.",
+      "noAttendees": "Keine Teilnehmer für diese Sitzung.",
+      "success": "Sitzungszahlung wurde gebucht.",
+      "error": "Fehler beim Buchen.",
+      "loadError": "Sitzungen konnten nicht geladen werden.",
+      "confirm": "Buchen",
+      "sessionLabel": "{date}"
+    },
+    "error": {
+      "invalidAmount": "Bitte einen gültigen Betrag eingeben"
+    },
+    "cancel": "Abbrechen"
   }
 }

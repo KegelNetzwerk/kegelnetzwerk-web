@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import {
   Newspaper, CheckSquare, CalendarDays, BarChart2,
-  ShieldCheck, LogOut, Building2, User, Menu, X, LogIn,
+  ShieldCheck, LogOut, Building2, User, Menu, X, LogIn, Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -130,6 +130,12 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic,
                 <span className="hidden md:inline">{nickname}</span>
               </Link>
 
+              {/* Finance */}
+              <Link href={`/${locale}/finance`} style={linkStyle(`/${locale}/finance`)} onMouseEnter={hoverOn} onMouseLeave={hoverOff}>
+                <Wallet size={14} style={{ opacity: 0.85, flexShrink: 0 }} />
+                <span className="hidden md:inline">{t('finance')}</span>
+              </Link>
+
               {/* Logout */}
               <form action="/api/auth/logout" method="POST" className="flex items-stretch">
                 <button
@@ -234,6 +240,14 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic,
                       ? <img src={memberPic} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'cover' }} />
                       : <User size={19} />}
                     {nickname}
+                  </Link>
+                  <Link
+                    href={`/${locale}/finance`}
+                    onClick={() => setMenuOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', color: 'rgba(255,255,255,0.8)', textDecoration: 'none', fontSize: 14 }}
+                  >
+                    <Wallet size={19} />
+                    {t('finance')}
                   </Link>
                   <form action="/api/auth/logout" method="POST">
                     <button

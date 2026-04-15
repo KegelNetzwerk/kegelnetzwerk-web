@@ -27,6 +27,29 @@ enum CommentType {
   EVENT
 }
 
+enum FinanceFrequency {
+  NONE
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  PER_SESSION
+}
+
+enum FinanceTxType {
+  PENALTY        // auto-calculated from euro-unit scoring results at payoff time
+  CLUB_FEE       // regular club fee charged at payoff time
+  PAYMENT_IN     // member paid into club (increases balance / credit)
+  PAYMENT_OUT    // manual debit / charge to member (decreases balance)
+  CLUB_PURCHASE  // club-level expense, no member (logged only)
+  COLLECTIVE     // charge for a collective event/trip
+  REGULAR_INCOME // auto payment-in included at payoff time
+  RESET          // balance reset transaction
+  MANUAL         // free-form manual adjustment
+  GUEST_FEE      // per-session fee charged to a guest at payoff time
+  SESSION_PAYMENT // split bill for a session charged to all attendees
+}
+
 // ─── Club ────────────────────────────────────────────────────────────────────
 
 model Club {
@@ -73,6 +96,10 @@ model Club {
   gamesOrPenalties     GameOrPenalty[]
   parts            Part[]
   results          Result[]
+  financeSettings      ClubFinanceSettings?
+  payoffEvents         PayoffEvent[]
+  financeTransactions  FinanceTransaction[]
+  collectiveCharges    CollectiveCharge[]
 }
 
 // ─── Member ───────────────────────────────────────────────────────────────────
@@ -117,6 +144,9 @@ model Member {
   authoredMemberComments   MemberComment[] @relation("AuthoredMemberComments")
   authoredClubComments     ClubComment[]   @relation("AuthoredClubComments")
   pushToken                PushToken?
+  financeTransactions      FinanceTransaction[]
+  collectiveAssignments    CollectiveChargeAssignment[]
+  regularMemberPayments    RegularMemberPayment[]
 }
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
@@ -347,7 +377,8 @@ model Guest {
   firstName String   @default("")
   lastName  String   @default("")
 
-  results   Result[]
+  results              Result[]
+  financeTransactions  FinanceTransaction[]
 
   createdAt DateTime @default(now())
 
@@ -407,4 +438,97 @@ model Result {
   sessionGroup    Int           // groups results that belong to the same game session
 
   createdAt       DateTime      @default(now())
+}
+
+// ─── Finance ──────────────────────────────────────────────────────────────────
+
+model ClubFinanceSettings {
+  id                   Int               @id @default(autoincrement())
+  clubId               Int               @unique
+  club                 Club              @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  feeAmount            Float             @default(0)
+  feeFrequency         FinanceFrequency  @default(NONE)
+  guestFeeAmount       Float             @default(0)
+  autoPayoffEnabled    Boolean           @default(false)
+  autoPayoffFrequency  FinanceFrequency  @default(MONTHLY)
+  autoPayoffDayOfMonth Int               @default(1)
+  lastPayoffAt         DateTime?
+
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+}
+
+model PayoffEvent {
+  id           Int      @id @default(autoincrement())
+  clubId       Int
+  club         Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  fromDate     DateTime?  // null = since beginning of time
+  toDate       DateTime
+  feeAmount    Float    @default(0)
+  note         String   @default("")
+  createdAt    DateTime @default(now())
+
+  transactions FinanceTransaction[]
+}
+
+model FinanceTransaction {
+  id            Int             @id @default(autoincrement())
+  clubId        Int
+  club          Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  memberId      Int?
+  member        Member?         @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  guestId       Int?
+  guest         Guest?          @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  type          FinanceTxType
+  amount        Float           // positive = credit (member paid), negative = debit (member owes)
+  note          String          @default("")
+  sessionGroup  Int?            // set for SESSION_PAYMENT to link back to the game session
+  payoffEventId Int?
+  payoffEvent   PayoffEvent?    @relation(fields: [payoffEventId], references: [id], onDelete: SetNull)
+  collectiveId  Int?
+  collective    CollectiveCharge? @relation(fields: [collectiveId], references: [id], onDelete: SetNull)
+  date          DateTime        @default(now())
+  createdAt     DateTime        @default(now())
+}
+
+model CollectiveCharge {
+  id            Int      @id @default(autoincrement())
+  clubId        Int
+  club          Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  name          String
+  defaultAmount Float
+  note          String   @default("")
+  closed        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  assignments   CollectiveChargeAssignment[]
+  transactions  FinanceTransaction[]
+}
+
+model CollectiveChargeAssignment {
+  id           Int              @id @default(autoincrement())
+  collectiveId Int
+  collective   CollectiveCharge @relation(fields: [collectiveId], references: [id], onDelete: Cascade)
+  memberId     Int
+  member       Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount       Float
+  excluded     Boolean          @default(false)
+  paidAt       DateTime?
+
+  createdAt    DateTime         @default(now())
+
+  @@unique([collectiveId, memberId])
+}
+
+model RegularMemberPayment {
+  id        Int              @id @default(autoincrement())
+  clubId    Int
+  memberId  Int
+  member    Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  amount    Float
+  frequency FinanceFrequency
+  note      String           @default("")
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 }
