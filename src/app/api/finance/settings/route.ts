@@ -37,6 +37,7 @@ export async function PUT(req: NextRequest) {
     autoPayoffEnabled?: boolean;
     autoPayoffFrequency?: string;
     autoPayoffDayOfMonth?: number;
+    lastPayoffAt?: string | null;
   };
 
   const validFrequencies = Object.values(FinanceFrequency);
@@ -46,6 +47,18 @@ export async function PUT(req: NextRequest) {
   const autoPayoffFrequency = validFrequencies.includes(body.autoPayoffFrequency as FinanceFrequency)
     ? (body.autoPayoffFrequency as FinanceFrequency)
     : FinanceFrequency.MONTHLY;
+
+  const has = (key: string) => Object.prototype.hasOwnProperty.call(body, key);
+
+  const patch = {
+    ...(has('feeAmount') ? { feeAmount: body.feeAmount ?? 0 } : {}),
+    ...(has('feeFrequency') ? { feeFrequency } : {}),
+    ...(has('guestFeeAmount') ? { guestFeeAmount: body.guestFeeAmount ?? 0 } : {}),
+    ...(has('autoPayoffEnabled') ? { autoPayoffEnabled: body.autoPayoffEnabled ?? false } : {}),
+    ...(has('autoPayoffFrequency') ? { autoPayoffFrequency } : {}),
+    ...(has('autoPayoffDayOfMonth') ? { autoPayoffDayOfMonth: Math.min(28, Math.max(1, body.autoPayoffDayOfMonth ?? 1)) } : {}),
+    ...(has('lastPayoffAt') ? { lastPayoffAt: body.lastPayoffAt ? new Date(body.lastPayoffAt) : null } : {}),
+  };
 
   const settings = await prisma.clubFinanceSettings.upsert({
     where: { clubId: member.clubId },
@@ -57,15 +70,9 @@ export async function PUT(req: NextRequest) {
       autoPayoffEnabled: body.autoPayoffEnabled ?? false,
       autoPayoffFrequency,
       autoPayoffDayOfMonth: Math.min(28, Math.max(1, body.autoPayoffDayOfMonth ?? 1)),
+      ...patch,
     },
-    update: {
-      feeAmount: body.feeAmount ?? 0,
-      feeFrequency,
-      guestFeeAmount: body.guestFeeAmount ?? 0,
-      autoPayoffEnabled: body.autoPayoffEnabled ?? false,
-      autoPayoffFrequency,
-      autoPayoffDayOfMonth: Math.min(28, Math.max(1, body.autoPayoffDayOfMonth ?? 1)),
-    },
+    update: patch,
   });
 
   return NextResponse.json(settings);

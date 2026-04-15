@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import TxTypeCell from '@/components/finance/TxTypeCell';
 import {
-  AlertTriangle, Calendar, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
+  AlertTriangle, Calendar, CalendarCheck, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
   Trash2, Wallet, Users, BarChart3, ListFilter, RotateCcw, X,
   Euro, TrendingUp, TrendingDown, ToggleLeft, ToggleRight, Info, CreditCard,
   FileText, Copy,
@@ -337,6 +337,9 @@ function OverviewTab({
 }) {
   const [payoffLoading, setPayoffLoading] = useState(false);
   const [showPayoffConfirm, setShowPayoffConfirm] = useState(false);
+  const [showAccountedUntil, setShowAccountedUntil] = useState(false);
+  const [accountedUntilDate, setAccountedUntilDate] = useState('');
+  const [accountedUntilLoading, setAccountedUntilLoading] = useState(false);
   const [resetConfirm, setResetConfirm] = useState<'all' | number | null>(null);
   const [resetAllInput, setResetAllInput] = useState('');
   const [addPaymentFor, setAddPaymentFor] = useState<number | null>(null); // memberId
@@ -465,6 +468,27 @@ function OverviewTab({
     }
   }
 
+  async function saveAccountedUntil() {
+    if (!accountedUntilDate) return;
+    setAccountedUntilLoading(true);
+    try {
+      const res = await fetch('/api/finance/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lastPayoffAt: new Date(accountedUntilDate).toISOString() }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+      toast.success(t('accountedUntil.success'));
+      setShowAccountedUntil(false);
+      setAccountedUntilDate('');
+      globalThis.location.reload();
+    } catch {
+      toast.error(t('accountedUntil.error'));
+    } finally {
+      setAccountedUntilLoading(false);
+    }
+  }
+
   async function addClubPurchase() {
     const amount = Number.parseFloat(cpAmount.replace(',', '.'));
     if (Number.isNaN(amount) || amount <= 0) {
@@ -570,6 +594,18 @@ function OverviewTab({
         >
           <Euro size={14} />
           {t('clubPurchase.button')}
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setAccountedUntilDate(settings.lastPayoffAt ? settings.lastPayoffAt.slice(0, 10) : '');
+            setShowAccountedUntil(true);
+          }}
+          className="gap-1.5"
+        >
+          <CalendarCheck size={14} />
+          {t('accountedUntil.button')}
         </Button>
         <Button
           size="sm"
@@ -932,6 +968,37 @@ function OverviewTab({
           onClose={() => setShowSessionPayment(false)}
           onSuccess={() => globalThis.location.reload()}
         />
+      )}
+
+      {/* Bereits abgerechnet bis modal */}
+      {showAccountedUntil && (
+        <Modal onClose={() => setShowAccountedUntil(false)} title={t('accountedUntil.title')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">{t('accountedUntil.hint')}</p>
+            <div className="space-y-1">
+              <Label htmlFor="accounted-until-date">{t('accountedUntil.date')}</Label>
+              <Input
+                id="accounted-until-date"
+                type="date"
+                value={accountedUntilDate}
+                onChange={(e) => setAccountedUntilDate(e.target.value)}
+                className="bg-white"
+                max={new Date().toISOString().slice(0, 10)}
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowAccountedUntil(false)}>{t('cancel')}</Button>
+              <Button
+                disabled={!accountedUntilDate || accountedUntilLoading}
+                onClick={saveAccountedUntil}
+                style={{ background: 'var(--kn-primary,#005982)' }}
+                className="text-white"
+              >
+                {t('accountedUntil.save')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {resetConfirm !== null && (
