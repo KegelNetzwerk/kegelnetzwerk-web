@@ -247,20 +247,21 @@ export default function FinanceAdminClient({
       <h1 className="text-2xl font-bold">{t('adminTitle')}</h1>
 
       {/* Tab bar */}
-      <div className="flex gap-1 border-b border-gray-200">
+      <div className="flex border-b border-gray-200">
         {tabItems.map(({ id, label, icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setActiveTab(id)}
-            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 cursor-pointer transition-colors ${
+            title={label}
+            className={`flex flex-1 sm:flex-none items-center justify-center sm:justify-start gap-1.5 px-2 sm:px-4 py-2 text-sm font-medium border-b-2 cursor-pointer transition-colors ${
               activeTab === id
                 ? 'border-[var(--kn-primary,#005982)] text-[var(--kn-primary,#005982)]'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
             {icon}
-            {label}
+            <span className="hidden sm:inline">{label}</span>
           </button>
         ))}
       </div>
