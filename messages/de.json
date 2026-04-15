@@ -606,7 +606,11 @@
       "saving": "Speichert...",
       "saved": "Einstellungen gespeichert",
       "error": "Fehler beim Speichern",
-      "autoPayoffHint": "Führt automatisch eine Abrechnung durch, wenn das konfigurierte Datum erreicht ist. Die Abrechnung wird beim nächsten Laden der Finanzseite als fällig angezeigt und kann dann mit einem Klick ausgeführt werden."
+      "autoPayoffHint": "Führt automatisch eine Abrechnung durch, wenn das konfigurierte Datum erreicht ist. Die Abrechnung wird beim nächsten Laden der Finanzseite als fällig angezeigt und kann dann mit einem Klick ausgeführt werden.",
+      "inactiveMembers": "Inaktive Mitglieder",
+      "inactiveMembersHint": "Inaktive Mitglieder werden beim Abrechnen nicht mit dem Klubbeitrag belastet. Strafen werden weiterhin verbucht.",
+      "inactiveToggled": "Mitglied aktualisiert",
+      "inactiveError": "Fehler beim Aktualisieren"
     },
     "regularPayment": {
       "title": "Regelmäßige Zahlungen",
@@ -705,7 +709,10 @@
       "clearTypeToConfirm": "Zur Bestätigung \"clear log\" eingeben",
       "clearConfirmOk": "Protokoll löschen",
       "clearSuccess": "Protokoll wurde gelöscht.",
-      "clearError": "Fehler beim Löschen des Protokolls."
+      "clearError": "Fehler beim Löschen des Protokolls.",
+      "bulkDeleteButton": "{count} Buchungen löschen",
+      "bulkDeleteConfirm": "Sollen {count} Buchungen wirklich gelöscht werden?",
+      "bulkDeleted": "{count} Buchungen gelöscht"
     },
     "paymentInfo": {
       "title": "Zahlungsinformationen",

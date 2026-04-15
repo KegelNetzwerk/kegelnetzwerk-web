@@ -606,7 +606,11 @@
       "saving": "Saving...",
       "saved": "Settings saved",
       "error": "Error saving settings",
-      "autoPayoffHint": "Automatically marks a payoff as due when the configured date is reached. The payoff will be shown as due on the next load of the Finance page and can then be triggered with one click."
+      "autoPayoffHint": "Automatically marks a payoff as due when the configured date is reached. The payoff will be shown as due on the next load of the Finance page and can then be triggered with one click.",
+      "inactiveMembers": "Inactive Members",
+      "inactiveMembersHint": "Inactive members are not charged the club fee during payoffs. Penalties are still applied.",
+      "inactiveToggled": "Member updated",
+      "inactiveError": "Error updating member"
     },
     "regularPayment": {
       "title": "Regular Payments",
@@ -705,7 +709,10 @@
       "clearTypeToConfirm": "Type \"clear log\" to confirm",
       "clearConfirmOk": "Clear Log",
       "clearSuccess": "Log cleared.",
-      "clearError": "Error clearing the log."
+      "clearError": "Error clearing the log.",
+      "bulkDeleteButton": "Delete {count} transactions",
+      "bulkDeleteConfirm": "Are you sure you want to delete {count} transactions?",
+      "bulkDeleted": "{count} transactions deleted"
     },
     "paymentInfo": {
       "title": "Payment Information",
