@@ -188,6 +188,7 @@ export default async function ClubProfilePage() {
               variable: p.variable,
               once: p.once,
               description: p.description,
+              pic: p.pic,
             })),
           }))}
           title={tg('title')}

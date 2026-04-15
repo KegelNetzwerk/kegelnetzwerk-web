@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import PartPicThumb from '@/components/PartPicThumb';
 
 interface Part {
   id: number;
@@ -13,6 +14,7 @@ interface Part {
   variable: boolean;
   once: boolean;
   description: string;
+  pic: string;
 }
 
 interface Game {
@@ -87,7 +89,12 @@ export default function GamesOverview({ games, title, labels }: GamesOverviewPro
                     {game.parts.map((part) => (
                       <React.Fragment key={part.id}>
                         <tr className="border-t">
-                          <td className="px-3 py-1.5 font-medium">{part.name}</td>
+                          <td className="px-3 py-1.5 font-medium">
+                            <span className="inline-flex items-center gap-1.5">
+                              <PartPicThumb pic={part.pic} size={20} />
+                              {part.name}
+                            </span>
+                          </td>
                           <td className="px-3 py-1.5 text-muted-foreground text-xs">
                             {part.unit === 'EURO' ? labels.unitEuro : labels.unitPoints}
                           </td>
@@ -102,12 +109,15 @@ export default function GamesOverview({ games, title, labels }: GamesOverviewPro
                           </td>
                         </tr>
                         {part.description && (
-                          <tr className="border-t bg-muted/30">
-                            <td colSpan={5} className="px-3 py-2">
-                              <div
-                                className="prose prose-sm max-w-none text-muted-foreground"
-                                dangerouslySetInnerHTML={{ __html: part.description }}
-                              />
+                          <tr>
+                            <td colSpan={5} className="px-3 pb-3 pt-0">
+                              <div className="relative mt-1.5 rounded-lg bg-muted px-3 py-2 shadow-sm">
+                                <div className="absolute -top-1.5 left-5 h-3 w-3 rotate-45 bg-muted" />
+                                <div
+                                  className="prose prose-sm max-w-none text-muted-foreground"
+                                  dangerouslySetInnerHTML={{ __html: part.description }}
+                                />
+                              </div>
                             </td>
                           </tr>
                         )}
