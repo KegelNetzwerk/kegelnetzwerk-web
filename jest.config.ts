@@ -7,6 +7,7 @@ const config: Config = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@prisma/client$': '<rootDir>/src/__tests__/__mocks__/prisma-client.ts',
   },
   collectCoverageFrom: [
     'src/lib/**/*.ts',
