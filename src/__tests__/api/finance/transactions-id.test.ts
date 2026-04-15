@@ -50,13 +50,6 @@ describe('DELETE /api/finance/transactions/[id]', () => {
     expect(res.status).toBe(404);
   });
 
-  it('returns 409 when transaction is part of payoff event', async () => {
-    mockFindUnique.mockResolvedValue({ clubId: 10, payoffEventId: 5 });
-    const { req, context } = makeRequest('1');
-    const res = await DELETE(req, context);
-    expect(res.status).toBe(409);
-  });
-
   it('deletes transaction and returns ok', async () => {
     mockFindUnique.mockResolvedValue({ clubId: 10, payoffEventId: null });
     mockDelete.mockResolvedValue({});
@@ -66,5 +59,15 @@ describe('DELETE /api/finance/transactions/[id]', () => {
     const body = await res.json() as { ok: boolean };
     expect(body.ok).toBe(true);
     expect(mockDelete).toHaveBeenCalledWith({ where: { id: 1 } });
+  });
+
+  it('deletes transaction that is part of a payoff event', async () => {
+    mockFindUnique.mockResolvedValue({ clubId: 10, payoffEventId: 5 });
+    mockDelete.mockResolvedValue({});
+    const { req, context } = makeRequest('1');
+    const res = await DELETE(req, context);
+    expect(res.status).toBe(200);
+    const body = await res.json() as { ok: boolean };
+    expect(body.ok).toBe(true);
   });
 });
