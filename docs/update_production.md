@@ -22,13 +22,19 @@ npm install
 npx prisma migrate deploy
 ```
 
-### 4. Build the application
+### 4. Regenerate the Prisma client
+
+```bash
+npx prisma generate
+```
+
+### 5. Build the application
 
 ```bash
 npm run build
 ```
 
-### 5. Restart the server
+### 6. Restart the server
 
 Stop the currently running process (e.g. via your process manager or by killing the existing `npm run start` process), then start it again:
 
