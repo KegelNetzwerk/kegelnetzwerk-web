@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
 
   const activeMembers = await prisma.member.findMany({
     where: { clubId: member.clubId },
-    select: { id: true },
+    select: { id: true, isInactive: true },
   });
 
   const regularPayments = await prisma.regularMemberPayment.findMany({
@@ -204,8 +204,8 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Club fee: debit (flat or per-session)
-      if (feeAmount > 0) {
+      // Club fee: debit (flat or per-session) — skipped for inactive members
+      if (feeAmount > 0 && !m.isInactive) {
         const sessionCount = feeFrequency === 'PER_SESSION' ? (sessionsByMember.get(m.id) ?? 0) : 1;
         if (sessionCount > 0) {
           memberTxData.push({

@@ -116,6 +116,7 @@ model Member {
   birthday             DateTime?
   passwordHash         String
   role                 Role     @default(MEMBER)
+  isInactive           Boolean  @default(false)
   pic                  String   @default("none") // avatar path
   phone                String   @default("")
 

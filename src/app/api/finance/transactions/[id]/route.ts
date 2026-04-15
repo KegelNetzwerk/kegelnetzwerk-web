@@ -25,13 +25,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  if (tx.payoffEventId !== null) {
-    return NextResponse.json(
-      { error: 'Cannot delete a transaction that is part of a payoff event' },
-      { status: 409 }
-    );
-  }
-
   await prisma.financeTransaction.delete({ where: { id: txId } });
   return NextResponse.json({ ok: true });
 }

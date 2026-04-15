@@ -17,7 +17,7 @@ export default async function AdminFinancePage() {
     }),
     prisma.member.findMany({
       where: { clubId: member.clubId },
-      select: { id: true, nickname: true, pic: true },
+      select: { id: true, nickname: true, pic: true, isInactive: true },
       orderBy: { nickname: 'asc' },
     }),
     prisma.guest.findMany({

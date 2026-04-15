@@ -38,6 +38,7 @@ interface MemberSummary {
   nickname: string;
   pic: string;
   balance: number;
+  isInactive: boolean;
 }
 
 interface AssignmentRow {
@@ -201,7 +202,7 @@ type Tab = 'overview' | 'settings' | 'collectives' | 'log' | 'payment-info';
 
 export default function FinanceAdminClient({
   settings: initialSettings,
-  members,
+  members: initialMembers,
   guests,
   collectives: initialCollectives,
   regularPayments: initialRegularPayments,
@@ -212,12 +213,13 @@ export default function FinanceAdminClient({
   const t = useTranslations('finance');
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [settings, setSettings] = useState(initialSettings);
+  const [members, setMembers] = useState(initialMembers);
   const [collectives, setCollectives] = useState(initialCollectives);
   const [regularPayments, setRegularPayments] = useState(initialRegularPayments);
   const [transactions, setTransactions] = useState(initialTx);
   const [paymentInfo, setPaymentInfo] = useState(initialPaymentInfo);
   const [memberBalances, setMemberBalances] = useState<Map<number, number>>(
-    new Map(members.map((m) => [m.id, m.balance]))
+    new Map(initialMembers.map((m) => [m.id, m.balance]))
   );
 
   function getBalance(memberId: number) {
@@ -285,6 +287,9 @@ export default function FinanceAdminClient({
           members={members}
           regularPayments={regularPayments}
           setRegularPayments={setRegularPayments}
+          onToggleInactive={(id, val) =>
+            setMembers((prev) => prev.map((m) => m.id === id ? { ...m, isInactive: val } : m))
+          }
         />
       )}
       {activeTab === 'collectives' && (
@@ -1042,7 +1047,7 @@ function OverviewTab({
 // ─── Settings Tab ─────────────────────────────────────────────────────────────
 
 function SettingsTab({
-  t, settings, setSettings, members, regularPayments, setRegularPayments,
+  t, settings, setSettings, members, regularPayments, setRegularPayments, onToggleInactive,
 }: {
   readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
   readonly settings: FinanceSettings;
@@ -1050,6 +1055,7 @@ function SettingsTab({
   readonly members: MemberSummary[];
   readonly regularPayments: RegularPayment[];
   readonly setRegularPayments: React.Dispatch<React.SetStateAction<RegularPayment[]>>;
+  readonly onToggleInactive: (id: number, isInactive: boolean) => void;
 }) {
   const [saving, setSaving] = useState(false);
   const [fee, setFee] = useState(String(settings.feeAmount));
@@ -1142,6 +1148,22 @@ function SettingsTab({
       toast.success(t('regularPayment.deleted'));
     } catch {
       toast.error(t('regularPayment.error'));
+    }
+  }
+
+  async function toggleInactive(m: MemberSummary) {
+    const next = !m.isInactive;
+    try {
+      const res = await fetch(`/api/finance/members/${m.id}/inactive`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isInactive: next }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+      onToggleInactive(m.id, next);
+      toast.success(t('settings.inactiveToggled'));
+    } catch {
+      toast.error(t('settings.inactiveError'));
     }
   }
 
@@ -1382,6 +1404,32 @@ function SettingsTab({
         ) : (
           <p className="text-sm text-gray-400 italic">{t('regularPayment.empty')}</p>
         )}
+      </section>
+
+      {/* Inactive members */}
+      <section className="space-y-4 border-t pt-6">
+        <h2 className="text-lg font-semibold">{t('settings.inactiveMembers')}</h2>
+        <p className="text-sm text-gray-500">{t('settings.inactiveMembersHint')}</p>
+        <div className="rounded-lg border divide-y">
+          {members.map((m) => (
+            <div key={m.id} className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-2">
+                <AvatarImg pic={m.pic} nickname={m.nickname} />
+                <span className="text-sm font-medium">{m.nickname}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleInactive(m)}
+                className="cursor-pointer"
+                aria-label={m.nickname}
+              >
+                {m.isInactive
+                  ? <ToggleRight size={22} style={{ color: 'var(--kn-primary,#005982)' }} />
+                  : <ToggleLeft size={22} className="text-gray-400" />}
+              </button>
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );
@@ -1829,6 +1877,9 @@ function LogTab({
   const [pageSize, setPageSize] = useState(50);
   const [page, setPage] = useState(0);
   const [deletePendingId, setDeletePendingId] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [showClearLog, setShowClearLog] = useState(false);
   const [clearLogInput, setClearLogInput] = useState('');
   const [clearingLog, setClearingLog] = useState(false);
@@ -1856,6 +1907,40 @@ function LogTab({
       toast.error(t('log.loadError'));
     } finally {
       setLoading(false);
+    }
+  }
+
+  function toggleOne(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function confirmBulkDelete() {
+    setBulkDeleting(true);
+    const ids = [...selectedIds];
+    try {
+      const res = await fetch('/api/finance/transactions/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) {
+        const body = await res.json() as { error?: string };
+        toast.error(body.error ?? t('log.deleteError'));
+        return;
+      }
+      setTransactions((prev) => prev.filter((tx) => !selectedIds.has(tx.id)));
+      setSelectedIds(new Set());
+      toast.success(t('log.bulkDeleted', { count: ids.length }));
+    } catch {
+      toast.error(t('log.deleteError'));
+    } finally {
+      setBulkDeleting(false);
+      setShowBulkDelete(false);
     }
   }
 
@@ -1917,6 +2002,24 @@ function LogTab({
   const safePage = Math.min(page, totalPages - 1);
   const paginated = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize);
   const txToDelete = deletePendingId !== null ? transactions.find((x) => x.id === deletePendingId) : null;
+  const allPageSelected = paginated.length > 0 && paginated.every((tx) => selectedIds.has(tx.id));
+  const somePageSelected = paginated.some((tx) => selectedIds.has(tx.id));
+
+  function toggleSelectAll() {
+    if (allPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginated.forEach((tx) => next.delete(tx.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        paginated.forEach((tx) => next.add(tx.id));
+        return next;
+      });
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -2014,6 +2117,32 @@ function LogTab({
         </Button>
       </div>
 
+      {/* Bulk delete action bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-3 py-2 rounded-lg bg-red-50 border border-red-200">
+          <span className="text-sm text-red-700 font-medium flex-1">
+            {t('log.bulkDeleteButton', { count: selectedIds.size })}
+          </span>
+          <Button
+            size="sm"
+            variant="destructive"
+            className="gap-1"
+            onClick={() => setShowBulkDelete(true)}
+          >
+            <Trash2 size={13} />
+            {t('log.deleteConfirmOk')}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            {t('cancel')}
+          </Button>
+        </div>
+      )}
+
       {/* Table */}
       {filtered.length === 0 ? (
         <p className="text-sm text-gray-400 italic py-4">{t('log.empty')}</p>
@@ -2023,6 +2152,15 @@ function LogTab({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  <th className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      className="cursor-pointer"
+                      checked={allPageSelected}
+                      ref={(el) => { if (el) el.indeterminate = somePageSelected && !allPageSelected; }}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
                   <th className="px-4 py-3">{t('log.date')}</th>
                   <th className="px-4 py-3">{t('overview.member')}</th>
                   <th className="px-4 py-3">{t('log.type')}</th>
@@ -2033,7 +2171,15 @@ function LogTab({
               </thead>
               <tbody>
                 {paginated.map((tx) => (
-                  <tr key={tx.id} className="border-b last:border-0 hover:bg-gray-50">
+                  <tr key={tx.id} className={`border-b last:border-0 hover:bg-gray-50 ${selectedIds.has(tx.id) ? 'bg-red-50' : ''}`}>
+                    <td className="px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        className="cursor-pointer"
+                        checked={selectedIds.has(tx.id)}
+                        onChange={() => toggleOne(tx.id)}
+                      />
+                    </td>
                     <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{fmtDate(tx.date)}</td>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2">
@@ -2161,6 +2307,22 @@ function LogTab({
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setDeletePendingId(null)}>{t('cancel')}</Button>
               <Button variant="destructive" onClick={confirmDeleteTx}>
+                <Trash2 size={14} />
+                {t('log.deleteConfirmOk')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Bulk delete confirmation modal */}
+      {showBulkDelete && (
+        <Modal onClose={() => setShowBulkDelete(false)} title={t('log.deleteConfirmTitle')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">{t('log.bulkDeleteConfirm', { count: selectedIds.size })}</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setShowBulkDelete(false)}>{t('cancel')}</Button>
+              <Button variant="destructive" disabled={bulkDeleting} onClick={confirmBulkDelete}>
                 <Trash2 size={14} />
                 {t('log.deleteConfirmOk')}
               </Button>
