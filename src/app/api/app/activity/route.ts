@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
   const where = { clubId: member.clubId, createdAt: { gt: since } };
 
-  const [newsItems, voteItems] = await Promise.all([
+  const [newsItems, voteItems, newPayoffCount] = await Promise.all([
     prisma.news.findMany({
       where,
       orderBy: { createdAt: 'desc' },
@@ -24,6 +24,9 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       select: { id: true, title: true },
     }),
+    prisma.payoffEvent.count({
+      where: { clubId: member.clubId, createdAt: { gt: since } },
+    }),
   ]);
 
   return NextResponse.json({
@@ -33,5 +36,6 @@ export async function GET(req: NextRequest) {
     latestNewsId: newsItems[0]?.id ?? null,
     latestVoteTitle: voteItems[0]?.title ?? null,
     latestVoteId: voteItems[0]?.id ?? null,
+    newPayoffCount,
   });
 }

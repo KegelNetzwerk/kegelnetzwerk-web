@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentMember } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { buildPayoffDateFilter } from '@/lib/finance-utils';
+import { sendPushToClub } from '@/lib/push';
 import { Role, FinanceTxType, Unit } from '@prisma/client';
 
 async function getPayoffWindow(clubId: number) {
@@ -284,6 +285,14 @@ export async function POST(req: NextRequest) {
 
     return { payoffEventId: payoffEvent.id, txCount: memberTxData.length + guestTxData.length };
   });
+
+  // Fire-and-forget push notification to all club members
+  sendPushToClub(
+    member.clubId,
+    'New Payoff',
+    'A new payoff has been executed for your club.',
+    { type: 'payoff' }
+  ).catch(() => {});
 
   return NextResponse.json(result);
 }
