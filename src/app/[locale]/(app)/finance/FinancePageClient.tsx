@@ -61,7 +61,6 @@ export default function FinancePageClient({
   const t = useTranslations('finance');
 
   const [viewMemberId, setViewMemberId] = useState(memberId);
-  const [viewMemberName, setViewMemberName] = useState(memberNickname);
   const [balance, setBalance] = useState(initialBalance);
   const [kncBalance, setKncBalance] = useState(initialKncBalance);
   const [transactions, setTransactions] = useState(initialTransactions);
@@ -107,9 +106,8 @@ export default function FinancePageClient({
     }
   }
 
-  async function handleMemberChange(id: number, nickname: string) {
+  async function handleMemberChange(id: number) {
     setViewMemberId(id);
-    setViewMemberName(nickname);
     setLoading(true);
     try {
       const res = await fetch(`/api/finance/transactions?memberId=${id}`);
@@ -213,7 +211,7 @@ export default function FinancePageClient({
               onChange={(e) => {
                 const id = Number.parseInt(e.target.value);
                 const m = allMembers.find((x) => x.id === id);
-                if (m) handleMemberChange(m.id, m.nickname);
+                if (m) handleMemberChange(m.id);
               }}
             >
               {allMembers.map((m) => (

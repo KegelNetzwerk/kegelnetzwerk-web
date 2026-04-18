@@ -1980,31 +1980,34 @@ function LogTab({
     }
   }
 
+  function matchesMember(tx: Transaction): boolean {
+    if (filterMember.startsWith('g:')) return tx.guestId === Number(filterMember.slice(2));
+    if (filterMember === '0') return tx.memberId === null && tx.guestId === null;
+    if (filterMember) return String(tx.memberId) === filterMember;
+    return true;
+  }
+
+  function matchesSearch(tx: Transaction): boolean {
+    if (!filterSearch) return true;
+    const q = filterSearch.toLowerCase();
+    const memberName = tx.member?.nickname ?? tx.guest?.nickname ?? '';
+    const haystack = [
+      memberName,
+      fmtDate(tx.date),
+      t(`txType.${tx.type}`),
+      fmt(tx.amount),
+      tx.note,
+      tx.sessionDate ? fmtDate(tx.sessionDate) : '',
+    ].join(' ').toLowerCase();
+    return haystack.includes(q);
+  }
+
   // Client-side filtering on loaded data
   const filtered = transactions.filter((tx) => {
-    if (filterMember.startsWith('g:')) {
-      const gid = Number(filterMember.slice(2));
-      if (tx.guestId !== gid) return false;
-    } else if (filterMember === '0') {
-      if (tx.memberId !== null || tx.guestId !== null) return false;
-    } else if (filterMember) {
-      if (String(tx.memberId) !== filterMember) return false;
-    }
+    if (!matchesMember(tx)) return false;
     if (filterFrom && tx.date < filterFrom) return false;
     if (filterTo && tx.date > filterTo + 'T23:59:59') return false;
-    if (filterSearch) {
-      const q = filterSearch.toLowerCase();
-      const memberName = tx.member?.nickname ?? tx.guest?.nickname ?? '';
-      const haystack = [
-        memberName,
-        fmtDate(tx.date),
-        t(`txType.${tx.type}`),
-        fmt(tx.amount),
-        tx.note,
-        tx.sessionDate ? fmtDate(tx.sessionDate) : '',
-      ].join(' ').toLowerCase();
-      if (!haystack.includes(q)) return false;
-    }
+    if (!matchesSearch(tx)) return false;
     return true;
   });
 
