@@ -9,6 +9,7 @@ import GamesOverview from './GamesOverview';
 import YearlyWinners from './YearlyWinners';
 import { computeYearlyWinners } from '@/lib/yearly-winners';
 import ClubComments, { type ClubCommentData } from './ClubCommentsWrapper';
+import KncLeaderboard from './KncLeaderboard';
 
 export default async function ClubProfilePage() {
   const member = await getCurrentMember();
@@ -211,31 +212,12 @@ export default async function ClubProfilePage() {
 
       {/* KNC Highscore — only shown when at least one member has donated */}
       {kncLeaderboard.some((m) => m.kncBalance > 0) && (
-        <div>
-          <h2 className="mb-3 text-xl font-semibold">{t('kncHighscore.title')}</h2>
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                  <th className="px-4 py-3">#</th>
-                  <th className="px-4 py-3">{t('kncHighscore.member')}</th>
-                  <th className="px-4 py-3 text-right">{t('kncHighscore.balance')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {kncLeaderboard.filter((m) => m.kncBalance > 0).map((m, idx) => (
-                  <tr key={m.id} className="border-b last:border-0 hover:bg-gray-50">
-                    <td className="px-4 py-2.5 text-gray-400 tabular-nums">{idx + 1}</td>
-                    <td className="px-4 py-2.5 font-medium">{m.nickname}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-amber-700">
-                      {m.kncBalance.toFixed(0)} KNC
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <KncLeaderboard
+          entries={kncLeaderboard.filter((m) => m.kncBalance > 0)}
+          title={t('kncHighscore.title')}
+          memberLabel={t('kncHighscore.member')}
+          balanceLabel={t('kncHighscore.balance')}
+        />
       )}
     </div>
   );
