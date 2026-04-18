@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RefreshCw, CreditCard, ExternalLink } from 'lucide-react';
+import { RefreshCw, CreditCard, ExternalLink, Heart } from 'lucide-react';
 import TxTypeCell from '@/components/finance/TxTypeCell';
 
 interface Transaction {
@@ -33,6 +33,7 @@ interface Props {
   readonly memberNickname: string;
   readonly isAdmin: boolean;
   readonly initialBalance: number;
+  readonly initialKncBalance: number;
   readonly initialTransactions: Transaction[];
   readonly allMembers: { id: number; nickname: string }[];
   readonly clubPaymentInfo: ClubPaymentInfo;
@@ -52,6 +53,7 @@ export default function FinancePageClient({
   memberNickname,
   isAdmin,
   initialBalance,
+  initialKncBalance,
   initialTransactions,
   allMembers,
   clubPaymentInfo,
@@ -61,13 +63,17 @@ export default function FinancePageClient({
   const [viewMemberId, setViewMemberId] = useState(memberId);
   const [viewMemberName, setViewMemberName] = useState(memberNickname);
   const [balance, setBalance] = useState(initialBalance);
+  const [kncBalance, setKncBalance] = useState(initialKncBalance);
   const [transactions, setTransactions] = useState(initialTransactions);
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
   const [filterType, setFilterType] = useState('');
   const [loading, setLoading] = useState(false);
+  const [donateOpen, setDonateOpen] = useState(false);
+  const [donateAmount, setDonateAmount] = useState('');
+  const [donating, setDonating] = useState(false);
 
-  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL', 'SESSION_PAYMENT'];
+  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL', 'SESSION_PAYMENT', 'DONATION'];
 
   async function loadHistory(targetMemberId: number) {
     setLoading(true);
@@ -114,6 +120,35 @@ export default function FinancePageClient({
       toast.error(t('log.loadError'));
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleDonate() {
+    const amt = parseFloat(donateAmount.replace(',', '.'));
+    if (isNaN(amt) || amt <= 0) {
+      toast.error(t('donate.invalidAmount'));
+      return;
+    }
+    setDonating(true);
+    try {
+      const res = await fetch('/api/finance/donate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: amt }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json() as { kncBalance: number; euroBalance: number };
+      setKncBalance(data.kncBalance);
+      setBalance(data.euroBalance);
+      setDonateOpen(false);
+      setDonateAmount('');
+      toast.success(t('donate.success', { knc: Math.round(amt * 100) }));
+      // Refresh transaction list to show the new DONATION entry
+      await loadHistory(viewMemberId);
+    } catch {
+      toast.error(t('donate.error'));
+    } finally {
+      setDonating(false);
     }
   }
 
@@ -187,6 +222,26 @@ export default function FinancePageClient({
           </div>
           <div className="text-sm text-gray-400 mt-1">{balanceLabel}</div>
         </div>
+
+        {/* KNC balance card — only shown for the logged-in member's own account */}
+        {viewMemberId === memberId && (
+          <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: '#d97706' }}>
+            <div className="text-sm text-gray-500 mb-1">{t('knc.label')}</div>
+            <div className="text-4xl font-extrabold tabular-nums text-amber-700">
+              {kncBalance.toFixed(0)} <span className="text-2xl">KNC</span>
+            </div>
+            <div className="text-sm text-gray-400 mt-1">{t('knc.subLabel')}</div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setDonateOpen(true)}
+              className="mt-3 gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              <Heart size={13} />
+              {t('knc.donateButton')}
+            </Button>
+          </div>
+        )}
 
         {/* Payment info (shown when balance is negative and info is configured) */}
         {balance < 0 && hasPaymentInfo && (
@@ -308,6 +363,37 @@ export default function FinancePageClient({
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {/* Donate dialog */}
+      {donateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDonateOpen(false)}>
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-semibold">{t('donate.title')}</h2>
+            <div className="space-y-1">
+              <Label htmlFor="donate-amount">{t('donate.amountLabel')}</Label>
+              <Input
+                id="donate-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder={t('donate.amountPlaceholder')}
+                value={donateAmount}
+                onChange={(e) => setDonateAmount(e.target.value)}
+                className="bg-white"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDonateOpen(false)} disabled={donating}>
+                {t('donate.cancel')}
+              </Button>
+              <Button onClick={handleDonate} disabled={donating} className="bg-amber-600 hover:bg-amber-700 text-white">
+                <Heart size={13} className="mr-1.5" />
+                {t('donate.confirm')}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

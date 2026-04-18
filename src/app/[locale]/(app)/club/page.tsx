@@ -53,12 +53,17 @@ export default async function ClubProfilePage() {
 
   if (!club) redirect('/login');
 
-  const [yearlyWinners, rawComments] = await Promise.all([
+  const [yearlyWinners, rawComments, kncLeaderboard] = await Promise.all([
     computeYearlyWinners(member.clubId, club.defaultScoringFilter ?? ''),
     prisma.clubComment.findMany({
       where: { clubId: member.clubId },
       orderBy: { createdAt: 'desc' },
       include: { authorMember: { select: { nickname: true, pic: true, club: { select: { name: true, farbe2: true } } } } },
+    }),
+    prisma.member.findMany({
+      where: { clubId: member.clubId, isInactive: false },
+      select: { id: true, nickname: true, kncBalance: true },
+      orderBy: { kncBalance: 'desc' },
     }),
   ]);
 
@@ -202,6 +207,35 @@ export default async function ClubProfilePage() {
             unitEuro: tg('unitEuro'),
           }}
         />
+      )}
+
+      {/* KNC Highscore — only shown when at least one member has donated */}
+      {kncLeaderboard.some((m) => m.kncBalance > 0) && (
+        <div>
+          <h2 className="mb-3 text-xl font-semibold">{t('kncHighscore.title')}</h2>
+          <div className="overflow-x-auto rounded-lg border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                  <th className="px-4 py-3">#</th>
+                  <th className="px-4 py-3">{t('kncHighscore.member')}</th>
+                  <th className="px-4 py-3 text-right">{t('kncHighscore.balance')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {kncLeaderboard.filter((m) => m.kncBalance > 0).map((m, idx) => (
+                  <tr key={m.id} className="border-b last:border-0 hover:bg-gray-50">
+                    <td className="px-4 py-2.5 text-gray-400 tabular-nums">{idx + 1}</td>
+                    <td className="px-4 py-2.5 font-medium">{m.nickname}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums font-semibold text-amber-700">
+                      {m.kncBalance.toFixed(0)} KNC
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
     </div>
   );

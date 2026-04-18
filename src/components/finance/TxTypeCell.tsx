@@ -13,6 +13,7 @@ const TX_TYPE_COLORS: Record<string, string> = {
   REGULAR_INCOME: 'bg-teal-100 text-teal-700',
   RESET: 'bg-purple-100 text-purple-700',
   MANUAL: 'bg-yellow-100 text-yellow-700',
+  DONATION: 'bg-amber-100 text-amber-700',
 };
 
 function fmtDate(iso: string): string {

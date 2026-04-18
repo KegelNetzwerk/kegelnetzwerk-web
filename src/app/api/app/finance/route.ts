@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const member = await getAppMember(req);
   if (!member) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const [aggregate, club] = await Promise.all([
+  const [aggregate, club, memberData] = await Promise.all([
     prisma.financeTransaction.aggregate({
       _sum: { amount: true },
       where: { memberId: member.id, clubId: member.clubId },
@@ -17,10 +17,15 @@ export async function GET(req: NextRequest) {
       where: { id: member.clubId },
       select: { paypal: true },
     }),
+    prisma.member.findUnique({
+      where: { id: member.id },
+      select: { kncBalance: true },
+    }),
   ]);
 
   return NextResponse.json({
     balance: Math.round((aggregate._sum.amount ?? 0) * 100) / 100,
     paypal: club?.paypal ?? null,
+    kncBalance: memberData?.kncBalance ?? 0,
   });
 }

@@ -1,0 +1,5 @@
+-- Add DONATION to FinanceTxType enum
+ALTER TYPE "FinanceTxType" ADD VALUE IF NOT EXISTS 'DONATION';
+
+-- Add kncBalance to Member
+ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "kncBalance" DOUBLE PRECISION NOT NULL DEFAULT 0;
