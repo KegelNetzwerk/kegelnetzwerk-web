@@ -1873,7 +1873,7 @@ function LogTab({
   const [filterMember, setFilterMember] = useState('');
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
-  const [filterType, setFilterType] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [pageSize, setPageSize] = useState(50);
   const [page, setPage] = useState(0);
@@ -1884,8 +1884,6 @@ function LogTab({
   const [showClearLog, setShowClearLog] = useState(false);
   const [clearLogInput, setClearLogInput] = useState('');
   const [clearingLog, setClearingLog] = useState(false);
-
-  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'CLUB_PURCHASE', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL', 'GUEST_FEE', 'SESSION_PAYMENT'];
 
   // filterMember values: '' = all, '0' = club purchases, 'g:N' = guest id N, 'N' = member id N
   async function loadMore() {
@@ -1899,7 +1897,6 @@ function LogTab({
       }
       if (filterFrom) params.set('from', filterFrom);
       if (filterTo) params.set('to', filterTo);
-      if (filterType) params.set('type', filterType);
       const res = await fetch(`/api/finance/transactions?${params.toString()}`);
       if (!res.ok) throw new Error('Request failed');
       const data = await res.json() as { transactions: Transaction[] };
@@ -1993,9 +1990,21 @@ function LogTab({
     } else if (filterMember) {
       if (String(tx.memberId) !== filterMember) return false;
     }
-    if (filterType && tx.type !== filterType) return false;
     if (filterFrom && tx.date < filterFrom) return false;
     if (filterTo && tx.date > filterTo + 'T23:59:59') return false;
+    if (filterSearch) {
+      const q = filterSearch.toLowerCase();
+      const memberName = tx.member?.nickname ?? tx.guest?.nickname ?? '';
+      const haystack = [
+        memberName,
+        fmtDate(tx.date),
+        t(`txType.${tx.type}`),
+        fmt(tx.amount),
+        tx.note,
+        tx.sessionDate ? fmtDate(tx.sessionDate) : '',
+      ].join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
     return true;
   });
 
@@ -2051,18 +2060,15 @@ function LogTab({
           </select>
         </div>
         <div className="space-y-1">
-          <Label htmlFor="log-type">{t('log.type')}</Label>
-          <select
-            id="log-type"
-            className="rounded border border-gray-300 px-3 py-2 text-sm bg-white"
-            value={filterType}
-            onChange={(e) => { setFilterType(e.target.value); setPage(0); }}
-          >
-            <option value="">{t('log.allTypes')}</option>
-            {ALL_TX_TYPES.map((type) => (
-              <option key={type} value={type}>{t(`txType.${type}`)}</option>
-            ))}
-          </select>
+          <Label htmlFor="log-search">{t('log.search')}</Label>
+          <Input
+            id="log-search"
+            type="text"
+            value={filterSearch}
+            onChange={(e) => { setFilterSearch(e.target.value); setPage(0); }}
+            placeholder={t('log.search')}
+            className="bg-white"
+          />
         </div>
         <div className="space-y-1">
           <Label htmlFor="log-from">{t('log.from')}</Label>

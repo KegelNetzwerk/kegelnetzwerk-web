@@ -67,7 +67,7 @@ export default function FinancePageClient({
   const [transactions, setTransactions] = useState(initialTransactions);
   const [filterFrom, setFilterFrom] = useState('');
   const [filterTo, setFilterTo] = useState('');
-  const [filterType, setFilterType] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [donateOpen, setDonateOpen] = useState(false);
   const [donateAmount, setDonateAmount] = useState('');
@@ -78,15 +78,12 @@ export default function FinancePageClient({
     else dialogRef.current?.close();
   }, [donateOpen]);
 
-  const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL', 'SESSION_PAYMENT', 'DONATION'];
-
   async function loadHistory(targetMemberId: number) {
     setLoading(true);
     try {
       const params = new URLSearchParams({ memberId: String(targetMemberId) });
       if (filterFrom) params.set('from', filterFrom);
       if (filterTo) params.set('to', filterTo);
-      if (filterType) params.set('type', filterType);
 
       const [txRes, balRes] = await Promise.all([
         fetch(`/api/finance/transactions?${params.toString()}`),
@@ -158,9 +155,19 @@ export default function FinancePageClient({
   }
 
   const filtered = transactions.filter((tx) => {
-    if (filterType && tx.type !== filterType) return false;
     if (filterFrom && tx.date < filterFrom) return false;
     if (filterTo && tx.date > filterTo + 'T23:59:59') return false;
+    if (filterSearch) {
+      const q = filterSearch.toLowerCase();
+      const haystack = [
+        fmtDate(tx.date),
+        t(`txType.${tx.type}`),
+        fmt(tx.amount),
+        tx.note,
+        tx.sessionDate ? fmtDate(tx.sessionDate) : '',
+      ].join(' ').toLowerCase();
+      if (!haystack.includes(q)) return false;
+    }
     return true;
   });
 
@@ -309,18 +316,15 @@ export default function FinancePageClient({
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-end">
         <div className="space-y-1">
-          <Label htmlFor="mf-type">{t('log.type')}</Label>
-          <select
-            id="mf-type"
-            className="rounded border border-gray-300 px-3 py-2 text-sm bg-white"
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-          >
-            <option value="">{t('log.allTypes')}</option>
-            {ALL_TX_TYPES.map((type) => (
-              <option key={type} value={type}>{t(`txType.${type}`)}</option>
-            ))}
-          </select>
+          <Label htmlFor="mf-search">{t('log.search')}</Label>
+          <Input
+            id="mf-search"
+            type="text"
+            value={filterSearch}
+            onChange={(e) => setFilterSearch(e.target.value)}
+            placeholder={t('log.search')}
+            className="bg-white"
+          />
         </div>
         <div className="space-y-1">
           <Label htmlFor="mf-from">{t('log.from')}</Label>
