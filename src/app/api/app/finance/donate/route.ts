@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json() as { amount?: unknown };
   const amount = Number(body.amount);
-  if (!isFinite(amount) || amount <= 0) {
+  if (!Number.isFinite(amount) || amount <= 0) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
   }
 

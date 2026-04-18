@@ -124,8 +124,8 @@ export default function FinancePageClient({
   }
 
   async function handleDonate() {
-    const amt = parseFloat(donateAmount.replace(',', '.'));
-    if (isNaN(amt) || amt <= 0) {
+    const amt = Number.parseFloat(donateAmount.replace(',', '.'));
+    if (Number.isNaN(amt) || amt <= 0) {
       toast.error(t('donate.invalidAmount'));
       return;
     }
@@ -136,7 +136,7 @@ export default function FinancePageClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: amt }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Donation request failed');
       const data = await res.json() as { kncBalance: number; euroBalance: number };
       setKncBalance(data.kncBalance);
       setBalance(data.euroBalance);
@@ -367,9 +367,20 @@ export default function FinancePageClient({
       )}
       {/* Donate dialog */}
       {donateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDonateOpen(false)}>
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold">{t('donate.title')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          role="presentation"
+          onClick={() => setDonateOpen(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setDonateOpen(false); }}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="donate-dialog-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="donate-dialog-title" className="text-lg font-semibold">{t('donate.title')}</h2>
             <div className="space-y-1">
               <Label htmlFor="donate-amount">{t('donate.amountLabel')}</Label>
               <Input
