@@ -532,7 +532,8 @@
       "settings": "Settings",
       "collectives": "Group Collections",
       "log": "Log",
-      "paymentInfo": "Payment Info"
+      "paymentInfo": "Payment Info",
+      "sources": "Sources"
     },
     "balance": {
       "label": "Balance",
@@ -779,6 +780,29 @@
     "error": {
       "invalidAmount": "Please enter a valid amount"
     },
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "sources": {
+      "title": "Money Sources",
+      "sourcesTotal": "Total Sources",
+      "balance": "Cash Balance",
+      "difference": "Difference",
+      "addSource": "Add Source",
+      "sourceName": "Name",
+      "sourceValue": "Initial Value",
+      "addLogEntry": "Record New Value",
+      "logValue": "New Value",
+      "logEmpty": "No entries",
+      "empty": "No money sources yet",
+      "deleteSourceTitle": "Delete Money Source",
+      "deleteSourceConfirm": "Delete this money source and all its log entries?",
+      "deleteSourceOk": "Delete",
+      "deleteLogTitle": "Delete Entry",
+      "deleteLogConfirm": "Delete this log entry?",
+      "deleteLogOk": "Delete",
+      "saveSuccess": "Saved",
+      "deleteSuccess": "Deleted",
+      "errorSave": "Save failed",
+      "errorDelete": "Delete failed"
+    }
   }
 }

@@ -9,7 +9,7 @@ export default async function AdminFinancePage() {
   const member = await getCurrentMember();
   if (!member || member.role !== Role.ADMIN) redirect('/');
 
-  const [settings, club, members, guests, collectives, regularPayments, recentTx] = await Promise.all([
+  const [settings, club, members, guests, collectives, regularPayments, recentTx, moneySources] = await Promise.all([
     prisma.clubFinanceSettings.findUnique({ where: { clubId: member.clubId } }),
     prisma.club.findUnique({
       where: { id: member.clubId },
@@ -48,6 +48,11 @@ export default async function AdminFinancePage() {
         member: { select: { id: true, nickname: true } },
         guest: { select: { id: true, nickname: true } },
       },
+    }),
+    prisma.moneySource.findMany({
+      where: { clubId: member.clubId },
+      orderBy: { createdAt: 'asc' },
+      include: { log: { orderBy: { createdAt: 'desc' } } },
     }),
   ]);
 
@@ -97,6 +102,7 @@ export default async function AdminFinancePage() {
   const collectivesSerialized = JSON.parse(JSON.stringify(collectives)); // NOSONAR
   const regularPaymentsSerialized = JSON.parse(JSON.stringify(regularPayments)); // NOSONAR
   const recentTxSerialized = JSON.parse(JSON.stringify(recentTxEnriched)); // NOSONAR
+  const moneySourcesSerialized = JSON.parse(JSON.stringify(moneySources)); // NOSONAR
 
   return (
     <FinanceAdminClient
@@ -108,6 +114,7 @@ export default async function AdminFinancePage() {
       recentTransactions={recentTxSerialized}
       payoffDue={payoffDue}
       clubPaymentInfo={club ?? { accountHolder: '', iban: '', bic: '', paypal: '' }}
+      moneySources={moneySourcesSerialized}
     />
   );
 }

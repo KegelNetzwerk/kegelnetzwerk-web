@@ -532,7 +532,8 @@
       "settings": "Einstellungen",
       "collectives": "Sammelkassen",
       "log": "Protokoll",
-      "paymentInfo": "Zahlungsinformationen"
+      "paymentInfo": "Zahlungsinformationen",
+      "sources": "Quellen"
     },
     "balance": {
       "label": "Kontostand",
@@ -779,6 +780,29 @@
     "error": {
       "invalidAmount": "Bitte einen gültigen Betrag eingeben"
     },
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "sources": {
+      "title": "Geldquellen",
+      "sourcesTotal": "Summe Geldquellen",
+      "balance": "Kassenstand",
+      "difference": "Differenz",
+      "addSource": "Quelle hinzufügen",
+      "sourceName": "Name",
+      "sourceValue": "Anfangswert",
+      "addLogEntry": "Neuen Wert eintragen",
+      "logValue": "Neuer Wert",
+      "logEmpty": "Keine Einträge",
+      "empty": "Keine Geldquellen vorhanden",
+      "deleteSourceTitle": "Geldquelle löschen",
+      "deleteSourceConfirm": "Soll diese Geldquelle mit allen Einträgen gelöscht werden?",
+      "deleteSourceOk": "Löschen",
+      "deleteLogTitle": "Eintrag löschen",
+      "deleteLogConfirm": "Soll dieser Logeintrag gelöscht werden?",
+      "deleteLogOk": "Löschen",
+      "saveSuccess": "Gespeichert",
+      "deleteSuccess": "Gelöscht",
+      "errorSave": "Fehler beim Speichern",
+      "errorDelete": "Fehler beim Löschen"
+    }
   }
 }

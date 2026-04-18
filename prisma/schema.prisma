@@ -101,6 +101,7 @@ model Club {
   payoffEvents         PayoffEvent[]
   financeTransactions  FinanceTransaction[]
   collectiveCharges    CollectiveCharge[]
+  moneySources         MoneySource[]
 }
 
 // ─── Member ───────────────────────────────────────────────────────────────────
@@ -534,4 +535,25 @@ model RegularMemberPayment {
   active    Boolean          @default(true)
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
+}
+
+// ─── Money Sources ────────────────────────────────────────────────────────────
+
+model MoneySource {
+  id        Int              @id @default(autoincrement())
+  clubId    Int
+  club      Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  name      String
+  value     Float            @default(0)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  log       MoneySourceLog[]
+}
+
+model MoneySourceLog {
+  id            Int         @id @default(autoincrement())
+  moneySourceId Int
+  moneySource   MoneySource @relation(fields: [moneySourceId], references: [id], onDelete: Cascade)
+  value         Float
+  createdAt     DateTime    @default(now())
 }
