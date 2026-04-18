@@ -685,7 +685,8 @@
     "donate": {
       "title": "Guthaben in KNC umwandeln",
       "amountLabel": "Betrag in Euro",
-      "amountPlaceholder": "z. B. 5.00",
+      "amountPlaceholder": "z. B. 10.00",
+      "exchangeRate": "Kurs: 1 € = 100 KNC",
       "confirm": "Umwandeln",
       "cancel": "Abbrechen",
       "success": "{knc} KNC gutgeschrieben",

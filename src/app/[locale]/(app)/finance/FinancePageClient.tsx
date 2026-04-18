@@ -405,6 +405,7 @@ export default function FinancePageClient({
             className="bg-white"
             autoFocus
           />
+          <p className="text-xs text-amber-600 font-medium pt-0.5">{t('donate.exchangeRate')}</p>
         </div>
         <div className="flex gap-2 justify-end">
           <Button variant="outline" onClick={() => setDonateOpen(false)} disabled={donating}>

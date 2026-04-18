@@ -685,7 +685,8 @@
     "donate": {
       "title": "Convert Balance to KNC",
       "amountLabel": "Amount in Euro",
-      "amountPlaceholder": "e.g. 5.00",
+      "amountPlaceholder": "e.g. 10.00",
+      "exchangeRate": "Rate: 1 € = 100 KNC",
       "confirm": "Convert",
       "cancel": "Cancel",
       "success": "{knc} KNC credited",
