@@ -2067,7 +2067,7 @@ function LogTab({
             value={filterSearch}
             onChange={(e) => { setFilterSearch(e.target.value); setPage(0); }}
             placeholder={t('log.search')}
-            className="bg-white"
+            className="bg-white w-64"
           />
         </div>
         <div className="space-y-1">
