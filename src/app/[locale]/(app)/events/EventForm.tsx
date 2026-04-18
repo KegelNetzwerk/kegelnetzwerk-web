@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/RichTextEditor';
-import { Save, X } from 'lucide-react';
+import FormActionRow from '@/components/FormActionRow';
 
 export interface EventData {
   id: number;
@@ -38,7 +37,7 @@ interface EventFormProps {
 
 export default function EventForm({ initial, onSaved, onCancel }: EventFormProps) {
   const t = useTranslations('events');
-  const tc = useTranslations('common');
+
 
   // Parse initial date/time
   const initDate = initial ? new Date(initial.date) : new Date();
@@ -171,16 +170,7 @@ export default function EventForm({ initial, onSaved, onCancel }: EventFormProps
           <RichTextEditor value={description} onChange={setDescription} minHeight="80px" />
         </div>
 
-        <div className="flex gap-2">
-          <Button type="submit" disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
-            <Save size={15} />
-            {initial ? t('update') : t('submit')}
-          </Button>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            <X size={15} />
-            {tc('cancel')}
-          </Button>
-        </div>
+        <FormActionRow submitLabel={initial ? t('update') : t('submit')} loading={loading} onCancel={onCancel} />
       </form>
     </div>
   );

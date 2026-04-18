@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import RichTextEditor from '@/components/RichTextEditor';
 import type { VoteData } from './VoteCard';
-import { Save, X, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import FormActionRow from '@/components/FormActionRow';
 
 interface VoteFormProps {
   readonly initial?: VoteData | null;
@@ -17,7 +18,7 @@ interface VoteFormProps {
 
 export default function VoteForm({ initial, onSaved, onCancel }: VoteFormProps) {
   const t = useTranslations('votes');
-  const tc = useTranslations('common');
+
 
   const [title, setTitle] = useState(initial?.title ?? '');
   const [description, setDescription] = useState(initial?.description ?? '');
@@ -157,16 +158,7 @@ export default function VoteForm({ initial, onSaved, onCancel }: VoteFormProps) 
           ))}
         </div>
 
-        <div className="flex gap-2">
-          <Button type="submit" disabled={loading} style={{ background: 'var(--kn-primary, #005982)' }} className="text-white">
-            <Save size={15} />
-            {initial ? t('update') : t('submit')}
-          </Button>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            <X size={15} />
-            {tc('cancel')}
-          </Button>
-        </div>
+        <FormActionRow submitLabel={initial ? t('update') : t('submit')} loading={loading} onCancel={onCancel} />
       </form>
     </div>
   );

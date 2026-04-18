@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Trash2 } from 'lucide-react';
+import CommentsToggleButton from '@/components/CommentsToggleButton';
 
 export interface CommentData {
   id: number;
@@ -62,32 +63,14 @@ export default function Comments({ referenceId, type, initialComments }: Comment
   return (
     <div className="mt-3 rounded-lg p-2" style={{ background: '#f0f0f0' }}>
       {/* Collapsed header — always visible */}
-      <button
+      <CommentsToggleButton
+        expanded={expanded}
+        count={comments.length}
+        latestAuthorName={latest?.author.nickname}
+        latestCreatedAt={latest?.createdAt}
+        latestContent={latest?.content}
         onClick={() => setExpanded((v) => !v)}
-        className="flex items-center gap-2 w-full text-left"
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0' }}
-      >
-        <MessageSquare size={13} style={{ color: 'rgba(0,0,0,0.4)', flexShrink: 0 }} />
-        <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.5)', fontWeight: 600 }}>
-          {t('title')} ({comments.length})
-        </span>
-        {!expanded && latest && (
-          <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.4)', marginLeft: 4, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            — {latest.author.nickname},{' '}
-            {new Date(latest.createdAt).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-            {': '}
-            <span style={{ fontStyle: 'italic' }}>{latest.content.slice(0, 60)}{latest.content.length > 60 ? '…' : ''}</span>
-          </span>
-        )}
-        {!expanded && comments.length === 0 && (
-          <span style={{ fontSize: 12, color: 'rgba(0,0,0,0.3)', marginLeft: 4 }}>
-            — {t('noComments')}
-          </span>
-        )}
-        <span style={{ marginLeft: 'auto', color: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
-          {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-        </span>
-      </button>
+      />
 
       {/* Expanded content */}
       {expanded && (
