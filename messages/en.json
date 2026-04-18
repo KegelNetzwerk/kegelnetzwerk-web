@@ -712,6 +712,7 @@
       "clubPurchases": "Club Expenses",
       "type": "Type",
       "allTypes": "All Types",
+      "search": "Search",
       "from": "From",
       "to": "To",
       "refresh": "Refresh",
