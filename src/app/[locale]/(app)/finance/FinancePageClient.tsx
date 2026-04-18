@@ -217,8 +217,8 @@ export default function FinancePageClient({
         )}
       </div>
 
-      {/* Balance section: Euro (left) | separator | KNC (right) */}
-      <div className="flex flex-wrap gap-x-6 gap-y-4 items-start">
+      {/* Balance section: Euro (left) | separator (centered) | button + KNC (right) */}
+      <div className="flex flex-wrap items-start gap-y-4 w-full">
 
         {/* Left group: Euro balance card + payment info */}
         <div className="flex flex-wrap gap-4 items-start">
@@ -272,20 +272,16 @@ export default function FinancePageClient({
           )}
         </div>
 
-        {/* Vertical separator + KNC group — only for own account */}
+        {/* Centered separator + right-aligned KNC group — only for own account */}
         {viewMemberId === memberId && (
           <>
-            <div className="hidden sm:block w-px self-stretch bg-gray-200" />
+            {/* Separator expands to fill remaining space and centers the line */}
+            <div className="hidden sm:flex flex-1 self-stretch justify-center items-stretch min-w-[48px]">
+              <div className="w-px bg-gray-200" />
+            </div>
 
-            {/* Right group: KNC balance card + convert button */}
-            <div className="flex flex-col items-start gap-3">
-              <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: '#d97706' }}>
-                <div className="text-sm text-gray-500 mb-1">{t('knc.label')}</div>
-                <div className="text-4xl font-extrabold tabular-nums text-amber-700">
-                  {kncBalance.toFixed(0)} <span className="text-2xl">KNC</span>
-                </div>
-                <div className="text-sm text-gray-400 mt-1">{t('knc.subLabel')}</div>
-              </div>
+            {/* Right group: convert button (left) + KNC card (right), pushed to the right */}
+            <div className="flex items-center gap-3">
               <Button
                 size="sm"
                 variant="outline"
@@ -295,6 +291,13 @@ export default function FinancePageClient({
                 <Heart size={13} />
                 {t('knc.donateButton')}
               </Button>
+              <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: '#d97706' }}>
+                <div className="text-sm text-gray-500 mb-1">{t('knc.label')}</div>
+                <div className="text-4xl font-extrabold tabular-nums text-amber-700">
+                  {kncBalance.toFixed(0)} <span className="text-2xl">KNC</span>
+                </div>
+                <div className="text-sm text-gray-400 mt-1">{t('knc.subLabel')}</div>
+              </div>
             </div>
           </>
         )}
