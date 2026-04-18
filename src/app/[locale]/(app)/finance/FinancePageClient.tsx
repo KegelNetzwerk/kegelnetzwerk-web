@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -72,6 +72,11 @@ export default function FinancePageClient({
   const [donateOpen, setDonateOpen] = useState(false);
   const [donateAmount, setDonateAmount] = useState('');
   const [donating, setDonating] = useState(false);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (donateOpen) dialogRef.current?.showModal();
+    else dialogRef.current?.close();
+  }, [donateOpen]);
 
   const ALL_TX_TYPES = ['PENALTY', 'CLUB_FEE', 'PAYMENT_IN', 'PAYMENT_OUT', 'COLLECTIVE', 'REGULAR_INCOME', 'RESET', 'MANUAL', 'SESSION_PAYMENT', 'DONATION'];
 
@@ -365,48 +370,38 @@ export default function FinancePageClient({
           </table>
         </div>
       )}
-      {/* Donate dialog */}
-      {donateOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          role="presentation"
-          onClick={() => setDonateOpen(false)}
-          onKeyDown={(e) => { if (e.key === 'Escape') setDonateOpen(false); }}
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="donate-dialog-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 id="donate-dialog-title" className="text-lg font-semibold">{t('donate.title')}</h2>
-            <div className="space-y-1">
-              <Label htmlFor="donate-amount">{t('donate.amountLabel')}</Label>
-              <Input
-                id="donate-amount"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder={t('donate.amountPlaceholder')}
-                value={donateAmount}
-                onChange={(e) => setDonateAmount(e.target.value)}
-                className="bg-white"
-                autoFocus
-              />
-            </div>
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setDonateOpen(false)} disabled={donating}>
-                {t('donate.cancel')}
-              </Button>
-              <Button onClick={handleDonate} disabled={donating} className="bg-amber-600 hover:bg-amber-700 text-white">
-                <Heart size={13} className="mr-1.5" />
-                {t('donate.confirm')}
-              </Button>
-            </div>
-          </div>
+      {/* Donate dialog — native <dialog> for full accessibility (Escape key, focus trap, backdrop) */}
+      <dialog
+        ref={dialogRef}
+        className="rounded-xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4 backdrop:bg-black/40"
+        onClose={() => { setDonateOpen(false); setDonateAmount(''); }}
+        aria-labelledby="donate-dialog-title"
+      >
+        <h2 id="donate-dialog-title" className="text-lg font-semibold">{t('donate.title')}</h2>
+        <div className="space-y-1">
+          <Label htmlFor="donate-amount">{t('donate.amountLabel')}</Label>
+          <Input
+            id="donate-amount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            placeholder={t('donate.amountPlaceholder')}
+            value={donateAmount}
+            onChange={(e) => setDonateAmount(e.target.value)}
+            className="bg-white"
+            autoFocus
+          />
         </div>
-      )}
+        <div className="flex gap-2 justify-end">
+          <Button variant="outline" onClick={() => setDonateOpen(false)} disabled={donating}>
+            {t('donate.cancel')}
+          </Button>
+          <Button onClick={handleDonate} disabled={donating} className="bg-amber-600 hover:bg-amber-700 text-white">
+            <Heart size={13} className="mr-1.5" />
+            {t('donate.confirm')}
+          </Button>
+        </div>
+      </dialog>
     </div>
   );
 }
