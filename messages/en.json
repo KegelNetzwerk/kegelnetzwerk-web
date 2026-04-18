@@ -446,7 +446,12 @@
     "rank2": "🥈 2nd Place",
     "rank3": "🥉 3rd Place",
     "lastPlace": "Last Place",
-    "noWinnersData": "No results available."
+    "noWinnersData": "No results available.",
+    "kncHighscore": {
+      "title": "KNC Leaderboard",
+      "member": "Member",
+      "balance": "KNC Balance"
+    }
   },
   "contactList": {
     "title": "Contact List",
@@ -674,7 +679,23 @@
       "RESET": "Reset",
       "MANUAL": "Manual",
       "GUEST_FEE": "Guest Fee",
-      "SESSION_PAYMENT": "Session Payment"
+      "SESSION_PAYMENT": "Session Payment",
+      "DONATION": "Donation / KNC"
+    },
+    "donate": {
+      "title": "Convert Balance to KNC",
+      "amountLabel": "Amount in Euro",
+      "amountPlaceholder": "e.g. 5.00",
+      "confirm": "Convert",
+      "cancel": "Cancel",
+      "success": "{knc} KNC credited",
+      "error": "Conversion failed",
+      "invalidAmount": "Please enter a valid amount"
+    },
+    "knc": {
+      "label": "KNC Balance",
+      "subLabel": "KegelNetzwerk Coins",
+      "donateButton": "Convert to KNC"
     },
     "freq": {
       "NONE": "None",
