@@ -695,7 +695,7 @@
     "knc": {
       "label": "KNC Balance",
       "subLabel": "KegelNetzwerk Coins",
-      "donateButton": "Convert to KNC"
+      "donateButton": "Convert € to KNC"
     },
     "freq": {
       "NONE": "None",

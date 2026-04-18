@@ -695,7 +695,7 @@
     "knc": {
       "label": "KNC-Guthaben",
       "subLabel": "Kegelnetzwerk Coins",
-      "donateButton": "In KNC umwandeln"
+      "donateButton": "€ in KNC umwandeln"
     },
     "freq": {
       "NONE": "Keine",

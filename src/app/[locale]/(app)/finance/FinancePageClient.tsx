@@ -217,75 +217,86 @@ export default function FinancePageClient({
         )}
       </div>
 
-      {/* Balance card + payment info row */}
-      <div className="flex flex-wrap gap-4 items-center">
-        {/* Balance card */}
-        <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: balanceBorderColor }}>
-          <div className="text-sm text-gray-500 mb-1">{t('balance.label')} — <span className="font-medium">{viewMemberName}</span></div>
-          <div className={`text-4xl font-extrabold tabular-nums ${balanceColor}`}>
-            {balance > 0 ? '+' : ''}{fmt(balance)}
+      {/* Balance section: Euro (left) | separator | KNC (right) */}
+      <div className="flex flex-wrap gap-x-6 gap-y-4 items-start">
+
+        {/* Left group: Euro balance card + payment info */}
+        <div className="flex flex-wrap gap-4 items-start">
+          {/* Balance card */}
+          <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: balanceBorderColor }}>
+            <div className="text-sm text-gray-500 mb-1">{t('balance.label')}</div>
+            <div className={`text-4xl font-extrabold tabular-nums ${balanceColor}`}>
+              {balance > 0 ? '+' : ''}{fmt(balance)}
+            </div>
+            <div className="text-sm text-gray-400 mt-1">{balanceLabel}</div>
           </div>
-          <div className="text-sm text-gray-400 mt-1">{balanceLabel}</div>
+
+          {/* Payment info (shown when balance is negative and info is configured) */}
+          {balance < 0 && hasPaymentInfo && (
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center gap-1.5 font-semibold text-gray-700 mb-1">
+                <CreditCard size={15} />
+                <span>{t('paymentInfo.title')}</span>
+              </div>
+              {clubPaymentInfo.accountHolder && (
+                <div>
+                  <span className="text-gray-400 text-xs">{t('paymentInfo.accountHolder')}: </span>
+                  <span className="font-medium">{clubPaymentInfo.accountHolder}</span>
+                </div>
+              )}
+              {clubPaymentInfo.iban && (
+                <div>
+                  <span className="text-gray-400 text-xs">IBAN: </span>
+                  <span className="font-mono font-medium tracking-wide">{clubPaymentInfo.iban}</span>
+                </div>
+              )}
+              {clubPaymentInfo.bic && (
+                <div>
+                  <span className="text-gray-400 text-xs">BIC: </span>
+                  <span className="font-mono font-medium">{clubPaymentInfo.bic}</span>
+                </div>
+              )}
+              {paypalUrl && (
+                <a
+                  href={`${paypalUrl}/${Math.abs(balance).toFixed(2)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-white text-xs font-semibold"
+                  style={{ background: '#003087' }}
+                >
+                  <ExternalLink size={12} />
+                  {t('paymentInfo.payNowPaypal', { amount: fmt(Math.abs(balance)) })}
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* KNC balance card — only shown for the logged-in member's own account */}
+        {/* Vertical separator + KNC group — only for own account */}
         {viewMemberId === memberId && (
-          <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: '#d97706' }}>
-            <div className="text-sm text-gray-500 mb-1">{t('knc.label')}</div>
-            <div className="text-4xl font-extrabold tabular-nums text-amber-700">
-              {kncBalance.toFixed(0)} <span className="text-2xl">KNC</span>
-            </div>
-            <div className="text-sm text-gray-400 mt-1">{t('knc.subLabel')}</div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setDonateOpen(true)}
-              className="mt-3 gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
-            >
-              <Heart size={13} />
-              {t('knc.donateButton')}
-            </Button>
-          </div>
-        )}
+          <>
+            <div className="hidden sm:block w-px self-stretch bg-gray-200" />
 
-        {/* Payment info (shown when balance is negative and info is configured) */}
-        {balance < 0 && hasPaymentInfo && (
-          <div className="space-y-2 text-sm">
-            <div className="flex items-center gap-1.5 font-semibold text-gray-700 mb-1">
-              <CreditCard size={15} />
-              <span>{t('paymentInfo.title')}</span>
-            </div>
-            {clubPaymentInfo.accountHolder && (
-              <div>
-                <span className="text-gray-400 text-xs">{t('paymentInfo.accountHolder')}: </span>
-                <span className="font-medium">{clubPaymentInfo.accountHolder}</span>
+            {/* Right group: KNC balance card + convert button */}
+            <div className="flex flex-col items-start gap-3">
+              <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: '#d97706' }}>
+                <div className="text-sm text-gray-500 mb-1">{t('knc.label')}</div>
+                <div className="text-4xl font-extrabold tabular-nums text-amber-700">
+                  {kncBalance.toFixed(0)} <span className="text-2xl">KNC</span>
+                </div>
+                <div className="text-sm text-gray-400 mt-1">{t('knc.subLabel')}</div>
               </div>
-            )}
-            {clubPaymentInfo.iban && (
-              <div>
-                <span className="text-gray-400 text-xs">IBAN: </span>
-                <span className="font-mono font-medium tracking-wide">{clubPaymentInfo.iban}</span>
-              </div>
-            )}
-            {clubPaymentInfo.bic && (
-              <div>
-                <span className="text-gray-400 text-xs">BIC: </span>
-                <span className="font-mono font-medium">{clubPaymentInfo.bic}</span>
-              </div>
-            )}
-            {paypalUrl && (
-              <a
-                href={`${paypalUrl}/${Math.abs(balance).toFixed(2)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 flex items-center gap-1.5 rounded-lg px-3 py-2 text-white text-xs font-semibold"
-                style={{ background: '#003087' }}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setDonateOpen(true)}
+                className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
               >
-                <ExternalLink size={12} />
-                {t('paymentInfo.payNowPaypal', { amount: fmt(Math.abs(balance)) })}
-              </a>
-            )}
-          </div>
+                <Heart size={13} />
+                {t('knc.donateButton')}
+              </Button>
+            </div>
+          </>
         )}
       </div>
 
