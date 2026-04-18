@@ -390,7 +390,7 @@ export default function FinancePageClient({
       {/* Donate dialog — native <dialog> for full accessibility (Escape key, focus trap, backdrop) */}
       <dialog
         ref={dialogRef}
-        className="rounded-xl shadow-xl p-6 w-full max-w-sm mx-4 space-y-4 backdrop:bg-black/40"
+        className="rounded-xl shadow-xl p-6 w-full max-w-sm space-y-4 backdrop:bg-black/40 m-auto"
         onClose={() => { setDonateOpen(false); setDonateAmount(''); }}
         aria-labelledby="donate-dialog-title"
       >
