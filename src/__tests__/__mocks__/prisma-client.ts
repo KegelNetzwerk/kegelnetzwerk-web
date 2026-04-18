@@ -32,6 +32,7 @@ export const FinanceTxType = {
   MANUAL: 'MANUAL',
   GUEST_FEE: 'GUEST_FEE',
   SESSION_PAYMENT: 'SESSION_PAYMENT',
+  DONATION: 'DONATION',
 } as const;
 
 export const CommentType = {
