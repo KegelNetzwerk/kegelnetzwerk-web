@@ -48,6 +48,7 @@ enum FinanceTxType {
   MANUAL         // free-form manual adjustment
   GUEST_FEE      // per-session fee charged to a guest at payoff time
   SESSION_PAYMENT // split bill for a session charged to all attendees
+  DONATION        // member converts Euro balance to KNC points
 }
 
 // ─── Club ────────────────────────────────────────────────────────────────────
@@ -117,6 +118,7 @@ model Member {
   passwordHash         String
   role                 Role     @default(MEMBER)
   isInactive           Boolean  @default(false)
+  kncBalance           Float    @default(0)
   pic                  String   @default("none") // avatar path
   phone                String   @default("")
 

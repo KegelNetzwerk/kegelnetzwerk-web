@@ -9,6 +9,7 @@ import GamesOverview from './GamesOverview';
 import YearlyWinners from './YearlyWinners';
 import { computeYearlyWinners } from '@/lib/yearly-winners';
 import ClubComments, { type ClubCommentData } from './ClubCommentsWrapper';
+import KncLeaderboard from './KncLeaderboard';
 
 export default async function ClubProfilePage() {
   const member = await getCurrentMember();
@@ -53,12 +54,17 @@ export default async function ClubProfilePage() {
 
   if (!club) redirect('/login');
 
-  const [yearlyWinners, rawComments] = await Promise.all([
+  const [yearlyWinners, rawComments, kncLeaderboard] = await Promise.all([
     computeYearlyWinners(member.clubId, club.defaultScoringFilter ?? ''),
     prisma.clubComment.findMany({
       where: { clubId: member.clubId },
       orderBy: { createdAt: 'desc' },
       include: { authorMember: { select: { nickname: true, pic: true, club: { select: { name: true, farbe2: true } } } } },
+    }),
+    prisma.member.findMany({
+      where: { clubId: member.clubId, isInactive: false },
+      select: { id: true, nickname: true, kncBalance: true },
+      orderBy: { kncBalance: 'desc' },
     }),
   ]);
 
@@ -201,6 +207,16 @@ export default async function ClubProfilePage() {
             unitPoints: tg('unitPoints'),
             unitEuro: tg('unitEuro'),
           }}
+        />
+      )}
+
+      {/* KNC Highscore — only shown when at least one member has donated */}
+      {kncLeaderboard.some((m) => m.kncBalance > 0) && (
+        <KncLeaderboard
+          entries={kncLeaderboard.filter((m) => m.kncBalance > 0)}
+          title={t('kncHighscore.title')}
+          memberLabel={t('kncHighscore.member')}
+          balanceLabel={t('kncHighscore.balance')}
         />
       )}
     </div>

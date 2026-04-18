@@ -446,7 +446,12 @@
     "rank2": "🥈 2. Platz",
     "rank3": "🥉 3. Platz",
     "lastPlace": "Letzter",
-    "noWinnersData": "Keine Ergebnisse vorhanden."
+    "noWinnersData": "Keine Ergebnisse vorhanden.",
+    "kncHighscore": {
+      "title": "KNC-Rangliste",
+      "member": "Mitglied",
+      "balance": "KNC-Guthaben"
+    }
   },
   "contactList": {
     "title": "Kontaktliste",
@@ -674,7 +679,25 @@
       "RESET": "Zurückgesetzt",
       "MANUAL": "Manuell",
       "GUEST_FEE": "Gastgebühr",
-      "SESSION_PAYMENT": "Sitzungszahlung"
+      "SESSION_PAYMENT": "Sitzungszahlung",
+      "DONATION": "Spende / KNC"
+    },
+    "donate": {
+      "title": "Guthaben in KNC umwandeln",
+      "amountLabel": "Betrag in Euro",
+      "amountPlaceholder": "z. B. 10.00",
+      "exchangeRate": "Kurs: 1 € = 100 KNC",
+      "confirm": "Umwandeln",
+      "cancel": "Abbrechen",
+      "success": "{knc} KNC gutgeschrieben",
+      "error": "Fehler bei der Umwandlung",
+      "invalidAmount": "Bitte einen gültigen Betrag eingeben"
+    },
+    "knc": {
+      "label": "KNC-Guthaben",
+      "subLabel": "Kegelnetzwerk Coins",
+      "donateButton": "€ in KNC umwandeln",
+      "description": "KNC können in der KegelNetzwerk.de App für Spiele genutzt werden. Dein Guthaben ist im Klubprofil als Bestenliste sichtbar."
     },
     "freq": {
       "NONE": "Keine",
@@ -689,6 +712,7 @@
       "clubPurchases": "Klubausgaben",
       "type": "Typ",
       "allTypes": "Alle Typen",
+      "search": "Suche",
       "from": "Von",
       "to": "Bis",
       "refresh": "Laden",

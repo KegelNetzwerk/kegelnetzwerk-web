@@ -446,7 +446,12 @@
     "rank2": "🥈 2nd Place",
     "rank3": "🥉 3rd Place",
     "lastPlace": "Last Place",
-    "noWinnersData": "No results available."
+    "noWinnersData": "No results available.",
+    "kncHighscore": {
+      "title": "KNC Leaderboard",
+      "member": "Member",
+      "balance": "KNC Balance"
+    }
   },
   "contactList": {
     "title": "Contact List",
@@ -674,7 +679,25 @@
       "RESET": "Reset",
       "MANUAL": "Manual",
       "GUEST_FEE": "Guest Fee",
-      "SESSION_PAYMENT": "Session Payment"
+      "SESSION_PAYMENT": "Session Payment",
+      "DONATION": "Donation / KNC"
+    },
+    "donate": {
+      "title": "Convert Balance to KNC",
+      "amountLabel": "Amount in Euro",
+      "amountPlaceholder": "e.g. 10.00",
+      "exchangeRate": "Rate: 1 € = 100 KNC",
+      "confirm": "Convert",
+      "cancel": "Cancel",
+      "success": "{knc} KNC credited",
+      "error": "Conversion failed",
+      "invalidAmount": "Please enter a valid amount"
+    },
+    "knc": {
+      "label": "KNC Balance",
+      "subLabel": "KegelNetzwerk Coins",
+      "donateButton": "Convert € to KNC",
+      "description": "KNC can be used for games in the KegelNetzwerk.de App. Your balance is visible on the club profile leaderboard."
     },
     "freq": {
       "NONE": "None",
@@ -689,6 +712,7 @@
       "clubPurchases": "Club Expenses",
       "type": "Type",
       "allTypes": "All Types",
+      "search": "Search",
       "from": "From",
       "to": "To",
       "refresh": "Refresh",

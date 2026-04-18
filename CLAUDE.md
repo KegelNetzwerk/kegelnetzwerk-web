@@ -24,6 +24,10 @@ KegelNetzwerk Web is a Next.js 16 App Router multi-tenant web application for ma
 
 All English-language strings (i18n, code comments, documentation) must use **American English** (e.g. "color" not "colour", "center" not "centre").
 
+## German Terminology
+
+Use **"Klub"** (not "Verein") for the concept of a bowling club throughout all German UI strings and code. For example: "Klubprofil" not "Vereinsprofil".
+
 ## UI Conventions
 
 ### User Feedback — always use Toaster

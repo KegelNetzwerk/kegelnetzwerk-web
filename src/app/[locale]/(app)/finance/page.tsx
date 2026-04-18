@@ -43,6 +43,7 @@ export default async function FinancePage() {
       memberNickname={member.nickname}
       isAdmin={member.role === Role.ADMIN}
       initialBalance={balance}
+      initialKncBalance={member.kncBalance}
       initialTransactions={JSON.parse(JSON.stringify(transactionsEnriched))} // NOSONAR
       allMembers={allMembers}
       clubPaymentInfo={club ?? { accountHolder: '', iban: '', bic: '', paypal: '' }}
