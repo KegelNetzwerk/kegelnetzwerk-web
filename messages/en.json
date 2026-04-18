@@ -553,7 +553,7 @@
       "error": "Error running payoff"
     },
     "accountedUntil": {
-      "button": "Bereits abgerechnet bis",
+      "button": "Already accounted until",
       "title": "Already accounted until",
       "hint": "Sets the date until which all penalties are treated as already accounted for. Penalties before this date will not be included in the next payoff.",
       "date": "Date",
