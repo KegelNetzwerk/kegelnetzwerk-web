@@ -696,7 +696,8 @@
     "knc": {
       "label": "KNC Balance",
       "subLabel": "KegelNetzwerk Coins",
-      "donateButton": "Convert € to KNC"
+      "donateButton": "Convert € to KNC",
+      "description": "KNC can be used for games in the KegelNetzwerk.de App. Your balance is visible on the club profile leaderboard."
     },
     "freq": {
       "NONE": "None",

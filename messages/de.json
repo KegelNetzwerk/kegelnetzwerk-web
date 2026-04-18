@@ -696,7 +696,8 @@
     "knc": {
       "label": "KNC-Guthaben",
       "subLabel": "Kegelnetzwerk Coins",
-      "donateButton": "€ in KNC umwandeln"
+      "donateButton": "€ in KNC umwandeln",
+      "description": "KNC können in der KegelNetzwerk.de App für Spiele genutzt werden. Dein Guthaben ist im Vereinsprofil als Bestenliste sichtbar."
     },
     "freq": {
       "NONE": "Keine",

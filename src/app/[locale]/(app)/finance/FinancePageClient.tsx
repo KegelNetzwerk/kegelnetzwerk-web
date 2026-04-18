@@ -280,17 +280,20 @@ export default function FinancePageClient({
               <div className="w-px bg-gray-200" />
             </div>
 
-            {/* Right group: convert button (left) + KNC card (right), pushed to the right */}
-            <div className="flex items-center gap-3">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setDonateOpen(true)}
-                className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
-              >
-                <Heart size={13} />
-                {t('knc.donateButton')}
-              </Button>
+            {/* Right group: description+button (left, bottom-aligned) + KNC card (right) */}
+            <div className="flex items-end gap-3">
+              <div className="flex flex-col justify-end gap-2">
+                <p className="text-sm text-gray-500 max-w-[220px]">{t('knc.description')}</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDonateOpen(true)}
+                  className="gap-1.5 border-amber-300 text-amber-700 hover:bg-amber-50"
+                >
+                  <Heart size={13} />
+                  {t('knc.donateButton')}
+                </Button>
+              </div>
               <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: '#d97706' }}>
                 <div className="text-sm text-gray-500 mb-1">{t('knc.label')}</div>
                 <div className="text-4xl font-extrabold tabular-nums text-amber-700">
