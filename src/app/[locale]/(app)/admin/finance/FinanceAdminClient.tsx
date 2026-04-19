@@ -2912,7 +2912,7 @@ function SourcesTab({
       const res = await fetch(`/api/finance/money-sources/${sourceId}/log/${logId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Request failed');
       setMoneySources((prev) => prev.map((s) =>
-        s.id !== sourceId ? s : withoutLogEntry(s, logId)
+        s.id === sourceId ? withoutLogEntry(s, logId) : s
       ));
       toast.success(t('sources.deleteSuccess'));
     } catch {
