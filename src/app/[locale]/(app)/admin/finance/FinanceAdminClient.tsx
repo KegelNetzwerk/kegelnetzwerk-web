@@ -387,8 +387,10 @@ function OverviewTab({
 
   // Club purchase modal state
   const [showClubPurchase, setShowClubPurchase] = useState(false);
+  const [cpMode, setCpMode] = useState<'in' | 'out' | 'set'>('out');
   const [cpAmount, setCpAmount] = useState('');
   const [cpNote, setCpNote] = useState('');
+  const [cpTargetBalance, setCpTargetBalance] = useState('');
 
   // Quick payment modal state
   const [payAmount, setPayAmount] = useState('');
@@ -526,16 +528,31 @@ function OverviewTab({
   }
 
   async function addClubPurchase() {
-    const amount = Number.parseFloat(cpAmount.replace(',', '.'));
-    if (Number.isNaN(amount) || amount <= 0) {
-      toast.error(t('error.invalidAmount'));
-      return;
+    let signedAmount: number;
+    if (cpMode === 'set') {
+      const targetBal = Number.parseFloat(cpTargetBalance.replace(',', '.'));
+      if (Number.isNaN(targetBal) || targetBal < 0) {
+        toast.error(t('error.invalidAmount'));
+        return;
+      }
+      signedAmount = Math.round((targetBal - totalCredit) * 100) / 100;
+      if (signedAmount === 0) {
+        setShowClubPurchase(false);
+        return;
+      }
+    } else {
+      const amount = Number.parseFloat(cpAmount.replace(',', '.'));
+      if (Number.isNaN(amount) || amount <= 0) {
+        toast.error(t('error.invalidAmount'));
+        return;
+      }
+      signedAmount = cpMode === 'in' ? amount : -amount;
     }
     try {
       const res = await fetch('/api/finance/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'CLUB_PURCHASE', amount: -amount, note: cpNote }),
+        body: JSON.stringify({ type: 'CLUB_PURCHASE', amount: signedAmount, note: cpNote }),
       });
       if (!res.ok) throw new Error('Request failed');
       const tx = await res.json() as Transaction;
@@ -543,6 +560,7 @@ function OverviewTab({
       setShowClubPurchase(false);
       setCpAmount('');
       setCpNote('');
+      setCpTargetBalance('');
       toast.success(t('clubPurchase.success'));
     } catch {
       toast.error(t('clubPurchase.error'));
@@ -625,7 +643,7 @@ function OverviewTab({
         <Button
           size="sm"
           variant="outline"
-          onClick={() => setShowClubPurchase(true)}
+          onClick={() => { setShowClubPurchase(true); setCpMode('out'); setCpAmount(''); setCpNote(''); setCpTargetBalance(''); }}
           className="gap-1.5"
         >
           <Euro size={14} />
@@ -853,7 +871,7 @@ function OverviewTab({
             </div>
             <div className="space-y-2">
               <Label>{t('bulk.exclude')}</Label>
-              <div className="max-h-40 overflow-y-auto rounded border divide-y text-sm">
+              <div className="max-h-80 overflow-y-auto rounded border divide-y text-sm">
                 {members.map((m) => (
                   <label key={m.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
                     <input
@@ -888,23 +906,72 @@ function OverviewTab({
         </Modal>
       )}
 
-      {/* Club purchase modal */}
+      {/* Club balance modal */}
       {showClubPurchase && (
         <Modal onClose={() => setShowClubPurchase(false)} title={t('clubPurchase.title')}>
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">{t('clubPurchase.hint')}</p>
-            <div className="space-y-1">
-              <Label htmlFor="cp-amount-ov">{t('payment.amount')} (€)</Label>
-              <Input
-                id="cp-amount-ov"
-                type="text"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={cpAmount}
-                onChange={(e) => setCpAmount(e.target.value)}
-                className="bg-white"
-              />
+            {/* Mode selector */}
+            <div className="flex gap-4">
+              {(['in', 'out', 'set'] as const).map((mode) => (
+                <label key={mode} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cpMode"
+                    value={mode}
+                    checked={cpMode === mode}
+                    onChange={() => setCpMode(mode)}
+                  />
+                  <span>{t(`clubPurchase.mode${mode.charAt(0).toUpperCase()}${mode.slice(1)}` as 'clubPurchase.modeIn')}</span>
+                </label>
+              ))}
             </div>
+
+            {cpMode !== 'set' ? (
+              <div className="space-y-1">
+                <Label htmlFor="cp-amount-ov">{t('payment.amount')} (€)</Label>
+                <Input
+                  id="cp-amount-ov"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={cpAmount}
+                  onChange={(e) => setCpAmount(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-sm text-gray-500">
+                  {t('clubPurchase.currentBalance')}: <span className="font-medium">{fmt(totalCredit)} €</span>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="cp-target-bal">{t('clubPurchase.modeSet')} (€)</Label>
+                  <Input
+                    id="cp-target-bal"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={cpTargetBalance}
+                    onChange={(e) => setCpTargetBalance(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+                {(() => {
+                  const targetBal = Number.parseFloat(cpTargetBalance.replace(',', '.'));
+                  if (Number.isNaN(targetBal)) return null;
+                  const delta = Math.round((targetBal - totalCredit) * 100) / 100;
+                  if (delta === 0) return <p className="text-sm text-gray-400 italic">{t('clubPurchase.noChange')}</p>;
+                  return (
+                    <p className={`text-sm font-medium ${delta > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      {delta > 0 ? t('clubPurchase.willDeposit') : t('clubPurchase.willWithdraw')}
+                      {': '}
+                      {delta > 0 ? '+' : ''}{fmt(delta)} €
+                    </p>
+                  );
+                })()}
+              </div>
+            )}
+
             <div className="space-y-1">
               <Label htmlFor="cp-note-ov">{t('payment.note')}</Label>
               <Input
