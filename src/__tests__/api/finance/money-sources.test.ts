@@ -30,7 +30,7 @@ function makeSourceRequest(method: string, body?: object) {
   return new NextRequest('http://localhost/api/finance/money-sources', {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
 
@@ -38,7 +38,7 @@ function makeIdRequest(method: string, id: string, body?: object) {
   return new NextRequest(`http://localhost/api/finance/money-sources/${id}`, {
     method,
     headers: { 'Content-Type': 'application/json' },
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
 

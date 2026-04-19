@@ -126,6 +126,12 @@ const TX_TYPES = ['PAYMENT_IN', 'PAYMENT_OUT', 'MANUAL', 'CLUB_PURCHASE'] as con
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function toggleSetMember(prev: Set<number>, id: number): Set<number> {
+  const next = new Set(prev);
+  if (next.has(id)) next.delete(id); else next.add(id);
+  return next;
+}
+
 function fmt(amount: number): string {
   return amount.toFixed(2).replace('.', ',') + ' €';
 }
@@ -937,23 +943,10 @@ function OverviewTab({
               ))}
             </div>
 
-            {cpMode !== 'set' ? (
-              <div className="space-y-1">
-                <Label htmlFor="cp-amount-ov">{t('payment.amount')} (€)</Label>
-                <Input
-                  id="cp-amount-ov"
-                  type="text"
-                  inputMode="decimal"
-                  placeholder="0,00"
-                  value={cpAmount}
-                  onChange={(e) => setCpAmount(e.target.value)}
-                  className="bg-white"
-                />
-              </div>
-            ) : (
+            {cpMode === 'set' ? (
               <div className="space-y-2">
                 <div className="text-sm text-gray-500">
-                  {t('clubPurchase.currentBalance')}: <span className="font-medium">{fmt(totalCredit)} €</span>
+                  {t('clubPurchase.currentBalance')}: <span className="font-medium">{fmt(totalCredit)}</span>
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor="cp-target-bal">{t('clubPurchase.modeSet')} (€)</Label>
@@ -976,10 +969,23 @@ function OverviewTab({
                     <p className={`text-sm font-medium ${delta > 0 ? 'text-green-700' : 'text-red-700'}`}>
                       {delta > 0 ? t('clubPurchase.willDeposit') : t('clubPurchase.willWithdraw')}
                       {': '}
-                      {delta > 0 ? '+' : ''}{fmt(delta)} €
+                      {delta > 0 ? '+' : ''}{fmt(delta)}
                     </p>
                   );
                 })()}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Label htmlFor="cp-amount-ov">{t('payment.amount')} (€)</Label>
+                <Input
+                  id="cp-amount-ov"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={cpAmount}
+                  onChange={(e) => setCpAmount(e.target.value)}
+                  className="bg-white"
+                />
               </div>
             )}
 
@@ -1675,14 +1681,6 @@ function CollectivesTab({
     }
   }
 
-  function toggleExpand(id: number) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
-
   return (
     <div className="space-y-6">
       {/* Create button */}
@@ -1819,7 +1817,7 @@ function CollectivesTab({
                 <button
                   type="button"
                   className="flex-1 text-left cursor-pointer"
-                  onClick={() => toggleExpand(c.id)}
+                  onClick={() => setExpanded((prev) => toggleSetMember(prev, c.id))}
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-sm">{c.name}</span>
@@ -1856,7 +1854,7 @@ function CollectivesTab({
                   </Button>
                   <button
                     type="button"
-                    onClick={() => toggleExpand(c.id)}
+                    onClick={() => setExpanded((prev) => toggleSetMember(prev, c.id))}
                     className="cursor-pointer p-1 rounded hover:bg-gray-100"
                   >
                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -2847,14 +2845,6 @@ function SourcesTab({
   const [addingLogFor, setAddingLogFor] = useState<number | null>(null);
   const [logValueInput, setLogValueInput] = useState('');
 
-  function toggleExpand(id: number) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
-
   const sourcesTotal = moneySources.reduce((s, src) => s + src.value, 0);
   const difference = Math.round((sourcesTotal - totalCredit) * 100) / 100;
 
@@ -2867,7 +2857,7 @@ function SourcesTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName.trim(), value: val }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const created = await res.json() as MoneySource;
       setMoneySources((prev) => [...prev, created]);
       setCreating(false);
@@ -2882,7 +2872,7 @@ function SourcesTab({
   async function deleteSource(id: number) {
     try {
       const res = await fetch(`/api/finance/money-sources/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       setMoneySources((prev) => prev.filter((s) => s.id !== id));
       toast.success(t('sources.deleteSuccess'));
     } catch {
@@ -2899,7 +2889,7 @@ function SourcesTab({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ value: val }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const entry = await res.json() as MoneySourceLog;
       setMoneySources((prev) => prev.map((s) => {
         if (s.id !== sourceId) return s;
@@ -2913,14 +2903,17 @@ function SourcesTab({
     }
   }
 
+  function withoutLogEntry(source: MoneySource, logId: number): MoneySource {
+    return { ...source, log: source.log.filter((l) => l.id !== logId) };
+  }
+
   async function deleteLogEntry(sourceId: number, logId: number) {
     try {
       const res = await fetch(`/api/finance/money-sources/${sourceId}/log/${logId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error();
-      setMoneySources((prev) => prev.map((s) => {
-        if (s.id !== sourceId) return s;
-        return { ...s, log: s.log.filter((l) => l.id !== logId) };
-      }));
+      if (!res.ok) throw new Error('Request failed');
+      setMoneySources((prev) => prev.map((s) =>
+        s.id !== sourceId ? s : withoutLogEntry(s, logId)
+      ));
       toast.success(t('sources.deleteSuccess'));
     } catch {
       toast.error(t('sources.errorDelete'));
@@ -3005,7 +2998,7 @@ function SourcesTab({
                 <button
                   type="button"
                   className="flex-1 text-left cursor-pointer"
-                  onClick={() => toggleExpand(src.id)}
+                  onClick={() => setExpanded((prev) => toggleSetMember(prev, src.id))}
                 >
                   <div className="flex items-center gap-3">
                     <span className="font-semibold text-sm">{src.name}</span>
@@ -3023,7 +3016,7 @@ function SourcesTab({
                   </Button>
                   <button
                     type="button"
-                    onClick={() => toggleExpand(src.id)}
+                    onClick={() => setExpanded((prev) => toggleSetMember(prev, src.id))}
                     className="cursor-pointer p-1 rounded hover:bg-gray-100"
                   >
                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
