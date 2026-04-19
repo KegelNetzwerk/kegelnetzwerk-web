@@ -580,7 +580,7 @@
     },
     "bulk": {
       "button": "Für alle Mitglieder",
-      "title": "Zahlung für alle Mitglieder",
+      "title": "Zahlung für alle",
       "exclude": "Mitglieder ausschließen",
       "apply": "Anwenden",
       "success": "Zahlung für alle gespeichert",
@@ -662,11 +662,17 @@
       "deleteConfirmOk": "Löschen"
     },
     "clubPurchase": {
-      "button": "Klubausgabe",
-      "title": "Klubausgabe erfassen",
-      "hint": "Erfasst eine Ausgabe des Klubs ohne Mitgliederzuordnung.",
+      "button": "Kassenstand",
+      "title": "Kassenstand",
+      "modeIn": "Einzahlung",
+      "modeOut": "Auszahlung",
+      "modeSet": "Gesamt Guthaben setzen",
+      "currentBalance": "Aktueller Kassenstand",
+      "willDeposit": "Automatische Einzahlung",
+      "willWithdraw": "Automatische Auszahlung",
+      "noChange": "Kein Unterschied",
       "save": "Speichern",
-      "success": "Ausgabe gespeichert",
+      "success": "Gespeichert",
       "error": "Fehler beim Speichern"
     },
     "txType": {
@@ -674,7 +680,7 @@
       "CLUB_FEE": "Beitrag",
       "PAYMENT_IN": "Einzahlung",
       "PAYMENT_OUT": "Abbuchung",
-      "CLUB_PURCHASE": "Klubausgabe",
+      "CLUB_PURCHASE": "Kassenstand",
       "COLLECTIVE": "Sammelkasse",
       "REGULAR_INCOME": "Regelmäßige Zahlung",
       "RESET": "Zurückgesetzt",

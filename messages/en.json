@@ -580,7 +580,7 @@
     },
     "bulk": {
       "button": "For All Members",
-      "title": "Payment for All Members",
+      "title": "Payment for All",
       "exclude": "Exclude members",
       "apply": "Apply",
       "success": "Payment saved for all members",
@@ -662,19 +662,25 @@
       "deleteConfirmOk": "Delete"
     },
     "clubPurchase": {
-      "button": "Club Expense",
-      "title": "Record Club Expense",
-      "hint": "Records a club-level expense not associated with any member.",
+      "button": "Club Balance",
+      "title": "Club Balance",
+      "modeIn": "Payment In",
+      "modeOut": "Payment Out",
+      "modeSet": "Set Total Balance",
+      "currentBalance": "Current Balance",
+      "willDeposit": "Automatic deposit",
+      "willWithdraw": "Automatic withdrawal",
+      "noChange": "No change",
       "save": "Save",
-      "success": "Expense saved",
-      "error": "Error saving expense"
+      "success": "Saved",
+      "error": "Error saving"
     },
     "txType": {
       "PENALTY": "Penalty",
       "CLUB_FEE": "Club Fee",
       "PAYMENT_IN": "Payment In",
       "PAYMENT_OUT": "Charge",
-      "CLUB_PURCHASE": "Club Expense",
+      "CLUB_PURCHASE": "Club Balance",
       "COLLECTIVE": "Group Collection",
       "REGULAR_INCOME": "Regular Payment",
       "RESET": "Reset",
