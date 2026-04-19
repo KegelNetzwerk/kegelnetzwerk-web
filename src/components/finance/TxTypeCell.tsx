@@ -23,9 +23,10 @@ function fmtDate(iso: string): string {
 interface Props {
   readonly type: string;
   readonly sessionDate: string | null;
+  readonly amount?: number;
 }
 
-export default function TxTypeCell({ type, sessionDate }: Props) {
+export default function TxTypeCell({ type, sessionDate, amount }: Props) {
   const t = useTranslations('finance');
   return (
     <td className="px-4 py-2.5">
@@ -36,6 +37,11 @@ export default function TxTypeCell({ type, sessionDate }: Props) {
         {type === 'SESSION_PAYMENT' && sessionDate && (
           <span className="text-xs text-cyan-700">
             {t('sessionPayment.sessionLabel', { date: fmtDate(sessionDate) })}
+          </span>
+        )}
+        {type === 'CLUB_PURCHASE' && amount !== undefined && (
+          <span className="text-xs text-gray-500">
+            {amount >= 0 ? t('clubPurchase.modeIn') : t('clubPurchase.modeOut')}
           </span>
         )}
       </div>

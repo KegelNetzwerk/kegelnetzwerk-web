@@ -117,6 +117,7 @@ interface Props {
   readonly payoffDue: boolean;
   readonly clubPaymentInfo: ClubPaymentInfo;
   readonly moneySources: MoneySource[];
+  readonly clubPurchaseTotal: number;
 }
 
 const FREQUENCIES = ['NONE', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'PER_SESSION'] as const;
@@ -226,6 +227,7 @@ export default function FinanceAdminClient({
   payoffDue,
   clubPaymentInfo: initialPaymentInfo,
   moneySources: initialMoneySources,
+  clubPurchaseTotal: initialCpTotal,
 }: Props) {
   const t = useTranslations('finance');
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -236,6 +238,7 @@ export default function FinanceAdminClient({
   const [transactions, setTransactions] = useState(initialTx);
   const [paymentInfo, setPaymentInfo] = useState(initialPaymentInfo);
   const [moneySources, setMoneySources] = useState(initialMoneySources);
+  const [cpTotal, setCpTotal] = useState(initialCpTotal);
   const [memberBalances, setMemberBalances] = useState<Map<number, number>>(
     new Map(initialMembers.map((m) => [m.id, m.balance]))
   );
@@ -252,7 +255,12 @@ export default function FinanceAdminClient({
     });
   }
 
-  const totalCredit = members.filter((m) => getBalance(m.id) > 0).reduce((s, m) => s + getBalance(m.id), 0);
+  function applyClubPurchaseTx(amount: number) {
+    setCpTotal((prev) => Math.round((prev + amount) * 100) / 100);
+  }
+
+  const membersTotalCredit = members.filter((m) => getBalance(m.id) > 0).reduce((s, m) => s + getBalance(m.id), 0);
+  const totalCredit = Math.round((membersTotalCredit + cpTotal) * 100) / 100;
 
   const tabItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: t('tabs.overview'), icon: <Wallet size={15} /> },
@@ -294,6 +302,7 @@ export default function FinanceAdminClient({
           guests={guests}
           getBalance={getBalance}
           applyTxToBalance={applyTxToBalance}
+          applyClubPurchaseTx={applyClubPurchaseTx}
           transactions={transactions}
           setTransactions={setTransactions}
           payoffDue={payoffDue}
@@ -357,7 +366,7 @@ export default function FinanceAdminClient({
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({
-  t, members, guests, getBalance, applyTxToBalance,
+  t, members, guests, getBalance, applyTxToBalance, applyClubPurchaseTx,
   transactions, setTransactions, payoffDue, settings, paymentInfo, totalCredit,
 }: {
   readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
@@ -365,6 +374,7 @@ function OverviewTab({
   readonly guests: GuestSummary[];
   readonly getBalance: (id: number) => number;
   readonly applyTxToBalance: (id: number, amount: number) => void;
+  readonly applyClubPurchaseTx: (amount: number) => void;
   readonly transactions: Transaction[];
   readonly setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   readonly payoffDue: boolean;
@@ -557,6 +567,7 @@ function OverviewTab({
       if (!res.ok) throw new Error('Request failed');
       const tx = await res.json() as Transaction;
       setTransactions((prev) => [tx, ...prev]);
+      applyClubPurchaseTx(signedAmount);
       setShowClubPurchase(false);
       setCpAmount('');
       setCpNote('');
@@ -2299,7 +2310,7 @@ function LogTab({
                         <span className="font-medium">{tx.member?.nickname ?? tx.guest?.nickname ?? t('log.clubLabel')}</span>
                       </div>
                     </td>
-                    <TxTypeCell type={tx.type} sessionDate={tx.sessionDate} />
+                    <TxTypeCell type={tx.type} sessionDate={tx.sessionDate} amount={tx.amount} />
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       <span className={tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}>
                         {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
