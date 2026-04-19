@@ -12,7 +12,7 @@ import {
   AlertTriangle, Calendar, CalendarCheck, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
   Trash2, Wallet, Users, BarChart3, ListFilter, RotateCcw, X,
   Euro, TrendingUp, TrendingDown, ToggleLeft, ToggleRight, Info, CreditCard,
-  FileText, Copy,
+  FileText, Copy, Landmark,
 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -92,6 +92,21 @@ interface ClubPaymentInfo {
   paypal: string;
 }
 
+interface MoneySourceLog {
+  id: number;
+  moneySourceId: number;
+  value: number;
+  createdAt: string;
+}
+
+interface MoneySource {
+  id: number;
+  name: string;
+  value: number;
+  createdAt: string;
+  log: MoneySourceLog[];
+}
+
 interface Props {
   readonly settings: FinanceSettings;
   readonly members: MemberSummary[];
@@ -101,6 +116,8 @@ interface Props {
   readonly recentTransactions: Transaction[];
   readonly payoffDue: boolean;
   readonly clubPaymentInfo: ClubPaymentInfo;
+  readonly moneySources: MoneySource[];
+  readonly clubPurchaseTotal: number;
 }
 
 const FREQUENCIES = ['NONE', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY', 'PER_SESSION'] as const;
@@ -108,6 +125,12 @@ const FREQ_NO_NONE = ['WEEKLY', 'MONTHLY', 'QUARTERLY', 'YEARLY'] as const;
 const TX_TYPES = ['PAYMENT_IN', 'PAYMENT_OUT', 'MANUAL', 'CLUB_PURCHASE'] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function toggleSetMember(prev: Set<number>, id: number): Set<number> {
+  const next = new Set(prev);
+  if (next.has(id)) next.delete(id); else next.add(id);
+  return next;
+}
 
 function fmt(amount: number): string {
   return amount.toFixed(2).replace('.', ',') + ' €';
@@ -198,7 +221,7 @@ function buildDemandText(
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'settings' | 'collectives' | 'log' | 'payment-info';
+type Tab = 'overview' | 'settings' | 'collectives' | 'log' | 'payment-info' | 'sources';
 
 export default function FinanceAdminClient({
   settings: initialSettings,
@@ -209,6 +232,8 @@ export default function FinanceAdminClient({
   recentTransactions: initialTx,
   payoffDue,
   clubPaymentInfo: initialPaymentInfo,
+  moneySources: initialMoneySources,
+  clubPurchaseTotal: initialCpTotal,
 }: Props) {
   const t = useTranslations('finance');
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -218,6 +243,8 @@ export default function FinanceAdminClient({
   const [regularPayments, setRegularPayments] = useState(initialRegularPayments);
   const [transactions, setTransactions] = useState(initialTx);
   const [paymentInfo, setPaymentInfo] = useState(initialPaymentInfo);
+  const [moneySources, setMoneySources] = useState(initialMoneySources);
+  const [cpTotal, setCpTotal] = useState(initialCpTotal);
   const [memberBalances, setMemberBalances] = useState<Map<number, number>>(
     new Map(initialMembers.map((m) => [m.id, m.balance]))
   );
@@ -234,12 +261,20 @@ export default function FinanceAdminClient({
     });
   }
 
+  function applyClubPurchaseTx(amount: number) {
+    setCpTotal((prev) => Math.round((prev + amount) * 100) / 100);
+  }
+
+  const membersTotalCredit = members.filter((m) => getBalance(m.id) > 0).reduce((s, m) => s + getBalance(m.id), 0);
+  const totalCredit = Math.round((membersTotalCredit + cpTotal) * 100) / 100;
+
   const tabItems: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: t('tabs.overview'), icon: <Wallet size={15} /> },
     { id: 'settings', label: t('tabs.settings'), icon: <BarChart3 size={15} /> },
     { id: 'collectives', label: t('tabs.collectives'), icon: <Users size={15} /> },
     { id: 'log', label: t('tabs.log'), icon: <ListFilter size={15} /> },
     { id: 'payment-info', label: t('tabs.paymentInfo'), icon: <CreditCard size={15} /> },
+    { id: 'sources', label: t('tabs.sources'), icon: <Landmark size={15} /> },
   ];
 
   return (
@@ -273,11 +308,13 @@ export default function FinanceAdminClient({
           guests={guests}
           getBalance={getBalance}
           applyTxToBalance={applyTxToBalance}
+          applyClubPurchaseTx={applyClubPurchaseTx}
           transactions={transactions}
           setTransactions={setTransactions}
           payoffDue={payoffDue}
           settings={settings}
           paymentInfo={paymentInfo}
+          totalCredit={totalCredit}
         />
       )}
       {activeTab === 'settings' && (
@@ -320,6 +357,14 @@ export default function FinanceAdminClient({
           setPaymentInfo={setPaymentInfo}
         />
       )}
+      {activeTab === 'sources' && (
+        <SourcesTab
+          t={t}
+          moneySources={moneySources}
+          setMoneySources={setMoneySources}
+          totalCredit={totalCredit}
+        />
+      )}
     </div>
   );
 }
@@ -327,19 +372,21 @@ export default function FinanceAdminClient({
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({
-  t, members, guests, getBalance, applyTxToBalance,
-  transactions, setTransactions, payoffDue, settings, paymentInfo,
+  t, members, guests, getBalance, applyTxToBalance, applyClubPurchaseTx,
+  transactions, setTransactions, payoffDue, settings, paymentInfo, totalCredit,
 }: {
   readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
   readonly members: MemberSummary[];
   readonly guests: GuestSummary[];
   readonly getBalance: (id: number) => number;
   readonly applyTxToBalance: (id: number, amount: number) => void;
+  readonly applyClubPurchaseTx: (amount: number) => void;
   readonly transactions: Transaction[];
   readonly setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
   readonly payoffDue: boolean;
   readonly settings: FinanceSettings;
   readonly paymentInfo: ClubPaymentInfo;
+  readonly totalCredit: number;
 }) {
   const [payoffLoading, setPayoffLoading] = useState(false);
   const [showPayoffConfirm, setShowPayoffConfirm] = useState(false);
@@ -356,8 +403,10 @@ function OverviewTab({
 
   // Club purchase modal state
   const [showClubPurchase, setShowClubPurchase] = useState(false);
+  const [cpMode, setCpMode] = useState<'in' | 'out' | 'set'>('out');
   const [cpAmount, setCpAmount] = useState('');
   const [cpNote, setCpNote] = useState('');
+  const [cpTargetBalance, setCpTargetBalance] = useState('');
 
   // Quick payment modal state
   const [payAmount, setPayAmount] = useState('');
@@ -370,7 +419,6 @@ function OverviewTab({
   const [bulkNote, setBulkNote] = useState('');
   const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
 
-  const totalCredit = members.filter((m) => getBalance(m.id) > 0).reduce((s, m) => s + getBalance(m.id), 0);
   const totalDebt = members.filter((m) => getBalance(m.id) < 0).reduce((s, m) => s + getBalance(m.id), 0);
 
   const debtMembers = members
@@ -496,23 +544,40 @@ function OverviewTab({
   }
 
   async function addClubPurchase() {
-    const amount = Number.parseFloat(cpAmount.replace(',', '.'));
-    if (Number.isNaN(amount) || amount <= 0) {
-      toast.error(t('error.invalidAmount'));
-      return;
+    let signedAmount: number;
+    if (cpMode === 'set') {
+      const targetBal = Number.parseFloat(cpTargetBalance.replace(',', '.'));
+      if (Number.isNaN(targetBal) || targetBal < 0) {
+        toast.error(t('error.invalidAmount'));
+        return;
+      }
+      signedAmount = Math.round((targetBal - totalCredit) * 100) / 100;
+      if (signedAmount === 0) {
+        setShowClubPurchase(false);
+        return;
+      }
+    } else {
+      const amount = Number.parseFloat(cpAmount.replace(',', '.'));
+      if (Number.isNaN(amount) || amount <= 0) {
+        toast.error(t('error.invalidAmount'));
+        return;
+      }
+      signedAmount = cpMode === 'in' ? amount : -amount;
     }
     try {
       const res = await fetch('/api/finance/transactions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'CLUB_PURCHASE', amount: -amount, note: cpNote }),
+        body: JSON.stringify({ type: 'CLUB_PURCHASE', amount: signedAmount, note: cpNote }),
       });
       if (!res.ok) throw new Error('Request failed');
       const tx = await res.json() as Transaction;
       setTransactions((prev) => [tx, ...prev]);
+      applyClubPurchaseTx(signedAmount);
       setShowClubPurchase(false);
       setCpAmount('');
       setCpNote('');
+      setCpTargetBalance('');
       toast.success(t('clubPurchase.success'));
     } catch {
       toast.error(t('clubPurchase.error'));
@@ -595,7 +660,7 @@ function OverviewTab({
         <Button
           size="sm"
           variant="outline"
-          onClick={() => setShowClubPurchase(true)}
+          onClick={() => { setShowClubPurchase(true); setCpMode('out'); setCpAmount(''); setCpNote(''); setCpTargetBalance(''); }}
           className="gap-1.5"
         >
           <Euro size={14} />
@@ -823,7 +888,7 @@ function OverviewTab({
             </div>
             <div className="space-y-2">
               <Label>{t('bulk.exclude')}</Label>
-              <div className="max-h-40 overflow-y-auto rounded border divide-y text-sm">
+              <div className="max-h-80 overflow-y-auto rounded border divide-y text-sm">
                 {members.map((m) => (
                   <label key={m.id} className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-50">
                     <input
@@ -858,23 +923,72 @@ function OverviewTab({
         </Modal>
       )}
 
-      {/* Club purchase modal */}
+      {/* Club balance modal */}
       {showClubPurchase && (
         <Modal onClose={() => setShowClubPurchase(false)} title={t('clubPurchase.title')}>
           <div className="space-y-4">
-            <p className="text-sm text-gray-500">{t('clubPurchase.hint')}</p>
-            <div className="space-y-1">
-              <Label htmlFor="cp-amount-ov">{t('payment.amount')} (€)</Label>
-              <Input
-                id="cp-amount-ov"
-                type="text"
-                inputMode="decimal"
-                placeholder="0,00"
-                value={cpAmount}
-                onChange={(e) => setCpAmount(e.target.value)}
-                className="bg-white"
-              />
+            {/* Mode selector */}
+            <div className="flex gap-4">
+              {(['in', 'out', 'set'] as const).map((mode) => (
+                <label key={mode} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cpMode"
+                    value={mode}
+                    checked={cpMode === mode}
+                    onChange={() => setCpMode(mode)}
+                  />
+                  <span>{t(`clubPurchase.mode${mode.charAt(0).toUpperCase()}${mode.slice(1)}` as 'clubPurchase.modeIn')}</span>
+                </label>
+              ))}
             </div>
+
+            {cpMode === 'set' ? (
+              <div className="space-y-2">
+                <div className="text-sm text-gray-500">
+                  {t('clubPurchase.currentBalance')}: <span className="font-medium">{fmt(totalCredit)}</span>
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="cp-target-bal">{t('clubPurchase.modeSet')} (€)</Label>
+                  <Input
+                    id="cp-target-bal"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={cpTargetBalance}
+                    onChange={(e) => setCpTargetBalance(e.target.value)}
+                    className="bg-white"
+                  />
+                </div>
+                {(() => {
+                  const targetBal = Number.parseFloat(cpTargetBalance.replace(',', '.'));
+                  if (Number.isNaN(targetBal)) return null;
+                  const delta = Math.round((targetBal - totalCredit) * 100) / 100;
+                  if (delta === 0) return <p className="text-sm text-gray-400 italic">{t('clubPurchase.noChange')}</p>;
+                  return (
+                    <p className={`text-sm font-medium ${delta > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                      {delta > 0 ? t('clubPurchase.willDeposit') : t('clubPurchase.willWithdraw')}
+                      {': '}
+                      {delta > 0 ? '+' : ''}{fmt(delta)}
+                    </p>
+                  );
+                })()}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <Label htmlFor="cp-amount-ov">{t('payment.amount')} (€)</Label>
+                <Input
+                  id="cp-amount-ov"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0,00"
+                  value={cpAmount}
+                  onChange={(e) => setCpAmount(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+            )}
+
             <div className="space-y-1">
               <Label htmlFor="cp-note-ov">{t('payment.note')}</Label>
               <Input
@@ -1567,14 +1681,6 @@ function CollectivesTab({
     }
   }
 
-  function toggleExpand(id: number) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }
-
   return (
     <div className="space-y-6">
       {/* Create button */}
@@ -1711,7 +1817,7 @@ function CollectivesTab({
                 <button
                   type="button"
                   className="flex-1 text-left cursor-pointer"
-                  onClick={() => toggleExpand(c.id)}
+                  onClick={() => setExpanded((prev) => toggleSetMember(prev, c.id))}
                 >
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-sm">{c.name}</span>
@@ -1748,7 +1854,7 @@ function CollectivesTab({
                   </Button>
                   <button
                     type="button"
-                    onClick={() => toggleExpand(c.id)}
+                    onClick={() => setExpanded((prev) => toggleSetMember(prev, c.id))}
                     className="cursor-pointer p-1 rounded hover:bg-gray-100"
                   >
                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -2202,7 +2308,7 @@ function LogTab({
                         <span className="font-medium">{tx.member?.nickname ?? tx.guest?.nickname ?? t('log.clubLabel')}</span>
                       </div>
                     </td>
-                    <TxTypeCell type={tx.type} sessionDate={tx.sessionDate} />
+                    <TxTypeCell type={tx.type} sessionDate={tx.sessionDate} amount={tx.amount} />
                     <td className="px-4 py-2.5 text-right tabular-nums">
                       <span className={tx.amount >= 0 ? 'text-green-700' : 'text-red-700'}>
                         {tx.amount >= 0 ? '+' : ''}{fmt(tx.amount)}
@@ -2716,6 +2822,320 @@ function SessionPaymentModal({
         </div>
       </div>
     </Modal>
+  );
+}
+
+// ─── Sources Tab ──────────────────────────────────────────────────────────────
+
+function SourcesTab({
+  t, moneySources, setMoneySources, totalCredit,
+}: {
+  readonly t: (k: string, v?: Record<string, string | number | Date>) => string;
+  readonly moneySources: MoneySource[];
+  readonly setMoneySources: React.Dispatch<React.SetStateAction<MoneySource[]>>;
+  readonly totalCredit: number;
+}) {
+  const tCommon = useTranslations('common');
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [newValue, setNewValue] = useState('');
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [deleteSourceId, setDeleteSourceId] = useState<number | null>(null);
+  const [deleteLogId, setDeleteLogId] = useState<{ sourceId: number; logId: number } | null>(null);
+  const [addingLogFor, setAddingLogFor] = useState<number | null>(null);
+  const [logValueInput, setLogValueInput] = useState('');
+
+  const sourcesTotal = moneySources.reduce((s, src) => s + src.value, 0);
+  const difference = Math.round((sourcesTotal - totalCredit) * 100) / 100;
+
+  async function createSource() {
+    if (!newName.trim()) { toast.error(t('sources.errorSave')); return; }
+    const val = Number.parseFloat(newValue.replace(',', '.')) || 0;
+    try {
+      const res = await fetch('/api/finance/money-sources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim(), value: val }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+      const created = await res.json() as MoneySource;
+      setMoneySources((prev) => [...prev, created]);
+      setCreating(false);
+      setNewName('');
+      setNewValue('');
+      toast.success(t('sources.saveSuccess'));
+    } catch {
+      toast.error(t('sources.errorSave'));
+    }
+  }
+
+  async function deleteSource(id: number) {
+    try {
+      const res = await fetch(`/api/finance/money-sources/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Request failed');
+      setMoneySources((prev) => prev.filter((s) => s.id !== id));
+      toast.success(t('sources.deleteSuccess'));
+    } catch {
+      toast.error(t('sources.errorDelete'));
+    }
+  }
+
+  async function addLogEntry(sourceId: number) {
+    const val = Number.parseFloat(logValueInput.replace(',', '.'));
+    if (Number.isNaN(val)) { toast.error(t('sources.errorSave')); return; }
+    try {
+      const res = await fetch(`/api/finance/money-sources/${sourceId}/log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: val }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+      const entry = await res.json() as MoneySourceLog;
+      setMoneySources((prev) => prev.map((s) => {
+        if (s.id !== sourceId) return s;
+        return { ...s, value: val, log: [entry, ...s.log] };
+      }));
+      setAddingLogFor(null);
+      setLogValueInput('');
+      toast.success(t('sources.saveSuccess'));
+    } catch {
+      toast.error(t('sources.errorSave'));
+    }
+  }
+
+  function withoutLogEntry(source: MoneySource, logId: number): MoneySource {
+    return { ...source, log: source.log.filter((l) => l.id !== logId) };
+  }
+
+  async function deleteLogEntry(sourceId: number, logId: number) {
+    try {
+      const res = await fetch(`/api/finance/money-sources/${sourceId}/log/${logId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Request failed');
+      setMoneySources((prev) => prev.map((s) =>
+        s.id === sourceId ? withoutLogEntry(s, logId) : s
+      ));
+      toast.success(t('sources.deleteSuccess'));
+    } catch {
+      toast.error(t('sources.errorDelete'));
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Summary cards */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="rounded-lg border bg-gray-50 p-4 text-center">
+          <div className="text-xs text-gray-500 mb-1">{t('sources.sourcesTotal')}</div>
+          <div className="text-xl font-bold tabular-nums">{fmt(sourcesTotal)}</div>
+        </div>
+        <div className="rounded-lg border bg-gray-50 p-4 text-center">
+          <div className="text-xs text-gray-500 mb-1">{t('sources.balance')}</div>
+          <div className="text-xl font-bold text-green-700 tabular-nums">+{fmt(totalCredit)}</div>
+        </div>
+        <div className={`rounded-lg border p-4 text-center ${difference === 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+          <div className="text-xs text-gray-500 mb-1">{t('sources.difference')}</div>
+          <div className={`text-xl font-bold tabular-nums ${difference === 0 ? 'text-green-700' : 'text-red-700'}`}>
+            {difference > 0 ? '+' : ''}{fmt(difference)}
+          </div>
+        </div>
+      </div>
+
+      {/* Add source button */}
+      {!creating && (
+        <Button
+          size="sm"
+          onClick={() => setCreating(true)}
+          style={{ background: 'var(--kn-primary,#005982)' }}
+          className="text-white gap-1.5"
+        >
+          <Plus size={14} />
+          <span>{t('sources.addSource')}</span>
+        </Button>
+      )}
+
+      {/* Create form */}
+      {creating && (
+        <div className="rounded-lg border p-4 space-y-3 bg-gray-50">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label>{t('sources.sourceName')}</Label>
+              <Input className="bg-white" value={newName} onChange={(e) => setNewName(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label>{t('sources.sourceValue')}</Label>
+              <Input className="bg-white" value={newValue} onChange={(e) => setNewValue(e.target.value)} inputMode="decimal" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={createSource}
+              style={{ background: 'var(--kn-primary,#005982)' }}
+              className="text-white gap-1.5"
+            >
+              <Check size={14} />
+              <span>{tCommon('save')}</span>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => { setCreating(false); setNewName(''); setNewValue(''); }}>
+              {t('cancel')}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {moneySources.length === 0 && !creating && (
+        <p className="text-sm text-gray-400 italic">{t('sources.empty')}</p>
+      )}
+
+      {/* Sources list */}
+      <div className="space-y-3">
+        {moneySources.map((src) => {
+          const isExpanded = expanded.has(src.id);
+          return (
+            <div key={src.id} className="rounded-lg border">
+              <div className="flex items-center gap-3 px-4 py-3">
+                <button
+                  type="button"
+                  className="flex-1 text-left cursor-pointer"
+                  onClick={() => setExpanded((prev) => toggleSetMember(prev, src.id))}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-sm">{src.name}</span>
+                    <span className="text-sm tabular-nums font-medium">{fmt(src.value)}</span>
+                  </div>
+                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
+                    onClick={() => setDeleteSourceId(src.id)}
+                  >
+                    <Trash2 size={13} />
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setExpanded((prev) => toggleSetMember(prev, src.id))}
+                    className="cursor-pointer p-1 rounded hover:bg-gray-100"
+                  >
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {isExpanded && (
+                <div className="border-t p-4 space-y-3">
+                  {addingLogFor === src.id ? (
+                    <div className="flex items-end gap-2">
+                      <div className="space-y-1 flex-1">
+                        <Label>{t('sources.logValue')}</Label>
+                        <Input
+                          className="bg-white"
+                          value={logValueInput}
+                          onChange={(e) => setLogValueInput(e.target.value)}
+                          inputMode="decimal"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => addLogEntry(src.id)}
+                        style={{ background: 'var(--kn-primary,#005982)' }}
+                        className="text-white"
+                      >
+                        <Check size={14} />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => { setAddingLogFor(null); setLogValueInput(''); }}
+                      >
+                        <X size={14} />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => { setAddingLogFor(src.id); setLogValueInput(String(src.value)); }}
+                      className="gap-1.5"
+                    >
+                      <Plus size={13} />
+                      <span>{t('sources.addLogEntry')}</span>
+                    </Button>
+                  )}
+
+                  {src.log.length === 0 ? (
+                    <p className="text-xs text-gray-400 italic">{t('sources.logEmpty')}</p>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {src.log.map((entry) => (
+                          <tr key={entry.id} className="border-b last:border-0">
+                            <td className="py-1.5 text-gray-500 text-xs">{fmtDate(entry.createdAt)}</td>
+                            <td className="py-1.5 tabular-nums font-medium">{fmt(entry.value)}</td>
+                            <td className="py-1.5 text-right">
+                              <button
+                                type="button"
+                                className="cursor-pointer p-1 text-red-400 hover:text-red-600 rounded hover:bg-red-50"
+                                onClick={() => setDeleteLogId({ sourceId: src.id, logId: entry.id })}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Delete source confirmation modal */}
+      {deleteSourceId !== null && (
+        <Modal onClose={() => setDeleteSourceId(null)} title={t('sources.deleteSourceTitle')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">{t('sources.deleteSourceConfirm')}</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDeleteSourceId(null)}>{t('cancel')}</Button>
+              <Button
+                variant="destructive"
+                onClick={() => { void deleteSource(deleteSourceId); setDeleteSourceId(null); }}
+              >
+                <Trash2 size={14} />
+                <span>{t('sources.deleteSourceOk')}</span>
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Delete log entry confirmation modal */}
+      {deleteLogId !== null && (
+        <Modal onClose={() => setDeleteLogId(null)} title={t('sources.deleteLogTitle')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">{t('sources.deleteLogConfirm')}</p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setDeleteLogId(null)}>{t('cancel')}</Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  void deleteLogEntry(deleteLogId.sourceId, deleteLogId.logId);
+                  setDeleteLogId(null);
+                }}
+              >
+                <Trash2 size={14} />
+                <span>{t('sources.deleteLogOk')}</span>
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
   );
 }
 

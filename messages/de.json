@@ -532,7 +532,8 @@
       "settings": "Einstellungen",
       "collectives": "Sammelkassen",
       "log": "Protokoll",
-      "paymentInfo": "Zahlungsinformationen"
+      "paymentInfo": "Zahlungsinformationen",
+      "sources": "Quellen"
     },
     "balance": {
       "label": "Kontostand",
@@ -579,7 +580,7 @@
     },
     "bulk": {
       "button": "Für alle Mitglieder",
-      "title": "Zahlung für alle Mitglieder",
+      "title": "Zahlung für alle",
       "exclude": "Mitglieder ausschließen",
       "apply": "Anwenden",
       "success": "Zahlung für alle gespeichert",
@@ -661,11 +662,17 @@
       "deleteConfirmOk": "Löschen"
     },
     "clubPurchase": {
-      "button": "Klubausgabe",
-      "title": "Klubausgabe erfassen",
-      "hint": "Erfasst eine Ausgabe des Klubs ohne Mitgliederzuordnung.",
+      "button": "Kassenstand",
+      "title": "Kassenstand",
+      "modeIn": "Einzahlung",
+      "modeOut": "Auszahlung",
+      "modeSet": "Gesamt Guthaben setzen",
+      "currentBalance": "Aktueller Kassenstand",
+      "willDeposit": "Automatische Einzahlung",
+      "willWithdraw": "Automatische Auszahlung",
+      "noChange": "Kein Unterschied",
       "save": "Speichern",
-      "success": "Ausgabe gespeichert",
+      "success": "Gespeichert",
       "error": "Fehler beim Speichern"
     },
     "txType": {
@@ -673,7 +680,7 @@
       "CLUB_FEE": "Beitrag",
       "PAYMENT_IN": "Einzahlung",
       "PAYMENT_OUT": "Abbuchung",
-      "CLUB_PURCHASE": "Klubausgabe",
+      "CLUB_PURCHASE": "Kassenstand",
       "COLLECTIVE": "Sammelkasse",
       "REGULAR_INCOME": "Regelmäßige Zahlung",
       "RESET": "Zurückgesetzt",
@@ -779,6 +786,29 @@
     "error": {
       "invalidAmount": "Bitte einen gültigen Betrag eingeben"
     },
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "sources": {
+      "title": "Geldquellen",
+      "sourcesTotal": "Summe Geldquellen",
+      "balance": "Kassenstand",
+      "difference": "Differenz",
+      "addSource": "Quelle hinzufügen",
+      "sourceName": "Name",
+      "sourceValue": "Anfangswert",
+      "addLogEntry": "Neuen Wert eintragen",
+      "logValue": "Neuer Wert",
+      "logEmpty": "Keine Einträge",
+      "empty": "Keine Geldquellen vorhanden",
+      "deleteSourceTitle": "Geldquelle löschen",
+      "deleteSourceConfirm": "Soll diese Geldquelle mit allen Einträgen gelöscht werden?",
+      "deleteSourceOk": "Löschen",
+      "deleteLogTitle": "Eintrag löschen",
+      "deleteLogConfirm": "Soll dieser Logeintrag gelöscht werden?",
+      "deleteLogOk": "Löschen",
+      "saveSuccess": "Gespeichert",
+      "deleteSuccess": "Gelöscht",
+      "errorSave": "Fehler beim Speichern",
+      "errorDelete": "Fehler beim Löschen"
+    }
   }
 }

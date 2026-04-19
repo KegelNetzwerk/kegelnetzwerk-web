@@ -88,4 +88,56 @@ describe('PUT /api/finance/settings', () => {
     const upsertCall = mockUpsert.mock.calls[0][0];
     expect(upsertCall.create.feeFrequency).toBe('NONE');
   });
+
+  it('falls back to MONTHLY for invalid autoPayoffFrequency', async () => {
+    mockUpsert.mockResolvedValue(mockSettings);
+    await PUT(makePutRequest({ autoPayoffFrequency: 'BOGUS' }));
+    const upsertCall = mockUpsert.mock.calls[0][0];
+    expect(upsertCall.create.autoPayoffFrequency).toBe('MONTHLY');
+  });
+
+  it('clamps autoPayoffDayOfMonth to minimum of 1', async () => {
+    mockUpsert.mockResolvedValue(mockSettings);
+    await PUT(makePutRequest({ autoPayoffDayOfMonth: 0 }));
+    const upsertCall = mockUpsert.mock.calls[0][0];
+    expect(upsertCall.create.autoPayoffDayOfMonth).toBe(1);
+    expect(upsertCall.update.autoPayoffDayOfMonth).toBe(1);
+  });
+
+  it('only patches fields that are present in the body', async () => {
+    mockUpsert.mockResolvedValue(mockSettings);
+    await PUT(makePutRequest({ guestFeeAmount: 2 }));
+    const upsertCall = mockUpsert.mock.calls[0][0];
+    expect(upsertCall.update).toEqual({ guestFeeAmount: 2 });
+    expect(upsertCall.update).not.toHaveProperty('feeAmount');
+  });
+
+  it('sets lastPayoffAt to null when provided as null', async () => {
+    mockUpsert.mockResolvedValue(mockSettings);
+    await PUT(makePutRequest({ lastPayoffAt: null }));
+    const upsertCall = mockUpsert.mock.calls[0][0];
+    expect(upsertCall.update.lastPayoffAt).toBeNull();
+  });
+
+  it('converts lastPayoffAt string to Date', async () => {
+    mockUpsert.mockResolvedValue(mockSettings);
+    await PUT(makePutRequest({ lastPayoffAt: '2025-01-01T00:00:00.000Z' }));
+    const upsertCall = mockUpsert.mock.calls[0][0];
+    expect(upsertCall.update.lastPayoffAt).toBeInstanceOf(Date);
+  });
+
+  it('defaults missing numeric fields to 0 in upsert create', async () => {
+    mockUpsert.mockResolvedValue(mockSettings);
+    await PUT(makePutRequest({}));
+    const upsertCall = mockUpsert.mock.calls[0][0];
+    expect(upsertCall.create.feeAmount).toBe(0);
+    expect(upsertCall.create.guestFeeAmount).toBe(0);
+  });
+
+  it('sets autoPayoffEnabled when provided', async () => {
+    mockUpsert.mockResolvedValue(mockSettings);
+    await PUT(makePutRequest({ autoPayoffEnabled: true }));
+    const upsertCall = mockUpsert.mock.calls[0][0];
+    expect(upsertCall.update.autoPayoffEnabled).toBe(true);
+  });
 });

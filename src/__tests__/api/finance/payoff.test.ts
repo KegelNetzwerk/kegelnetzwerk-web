@@ -67,6 +67,19 @@ describe('GET /api/finance/payoff', () => {
     expect(body.penaltiesByMember[0].penaltyTotal).toBe(2);
   });
 
+  it('accumulates multiple penalties for the same member', async () => {
+    mockResultFindMany.mockResolvedValue([
+      { memberId: 1, member: { id: 1, nickname: 'Alice' }, value: 2, part: { value: 2, factor: 1, bonus: 0 } },
+      { memberId: 1, member: { id: 1, nickname: 'Alice' }, value: 3, part: { value: 3, factor: 1, bonus: 0 } },
+    ]);
+    mockMemberFindMany.mockResolvedValue([{ id: 1, nickname: 'Alice' }]);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json() as { penaltiesByMember: { memberId: number; penaltyTotal: number }[] };
+    expect(body.penaltiesByMember).toHaveLength(1);
+    expect(body.penaltiesByMember[0].penaltyTotal).toBe(5);
+  });
+
   it('uses null fromDate when settings is null', async () => {
     mockSettingsFindUnique.mockResolvedValue(null);
     const res = await GET();
@@ -132,6 +145,50 @@ describe('POST /api/finance/payoff', () => {
   it('counts regular income payments', async () => {
     mockMemberFindMany.mockResolvedValue([{ id: 1 }]);
     mockRegularPayments.mockResolvedValue([{ memberId: 1, amount: 10, note: 'Sponsoring' }]);
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+  });
+
+  it('creates guest penalty transactions when guest has euro results', async () => {
+    mockResultFindMany
+      .mockResolvedValueOnce([]) // member penalty results
+      .mockResolvedValueOnce([  // guest penalty results
+        { guestId: 50, value: 3, part: { value: 3, factor: 1, bonus: 0 } },
+      ])
+      .mockResolvedValueOnce([]); // guest session results
+    mockMemberFindMany.mockResolvedValue([]);
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+    expect(prisma.$transaction).toHaveBeenCalled();
+  });
+
+  it('creates guest fee transactions when guestFeeAmount > 0', async () => {
+    mockSettingsFindUnique.mockResolvedValue({ ...mockSettings, guestFeeAmount: 2 });
+    mockResultFindMany
+      .mockResolvedValueOnce([]) // member penalty results
+      .mockResolvedValueOnce([]) // guest penalty results
+      .mockResolvedValueOnce([  // guest session results
+        { guestId: 50, sessionGroup: 'g1' },
+      ]);
+    mockMemberFindMany.mockResolvedValue([]);
+
+    const res = await POST(makeRequest());
+    expect(res.status).toBe(200);
+  });
+
+  it('creates per-session club fee transactions', async () => {
+    mockSettingsFindUnique.mockResolvedValue({ ...mockSettings, feeFrequency: 'PER_SESSION', feeAmount: 5 });
+    mockResultFindMany
+      .mockResolvedValueOnce([]) // member penalty results
+      .mockResolvedValueOnce([  // member session results (PER_SESSION path)
+        { memberId: 1, sessionGroup: 'g1' },
+        { memberId: 1, sessionGroup: 'g2' },
+      ])
+      .mockResolvedValueOnce([]) // guest penalty results
+      .mockResolvedValueOnce([]); // guest session results
+    mockMemberFindMany.mockResolvedValue([{ id: 1, isInactive: false }]);
+
     const res = await POST(makeRequest());
     expect(res.status).toBe(200);
   });
