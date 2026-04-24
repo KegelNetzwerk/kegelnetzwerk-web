@@ -60,13 +60,19 @@ export const PAYLINES: number[][] = [
 
 const TOTAL_WEIGHT = Object.values(WEIGHTS).reduce((a, b) => a + b, 0);
 
+function secureRandom(): number {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] / 2 ** 32;
+}
+
 export function weightedRandomSymbol(): SymbolKey {
-  let rand = Math.random() * TOTAL_WEIGHT;
+  let rand = secureRandom() * TOTAL_WEIGHT;
   for (const sym of SYMBOL_KEYS) {
     rand -= WEIGHTS[sym];
     if (rand <= 0) return sym;
   }
-  return SYMBOL_KEYS[SYMBOL_KEYS.length - 1];
+  return SYMBOL_KEYS.at(-1)!;
 }
 
 export function generateReels(): SymbolKey[][] {
@@ -98,7 +104,7 @@ export function evaluatePayline(
 }
 
 function evaluateExpandingScatter(reels: SymbolKey[][], sym: SymbolKey, betPerLine: number, lines: number): number {
-  const count = reels.filter((reel) => reel.some((s) => s === sym)).length;
+  const count = reels.filter((reel) => reel.includes(sym)).length;
   // High-value symbols expand at ≥2 reels and pay scatter from that point.
   // Low-value symbols require ≥3 reels. payoutIdx maps into the [3×,4×,5×] table,
   // clamped so 5-reel always uses the highest multiplier.
@@ -118,7 +124,7 @@ const HIGH_VALUE_SYMBOLS = new Set<SymbolKey>(['pin', 'trophy', 'target', 'joker
 
 function applyExpansion(reels: SymbolKey[][], sym: SymbolKey): SymbolKey[][] {
   return reels.map((reel) =>
-    reel.some((s) => s === sym) ? [sym, sym, sym] : reel,
+    reel.includes(sym) ? [sym, sym, sym] : reel,
   );
 }
 
@@ -137,7 +143,7 @@ export function spin(lines: number, betPerLine: number, expandingSymbol?: Symbol
   let expansionApplied = false;
 
   if (expandingSymbol) {
-    const reelCount = originalReels.filter((reel) => reel.some((s) => s === expandingSymbol)).length;
+    const reelCount = originalReels.filter((reel) => reel.includes(expandingSymbol)).length;
     const threshold = HIGH_VALUE_SYMBOLS.has(expandingSymbol) ? 2 : 3;
     if (reelCount >= threshold) {
       reels = applyExpansion(originalReels, expandingSymbol);
@@ -169,7 +175,7 @@ export function spin(lines: number, betPerLine: number, expandingSymbol?: Symbol
   // but a scatter that landed should still trigger/retrigger free spins.
   const featureTriggered = countScatters(originalReels) >= 3;
   const newExpandingSymbol: SymbolKey | undefined = featureTriggered
-    ? SYMBOL_KEYS.filter((s) => s !== 'book')[Math.floor(Math.random() * (SYMBOL_KEYS.length - 1))]
+    ? SYMBOL_KEYS.filter((s) => s !== 'book')[Math.floor(secureRandom() * (SYMBOL_KEYS.length - 1))]
     : undefined;
 
   return { reels, originalReels, win, featureTriggered, expansionApplied, expandingSymbol: newExpandingSymbol };
