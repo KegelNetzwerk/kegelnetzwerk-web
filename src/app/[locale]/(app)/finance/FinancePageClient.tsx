@@ -299,10 +299,10 @@ export default function FinancePageClient({
                   {t('knc.donateButton')}
                 </Button>
               </div>
-              <div className="rounded-xl border-2 p-6 text-center min-w-[200px]" style={{ borderColor: '#d97706' }}>
+              <div className="rounded-xl border-2 border-border p-6 text-center min-w-[200px]">
                 <div className="text-sm text-gray-500 mb-1">{t('knc.label')}</div>
-                <div className="text-4xl font-extrabold tabular-nums text-amber-700">
-                  {kncBalance.toFixed(0)} <span className="text-2xl">KNC</span>
+                <div className="text-4xl font-extrabold tabular-nums">
+                  {kncBalance.toFixed(0)} <span className="text-2xl font-bold text-yellow-400">K</span>
                 </div>
                 <div className="text-sm text-gray-400 mt-1">{t('knc.subLabel')}</div>
               </div>
