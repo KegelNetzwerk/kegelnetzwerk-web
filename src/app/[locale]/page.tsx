@@ -9,10 +9,11 @@ import AuthShell from '@/components/layout/AuthShell';
 import { ChevronRight, Smartphone } from 'lucide-react';
 
 export default async function LandingPage() {
-  const [member, locale, t] = await Promise.all([
+  const [member, locale, t, tAuth] = await Promise.all([
     getCurrentMember(),
     getLocale(),
     getTranslations('publicLanding'),
+    getTranslations('auth.login'),
   ]);
 
   if (member) redirect(`/${locale}/news`);
@@ -29,7 +30,18 @@ export default async function LandingPage() {
 
   return (
     <AuthShell maxWidth="max-w-4xl">
-      <div className="px-8 py-10 space-y-10">
+      <div className="px-8 pt-5 pb-10 space-y-10">
+
+        {/* Login shortcut */}
+        <div className="flex justify-end -mb-6">
+          <Link
+            href={`/${locale}/login`}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white"
+            style={{ background: '#005982' }}
+          >
+            {tAuth('submit')}
+          </Link>
+        </div>
 
         {/* What is KegelNetzwerk? */}
         <section className="space-y-4">
@@ -37,13 +49,6 @@ export default async function LandingPage() {
             <h2 className="text-2xl font-bold" style={{ color: '#005982' }}>
               {t('whatIsTitle')}
             </h2>
-            <Link
-              href={`/${locale}/login`}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#005982' }}
-            >
-              {t('loginButton')}
-            </Link>
           </div>
           <p className="text-gray-700 leading-relaxed">
             {t('whatIsPara1')}

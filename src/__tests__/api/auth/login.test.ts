@@ -109,7 +109,13 @@ describe('POST /api/auth/login', () => {
     mockVerify.mockResolvedValue(true);
     await POST(makeRequest({ clubName: 'TestClub', nickname: 'testuser', password: 'correct' }));
     expect(mockPrisma.member.findFirst).toHaveBeenCalledWith({
-      where: { clubId: mockClub.id, nickname: { equals: 'testuser', mode: 'insensitive' } },
+      where: {
+        clubId: mockClub.id,
+        OR: [
+          { nickname: { equals: 'testuser', mode: 'insensitive' } },
+          { email: { equals: 'testuser', mode: 'insensitive' } },
+        ],
+      },
     });
   });
 

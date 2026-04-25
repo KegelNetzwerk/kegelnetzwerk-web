@@ -1,10 +1,14 @@
+import Link from 'next/link';
+
 interface AuthShellProps {
   readonly children: React.ReactNode;
   /** Tailwind max-width class, e.g. 'max-w-2xl' (default) or 'max-w-4xl' */
   readonly maxWidth?: string;
+  /** If provided, the logo becomes a link to this href */
+  readonly logoHref?: string;
 }
 
-export default function AuthShell({ children, maxWidth = 'max-w-2xl' }: AuthShellProps) {
+export default function AuthShell({ children, maxWidth = 'max-w-2xl', logoHref }: AuthShellProps) {
   return (
     <div
       className="min-h-screen py-6 px-4"
@@ -27,8 +31,15 @@ export default function AuthShell({ children, maxWidth = 'max-w-2xl' }: AuthShel
             borderTopRightRadius: 30,
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/splash.png" alt="KegelNetzwerk" style={{ height: 82, objectFit: 'contain' }} />
+          {logoHref ? (
+            <Link href={logoHref}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/splash.png" alt="KegelNetzwerk" style={{ height: 82, objectFit: 'contain' }} />
+            </Link>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src="/images/splash.png" alt="KegelNetzwerk" style={{ height: 82, objectFit: 'contain' }} />
+          )}
         </div>
 
         {/* Thin blue accent bar */}

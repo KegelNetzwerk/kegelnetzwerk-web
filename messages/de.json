@@ -37,7 +37,7 @@
     "login": {
       "title": "Anmelden",
       "clubName": "Klubname",
-      "nickname": "Spitzname",
+      "nickname": "Spitzname oder E-Mail",
       "password": "Passwort",
       "submit": "Anmelden",
       "forgotPassword": "Passwort vergessen?",

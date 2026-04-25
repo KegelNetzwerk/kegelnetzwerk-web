@@ -15,10 +15,11 @@ export default async function PublicClubPage({
   const { clubName } = await params;
   const decodedName = decodeURIComponent(clubName);
 
-  const [viewer, locale, t] = await Promise.all([
+  const [viewer, locale, t, tAuth] = await Promise.all([
     getCurrentMember(),
     getLocale(),
     getTranslations('clubProfile'),
+    getTranslations('auth.login'),
   ]);
 
   const club = await prisma.club.findUnique({
@@ -57,14 +58,25 @@ export default async function PublicClubPage({
 
   return (
     <div className="space-y-8">
-      {/* Back */}
-      <Link
-        href={`/${locale}/`}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground cursor-pointer"
-      >
-        <ArrowLeft size={16} />
-        KegelNetzwerk
-      </Link>
+      {/* Back + login */}
+      <div className="flex items-center justify-between">
+        <Link
+          href={`/${locale}/`}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          <ArrowLeft size={16} />
+          KegelNetzwerk
+        </Link>
+        {viewer?.clubId !== club.id && (
+          <Link
+            href={`/${locale}/login?club=${encodeURIComponent(club.name)}`}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-white"
+            style={{ background: '#005982' }}
+          >
+            {tAuth('submit')}
+          </Link>
+        )}
+      </div>
 
       {/* Club header */}
       <div className="flex items-center gap-6">
