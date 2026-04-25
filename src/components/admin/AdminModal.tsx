@@ -12,11 +12,10 @@ interface AdminModalProps {
 
 export default function AdminModal({ children, title, onClose, wide }: AdminModalProps) {
   return createPortal(
-    <div
-      role="button"
-      tabIndex={0}
+    <button
+      type="button"
       aria-label="Close"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 border-0 cursor-default"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
@@ -32,7 +31,7 @@ export default function AdminModal({ children, title, onClose, wide }: AdminModa
         </div>
         {children}
       </dialog>
-    </div>,
+    </button>,
     document.body
   );
 }
