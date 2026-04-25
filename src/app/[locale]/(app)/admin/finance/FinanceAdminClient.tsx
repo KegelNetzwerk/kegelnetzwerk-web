@@ -11,7 +11,7 @@ import TxTypeCell from '@/components/finance/TxTypeCell';
 import {
   AlertTriangle, Calendar, CalendarCheck, Check, ChevronDown, ChevronUp, Plus, RefreshCw,
   Trash2, Wallet, Users, BarChart3, ListFilter, RotateCcw, X,
-  Euro, TrendingUp, TrendingDown, ToggleLeft, ToggleRight, Info, CreditCard,
+  Euro, Minus, ToggleLeft, ToggleRight, Info, CreditCard,
   FileText, Copy, Landmark,
 } from 'lucide-react';
 
@@ -722,33 +722,30 @@ function OverviewTab({
                 </td>
                 <td className="px-4 py-2.5 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-green-700 hover:bg-green-50"
+                    <button
+                      type="button"
                       onClick={() => { setAddPaymentFor(m.id); setPayType('PAYMENT_IN'); }}
                       title={t('payment.in')}
+                      className="flex h-8 w-8 items-center justify-center rounded border border-green-200 bg-green-50 text-green-700 hover:bg-green-100 cursor-pointer transition-colors"
                     >
-                      <TrendingUp size={13} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-red-700 hover:bg-red-50"
+                      <Plus size={14} />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => { setAddPaymentFor(m.id); setPayType('PAYMENT_OUT'); }}
                       title={t('payment.out')}
+                      className="flex h-8 w-8 items-center justify-center rounded border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 cursor-pointer transition-colors"
                     >
-                      <TrendingDown size={13} />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-purple-700 hover:bg-purple-50"
+                      <Minus size={14} />
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setResetConfirm(m.id)}
                       title={t('reset.member')}
+                      className="flex h-8 w-8 items-center justify-center rounded border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100 cursor-pointer transition-colors"
                     >
-                      <RotateCcw size={13} />
-                    </Button>
+                      <RotateCcw size={14} />
+                    </button>
                   </div>
                 </td>
               </tr>
