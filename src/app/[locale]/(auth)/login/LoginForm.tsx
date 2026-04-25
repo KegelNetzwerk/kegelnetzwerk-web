@@ -8,7 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-export default function LoginForm() {
+interface LoginFormProps {
+  initialClubName?: string;
+}
+
+export default function LoginForm({ initialClubName = '' }: LoginFormProps) {
   const t = useTranslations('auth.login');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,7 +54,7 @@ export default function LoginForm() {
           )}
           <div className="space-y-2">
             <Label htmlFor="clubName">{t('clubName')}</Label>
-            <Input id="clubName" name="clubName" required />
+            <Input id="clubName" name="clubName" required defaultValue={initialClubName} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="nickname">{t('nickname')}</Label>

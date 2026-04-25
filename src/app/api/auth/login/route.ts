@@ -15,9 +15,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
   }
 
-  // Find member in that club by nickname (case-insensitive)
+  // Find member in that club by nickname or email (case-insensitive)
   const member = await prisma.member.findFirst({
-    where: { clubId: club.id, nickname: { equals: nickname, mode: 'insensitive' } },
+    where: {
+      clubId: club.id,
+      OR: [
+        { nickname: { equals: nickname, mode: 'insensitive' } },
+        { email: { equals: nickname, mode: 'insensitive' } },
+      ],
+    },
   });
   if (!member) {
     return NextResponse.json({ error: 'Invalid credentials.' }, { status: 401 });
