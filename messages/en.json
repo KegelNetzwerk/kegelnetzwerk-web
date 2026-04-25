@@ -37,7 +37,7 @@
     "login": {
       "title": "Sign In",
       "clubName": "Club name",
-      "nickname": "Nickname",
+      "nickname": "Nickname or email",
       "password": "Password",
       "submit": "Sign in",
       "forgotPassword": "Forgot password?",
