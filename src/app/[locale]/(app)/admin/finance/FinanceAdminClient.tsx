@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import Modal from '@/components/admin/AdminModal';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -3133,31 +3133,5 @@ function SourcesTab({
         </Modal>
       )}
     </div>
-  );
-}
-
-// ─── Shared Modal ─────────────────────────────────────────────────────────────
-
-function Modal({ children, title, onClose, wide }: { readonly children: React.ReactNode; readonly title: string; readonly onClose: () => void; readonly wide?: boolean }) {
-  return createPortal(
-    <div role="presentation" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose} onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        tabIndex={-1}
-        className={`w-full rounded-xl bg-white shadow-xl p-6 space-y-4 ${wide ? 'max-w-2xl' : 'max-w-md'}`}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold">{title}</h3>
-          <button type="button" onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600">
-            <X size={18} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>,
-    document.body
   );
 }

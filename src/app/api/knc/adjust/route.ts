@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json() as { memberId?: number; delta?: number };
   const { memberId, delta } = body;
 
-  if (typeof memberId !== 'number' || typeof delta !== 'number' || !isFinite(delta) || delta === 0) {
+  if (typeof memberId !== 'number' || typeof delta !== 'number' || !Number.isFinite(delta) || delta === 0) {
     return NextResponse.json({ error: 'Invalid input.' }, { status: 400 });
   }
 

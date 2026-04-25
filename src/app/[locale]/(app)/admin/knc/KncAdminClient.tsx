@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
-import { AlertTriangle, Minus, Plus, RotateCcw, X } from 'lucide-react';
+import { AlertTriangle, Minus, Plus, RotateCcw } from 'lucide-react';
+import Modal from '@/components/admin/AdminModal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,7 @@ interface MemberRow {
 }
 
 interface Props {
-  members: MemberRow[];
+  readonly members: MemberRow[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,7 +67,7 @@ export default function KncAdminClient({ members: initialMembers }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId, delta }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const data = await res.json() as { id: number; kncBalance: number };
       setMembers((prev) => prev.map((m) => m.id === memberId ? { ...m, kncBalance: data.kncBalance } : m));
       toast.success(t('success.adjust'));
@@ -86,7 +86,7 @@ export default function KncAdminClient({ members: initialMembers }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ delta }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       const data = await res.json() as { id: number; kncBalance: number }[];
       const map = new Map(data.map((r) => [r.id, r.kncBalance]));
       setMembers((prev) => prev.map((m) => ({ ...m, kncBalance: map.get(m.id) ?? m.kncBalance })));
@@ -106,7 +106,7 @@ export default function KncAdminClient({ members: initialMembers }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ memberId }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       setMembers((prev) => prev.map((m) => m.id === memberId ? { ...m, kncBalance: 0 } : m));
       toast.success(t('success.reset'));
     } catch {
@@ -124,7 +124,7 @@ export default function KncAdminClient({ members: initialMembers }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) throw new Error('Request failed');
       toast.success(t('success.resetAll'));
       globalThis.location.reload();
     } catch {
@@ -277,36 +277,5 @@ export default function KncAdminClient({ members: initialMembers }: Props) {
       )}
 
     </div>
-  );
-}
-
-// ─── Modal ────────────────────────────────────────────────────────────────────
-
-function Modal({ children, title, onClose }: { readonly children: React.ReactNode; readonly title: string; readonly onClose: () => void }) {
-  return createPortal(
-    <div
-      role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
-      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        tabIndex={-1}
-        className="w-full max-w-md rounded-xl bg-white shadow-xl p-6 space-y-4"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold">{title}</h3>
-          <button type="button" onClick={onClose} className="cursor-pointer text-gray-400 hover:text-gray-600">
-            <X size={18} />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>,
-    document.body
   );
 }
