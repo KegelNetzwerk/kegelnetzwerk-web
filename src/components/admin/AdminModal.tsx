@@ -18,9 +18,11 @@ export default function AdminModal({ children, title, onClose, wide }: AdminModa
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
     >
-      <dialog
-        open
-        className={`m-0 w-full border-0 rounded-xl bg-white shadow-xl p-6 space-y-4 ${wide ? 'max-w-2xl' : 'max-w-md'}`}
+      <div // NOSONAR — native <dialog> breaks flex centering via UA default positioning
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        className={`w-full rounded-xl bg-white shadow-xl p-6 space-y-4 ${wide ? 'max-w-2xl' : 'max-w-md'}`}
       >
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold">{title}</h3>
@@ -29,7 +31,7 @@ export default function AdminModal({ children, title, onClose, wide }: AdminModa
           </button>
         </div>
         {children}
-      </dialog>
+      </div>
     </div>,
     document.body
   );
