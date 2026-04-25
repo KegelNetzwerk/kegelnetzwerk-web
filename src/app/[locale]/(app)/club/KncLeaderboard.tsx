@@ -31,8 +31,8 @@ export default function KncLeaderboard({ entries, title, memberLabel, balanceLab
             <tr key={m.id} className="border-t hover:bg-muted/50">
               <td className="px-4 py-2 text-muted-foreground tabular-nums">{idx + 1}</td>
               <td className="px-4 py-2 font-medium">{m.nickname}</td>
-              <td className="px-4 py-2 text-right tabular-nums font-semibold text-amber-700">
-                {m.kncBalance.toFixed(0)} KNC
+              <td className="px-4 py-2 text-right tabular-nums font-semibold">
+                {m.kncBalance.toFixed(0)} <span className="font-bold text-yellow-400">K</span>
               </td>
             </tr>
           ))}
