@@ -466,7 +466,8 @@
     "games": "Games & Penalties",
     "results": "Result Editor",
     "secretSanta": "Secret Santa",
-    "finance": "Finance"
+    "finance": "Finance",
+    "knc": "KNC"
   },
   "secretSanta": {
     "title": "Secret Santa",
@@ -809,6 +810,28 @@
       "deleteSuccess": "Deleted",
       "errorSave": "Save failed",
       "errorDelete": "Delete failed"
+    }
+  },
+  "kncAdmin": {
+    "title": "KNC Management",
+    "amount": "Amount (KNC)",
+    "resetAll": "Reset All",
+    "resetOne": "Reset",
+    "confirmAll": "All KNC balances will be set to 0. This action cannot be undone.",
+    "typeToConfirm": "Type \"reset all\" to confirm",
+    "forAll": "All",
+    "colMember": "Member",
+    "colBalance": "KNC Balance",
+    "colActions": "Actions",
+    "cancel": "Cancel",
+    "success": {
+      "adjust": "KNC updated.",
+      "reset": "KNC reset.",
+      "resetAll": "All KNC balances reset."
+    },
+    "error": {
+      "adjust": "Failed to update.",
+      "reset": "Failed to reset."
     }
   }
 }

@@ -466,7 +466,8 @@
     "games": "Spiele & Strafen",
     "results": "Ergebnisse bearbeiten",
     "secretSanta": "Wichteln",
-    "finance": "Finanzen"
+    "finance": "Finanzen",
+    "knc": "KNC"
   },
   "secretSanta": {
     "title": "Wichteln",
@@ -809,6 +810,28 @@
       "deleteSuccess": "Gelöscht",
       "errorSave": "Fehler beim Speichern",
       "errorDelete": "Fehler beim Löschen"
+    }
+  },
+  "kncAdmin": {
+    "title": "KNC-Verwaltung",
+    "amount": "Betrag (KNC)",
+    "resetAll": "Alle zurücksetzen",
+    "resetOne": "Zurücksetzen",
+    "confirmAll": "Alle KNC-Guthaben werden auf 0 zurückgesetzt. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "typeToConfirm": "Gib \"reset all\" ein, um zu bestätigen",
+    "forAll": "Alle",
+    "colMember": "Mitglied",
+    "colBalance": "KNC-Guthaben",
+    "colActions": "Aktionen",
+    "cancel": "Abbrechen",
+    "success": {
+      "adjust": "KNC aktualisiert.",
+      "reset": "KNC zurückgesetzt.",
+      "resetAll": "Alle KNC-Guthaben zurückgesetzt."
+    },
+    "error": {
+      "adjust": "Fehler beim Aktualisieren.",
+      "reset": "Fehler beim Zurücksetzen."
     }
   }
 }
