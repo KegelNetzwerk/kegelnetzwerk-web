@@ -100,10 +100,14 @@ function computeOnceDuplicates(results: ResultEntry[]): Set<number> {
   return dupes;
 }
 
+interface PlayerArg {
+  type: 'member' | 'guest';
+  id: string;
+}
+
 function buildResultBody(
   sessionGroup: number,
-  playerType: 'member' | 'guest',
-  playerId: string,
+  player: PlayerArg,
   gopId: string,
   partId: string,
   part: PartInfo | null,
@@ -115,11 +119,22 @@ function buildResultBody(
     partId: Number(partId),
     gopId: Number(gopId),
   };
-  if (playerType === 'member') body.memberId = Number(playerId);
-  else body.guestId = Number(playerId);
+  if (player.type === 'member') body.memberId = Number(player.id);
+  else body.guestId = Number(player.id);
   if (part?.variable) body.value = Number.parseFloat(value);
   if (createdAt) body.createdAt = new Date(createdAt).toISOString();
   return body;
+}
+
+function isAddFormInvalid(
+  session: SessionRow | null,
+  playerId: string,
+  gopId: string,
+  partId: string,
+  part: PartInfo | null,
+  value: string,
+): boolean {
+  return !session || !playerId || !gopId || !partId || (part?.variable === true && value === '');
 }
 
 export default function ResultsClient({ categories, members, guests, years }: ResultsClientProps) {
@@ -136,6 +151,7 @@ export default function ResultsClient({ categories, members, guests, years }: Re
   const [results, setResults] = useState<ResultEntry[]>([]);
   const [detailLoading, setDetailLoading] = useState(false);
   const [resultToRemove, setResultToRemove] = useState<ResultEntry | null>(null);
+  const [sessionToDelete, setSessionToDelete] = useState<SessionRow | null>(null);
 
   // ── Filters ───────────────────────────────────────────────────────────────────
   const [filterGopId, setFilterGopId] = useState('');
@@ -209,16 +225,18 @@ export default function ResultsClient({ categories, members, guests, years }: Re
   }
 
   // ── Delete entire session ─────────────────────────────────────────────────────
-  async function handleDeleteSession(session: SessionRow) {
-    if (!confirm(t('deleteConfirm'))) return;
-    const res = await fetch(`/api/results/sessions/${session.sessionGroup}`, { method: 'DELETE' });
+  async function confirmDeleteSession() {
+    if (!sessionToDelete) return;
+    const sg = sessionToDelete.sessionGroup;
+    setSessionToDelete(null);
+    const res = await fetch(`/api/results/sessions/${sg}`, { method: 'DELETE' });
     if (!res.ok) {
       toast.error(t('error.deleteFailed'));
       return;
     }
     toast.success(t('deleteSuccess'));
-    setSessions((prev) => prev.filter((s) => s.sessionGroup !== session.sessionGroup));
-    if (selectedSession?.sessionGroup === session.sessionGroup) backToSessions();
+    setSessions((prev) => prev.filter((s) => s.sessionGroup !== sg));
+    if (selectedSession?.sessionGroup === sg) backToSessions();
   }
 
   // ── Remove single result ──────────────────────────────────────────────────────
@@ -257,11 +275,7 @@ export default function ResultsClient({ categories, members, guests, years }: Re
   const selectedPart = selectedCategory?.parts.find((p) => String(p.id) === addPartId) ?? null;
 
   async function handleAddResult() {
-    if (!selectedSession || !addPlayerId || !addGopId || !addPartId) {
-      toast.error(t('error.invalidValue'));
-      return;
-    }
-    if (selectedPart?.variable && addValue === '') {
+    if (isAddFormInvalid(selectedSession, addPlayerId, addGopId, addPartId, selectedPart, addValue)) {
       toast.error(t('error.invalidValue'));
       return;
     }
@@ -269,9 +283,8 @@ export default function ResultsClient({ categories, members, guests, years }: Re
     setAdding(true);
     try {
       const body = buildResultBody(
-        selectedSession.sessionGroup,
-        playerType,
-        addPlayerId,
+        selectedSession!.sessionGroup,
+        { type: playerType, id: addPlayerId },
         addGopId,
         addPartId,
         selectedPart,
@@ -300,7 +313,7 @@ export default function ResultsClient({ categories, members, guests, years }: Re
       setAddCreatedAt(toLocalDatetimeInput(new Date().toISOString()));
       setSessions((prev) =>
         prev.map((s) =>
-          s.sessionGroup === selectedSession.sessionGroup
+          s.sessionGroup === selectedSession!.sessionGroup
             ? { ...s, entryCount: s.entryCount + count }
             : s,
         ),
@@ -387,7 +400,7 @@ export default function ResultsClient({ categories, members, guests, years }: Re
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => handleDeleteSession(session)}
+                    onClick={() => setSessionToDelete(session)}
                     className="cursor-pointer"
                   >
                     <Trash2 size={13} />
@@ -398,6 +411,36 @@ export default function ResultsClient({ categories, members, guests, years }: Re
             ))}
           </div>
         )}
+
+      {/* Delete session confirmation modal */}
+      {sessionToDelete && (
+        <Modal onClose={() => setSessionToDelete(null)} title={t('deleteSession')}>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">{t('deleteConfirm')}</p>
+            <div className="rounded-lg border bg-gray-50 px-4 py-3 text-sm space-y-2">
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">{t('category')}</span>
+                <span className="font-medium">
+                  {new Date(sessionToDelete.date).toLocaleDateString('de-DE', { timeZone: 'UTC' })}
+                  {' — '}
+                  {sessionToDelete.categoryNames.join(', ')}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-gray-500">{t('entries')}</span>
+                <span className="font-medium">{sessionToDelete.entryCount}</span>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={() => setSessionToDelete(null)}>{tCommon('cancel')}</Button>
+              <Button variant="destructive" onClick={confirmDeleteSession}>
+                <Trash2 size={14} />
+                {t('deleteSession')}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
       </div>
     );
   }
