@@ -3,6 +3,22 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentMember } from '@/lib/auth';
 import { Role } from '@prisma/client';
 
+async function validatePlayer(
+  memberId: number | undefined,
+  guestId: number | undefined,
+  clubId: number,
+): Promise<string | null> {
+  if (memberId != null) {
+    const valid = await prisma.member.findFirst({ where: { id: memberId, clubId }, select: { id: true } });
+    if (!valid) return 'invalidMemberId';
+  }
+  if (guestId != null) {
+    const valid = await prisma.guest.findFirst({ where: { id: guestId, clubId }, select: { id: true } });
+    if (!valid) return 'invalidGuestId';
+  }
+  return null;
+}
+
 // POST /api/results
 // Creates a single result in an existing session.
 // Body: { sessionGroup, memberId?, guestId?, partId, gopId, value? }
@@ -41,21 +57,8 @@ export async function POST(req: NextRequest) {
   });
   if (!part) return NextResponse.json({ error: 'invalidPartId' }, { status: 422 });
 
-  if (body.memberId != null) {
-    const validMember = await prisma.member.findFirst({
-      where: { id: body.memberId, clubId: member.clubId },
-      select: { id: true },
-    });
-    if (!validMember) return NextResponse.json({ error: 'invalidMemberId' }, { status: 422 });
-  }
-
-  if (body.guestId != null) {
-    const validGuest = await prisma.guest.findFirst({
-      where: { id: body.guestId, clubId: member.clubId },
-      select: { id: true },
-    });
-    if (!validGuest) return NextResponse.json({ error: 'invalidGuestId' }, { status: 422 });
-  }
+  const playerError = await validatePlayer(body.memberId, body.guestId, member.clubId);
+  if (playerError) return NextResponse.json({ error: playerError }, { status: 422 });
 
   const sessionResult = await prisma.result.findFirst({
     where: { sessionGroup: body.sessionGroup, clubId: member.clubId },

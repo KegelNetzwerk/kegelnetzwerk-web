@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,9 +76,28 @@ function toLocalDatetimeInput(iso: string): string {
 function calcResult(value: number, factor: number, bonus: number, unit: string): string | null {
   if (factor === 1 && bonus === 0) return null;
   const result = value * factor + bonus;
-  return unit === 'POINTS'
-    ? `= ${Number.isInteger(result) ? result : result.toFixed(2)} Pkt`
-    : `= ${result.toFixed(2)} €`;
+  if (unit === 'POINTS') {
+    const pts = Number.isInteger(result) ? String(result) : result.toFixed(2);
+    return `= ${pts} Pkt`;
+  }
+  return `= ${result.toFixed(2)} €`;
+}
+
+function computeOnceDuplicates(results: ResultEntry[]): Set<number> {
+  const counts = new Map<string, number[]>();
+  for (const r of results) {
+    if (r.once) {
+      const playerKey = r.memberId != null ? `m${r.memberId}` : `g${r.guestId}`;
+      const key = `${playerKey}-${r.partId}`;
+      if (!counts.has(key)) counts.set(key, []);
+      counts.get(key)!.push(r.id);
+    }
+  }
+  const dupes = new Set<number>();
+  for (const ids of counts.values()) {
+    if (ids.length > 1) ids.forEach((id) => dupes.add(id));
+  }
+  return dupes;
 }
 
 export default function ResultsClient({ categories, members, guests, years }: ResultsClientProps) {
@@ -269,22 +288,7 @@ export default function ResultsClient({ categories, members, guests, years }: Re
   }
 
   // ── Once-duplicate detection ──────────────────────────────────────────────────
-  // For parts with once=true, flag all entries where the same player+part appears more than once.
-  const onceDuplicateIds = (() => {
-    const counts = new Map<string, number[]>();
-    for (const r of results) {
-      if (!r.once) continue;
-      const playerKey = r.memberId != null ? `m${r.memberId}` : `g${r.guestId}`;
-      const key = `${playerKey}-${r.partId}`;
-      if (!counts.has(key)) counts.set(key, []);
-      counts.get(key)!.push(r.id);
-    }
-    const dupes = new Set<number>();
-    for (const ids of counts.values()) {
-      if (ids.length > 1) ids.forEach((id) => dupes.add(id));
-    }
-    return dupes;
-  })();
+  const onceDuplicateIds = useMemo(() => computeOnceDuplicates(results), [results]);
 
   // ── Derived filter options ────────────────────────────────────────────────────
   const resultCategories = [
@@ -376,6 +380,79 @@ export default function ResultsClient({ categories, members, guests, years }: Re
   }
 
   // ── SESSION DETAIL VIEW ───────────────────────────────────────────────────────
+
+  const tableOrEmpty =
+    filteredResults.length === 0 ? (
+      <p className="text-sm text-muted-foreground">{t('noResults')}</p>
+    ) : (
+      <div className="overflow-x-auto rounded-lg border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-muted">
+              <th className="px-3 py-2 text-left font-medium">{t('player')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('category')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('part')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('value')}</th>
+              <th className="px-3 py-2 text-left font-medium">{t('timeEntered')}</th>
+              <th className="px-3 py-2" />
+            </tr>
+          </thead>
+          <tbody>
+            {filteredResults.map((r) => {
+              const isDupe = onceDuplicateIds.has(r.id);
+              return (
+                <tr key={r.id} className="border-t bg-white">
+                  <td className="px-3 py-2">
+                    <span className="flex items-center gap-2">
+                      {r.playerPic && r.playerPic !== 'none' ? (
+                        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border">
+                          <Image src={r.playerPic} alt={r.nickname} fill className="object-cover" />
+                        </div>
+                      ) : (
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
+                          {r.nickname.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span>{r.nickname}</span>
+                      {r.isGuest && (
+                        <span className="text-xs text-muted-foreground">({t('guestType')})</span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">{r.gopName}</td>
+                  <td className="px-3 py-2">
+                    <span className="flex items-center gap-1.5">
+                      <PartPicThumb pic={r.partPic} size={20} />
+                      <span>{r.partName}</span>
+                      {isDupe && (
+                        <span title={t('onceWarning')}>
+                          <TriangleAlert size={14} className="text-amber-500 shrink-0" />
+                        </span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">{r.value}</td>
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {new Date(r.createdAt).toLocaleString('de-DE')}
+                  </td>
+                  <td className="px-3 py-2">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setResultToRemove(r)}
+                      className="cursor-pointer h-7 w-7 text-destructive hover:text-destructive"
+                      title={tCommon('remove')}
+                    >
+                      <Trash2 size={13} />
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
 
   return (
     <div className="space-y-6">
@@ -624,76 +701,8 @@ export default function ResultsClient({ categories, members, guests, years }: Re
       {/* Results table */}
       {detailLoading ? (
         <p className="text-sm text-muted-foreground">{tCommon('loading')}</p>
-      ) : filteredResults.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('noResults')}</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-muted">
-                <th className="px-3 py-2 text-left font-medium">{t('player')}</th>
-                <th className="px-3 py-2 text-left font-medium">{t('category')}</th>
-                <th className="px-3 py-2 text-left font-medium">{t('part')}</th>
-                <th className="px-3 py-2 text-left font-medium">{t('value')}</th>
-                <th className="px-3 py-2 text-left font-medium">{t('timeEntered')}</th>
-                <th className="px-3 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {filteredResults.map((r) => {
-                const isDupe = onceDuplicateIds.has(r.id);
-                return (
-                  <tr key={r.id} className="border-t bg-white">
-                    <td className="px-3 py-2">
-                      <span className="flex items-center gap-2">
-                        {r.playerPic && r.playerPic !== 'none' ? (
-                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border">
-                            <Image src={r.playerPic} alt={r.nickname} fill className="object-cover" />
-                          </div>
-                        ) : (
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                            {r.nickname.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                        <span>{r.nickname}</span>
-                        {r.isGuest && (
-                          <span className="text-xs text-muted-foreground">({t('guestType')})</span>
-                        )}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">{r.gopName}</td>
-                    <td className="px-3 py-2">
-                      <span className="flex items-center gap-1.5">
-                        <PartPicThumb pic={r.partPic} size={20} />
-                        <span>{r.partName}</span>
-                        {isDupe && (
-                          <span title={t('onceWarning')}>
-                            <TriangleAlert size={14} className="text-amber-500 shrink-0" />
-                          </span>
-                        )}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">{r.value}</td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {new Date(r.createdAt).toLocaleString('de-DE')}
-                    </td>
-                    <td className="px-3 py-2">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => setResultToRemove(r)}
-                        className="cursor-pointer h-7 w-7 text-destructive hover:text-destructive"
-                        title={tCommon('remove')}
-                      >
-                        <Trash2 size={13} />
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        tableOrEmpty
       )}
 
       {/* Remove result confirmation modal */}
