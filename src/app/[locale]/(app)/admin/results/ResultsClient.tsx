@@ -87,7 +87,7 @@ function computeOnceDuplicates(results: ResultEntry[]): Set<number> {
   const counts = new Map<string, number[]>();
   for (const r of results) {
     if (r.once) {
-      const playerKey = r.memberId != null ? `m${r.memberId}` : `g${r.guestId}`;
+      const playerKey = r.memberId == null ? `g${r.guestId}` : `m${r.memberId}`;
       const key = `${playerKey}-${r.partId}`;
       if (!counts.has(key)) counts.set(key, []);
       counts.get(key)!.push(r.id);
@@ -98,6 +98,28 @@ function computeOnceDuplicates(results: ResultEntry[]): Set<number> {
     if (ids.length > 1) ids.forEach((id) => dupes.add(id));
   }
   return dupes;
+}
+
+function buildResultBody(
+  sessionGroup: number,
+  playerType: 'member' | 'guest',
+  playerId: string,
+  gopId: string,
+  partId: string,
+  part: PartInfo | null,
+  value: string,
+  createdAt: string,
+): Record<string, unknown> {
+  const body: Record<string, unknown> = {
+    sessionGroup,
+    partId: Number(partId),
+    gopId: Number(gopId),
+  };
+  if (playerType === 'member') body.memberId = Number(playerId);
+  else body.guestId = Number(playerId);
+  if (part?.variable) body.value = Number.parseFloat(value);
+  if (createdAt) body.createdAt = new Date(createdAt).toISOString();
+  return body;
 }
 
 export default function ResultsClient({ categories, members, guests, years }: ResultsClientProps) {
@@ -246,15 +268,16 @@ export default function ResultsClient({ categories, members, guests, years }: Re
     const count = Math.max(1, Math.floor(Number(addCount) || 1));
     setAdding(true);
     try {
-      const body: Record<string, unknown> = {
-        sessionGroup: selectedSession.sessionGroup,
-        partId: Number(addPartId),
-        gopId: Number(addGopId),
-      };
-      if (playerType === 'member') body.memberId = Number(addPlayerId);
-      else body.guestId = Number(addPlayerId);
-      if (selectedPart?.variable) body.value = Number.parseFloat(addValue);
-      if (addCreatedAt) body.createdAt = new Date(addCreatedAt).toISOString();
+      const body = buildResultBody(
+        selectedSession.sessionGroup,
+        playerType,
+        addPlayerId,
+        addGopId,
+        addPartId,
+        selectedPart,
+        addValue,
+        addCreatedAt,
+      );
 
       const responses = await Promise.all(
         Array.from({ length: count }, () =>
