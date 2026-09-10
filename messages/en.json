@@ -482,7 +482,29 @@
     "year": "Year",
     "partnerLabel": "Drawn",
     "notParticipated": "Did not participate",
-    "noRoundsYet": "No Secret Santa rounds have taken place yet."
+    "noRoundsYet": "No Secret Santa rounds have taken place yet.",
+    "pairings": {
+      "title": "Manage pairings",
+      "description": "Set new pairings without revealing the current ones.",
+      "reveal": "Reveal names",
+      "giver": "Giver",
+      "receiver": "Receiver",
+      "changeAction": "Change",
+      "changePlaceholder": "Change...",
+      "clearOption": "Remove pairing",
+      "none": "–",
+      "hidden": "*****",
+      "confirmTitle": "Change pairing",
+      "confirmQuestion": "Do you really want to change this pairing?",
+      "previousReceiver": "Previously gifted",
+      "newReceiver": "Now gifted",
+      "warningsColumn": "Warnings",
+      "warningDuplicate": "{name} is gifted twice",
+      "warningNoReceiver": "Receives no gift",
+      "updateSuccess": "Pairing updated.",
+      "updateError": "Update failed.",
+      "selfAssignmentError": "A member cannot be paired with themselves."
+    }
   },
   "resultManagement": {
     "title": "Manage Results",

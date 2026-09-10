@@ -482,7 +482,29 @@
     "year": "Jahr",
     "partnerLabel": "Ausgelost",
     "notParticipated": "Nicht teilgenommen",
-    "noRoundsYet": "Es wurden noch keine Wichtelrunden durchgeführt."
+    "noRoundsYet": "Es wurden noch keine Wichtelrunden durchgeführt.",
+    "pairings": {
+      "title": "Zuweisungen verwalten",
+      "description": "Neue Zuweisungen festlegen, ohne die aktuellen aufzudecken.",
+      "reveal": "Namen aufdecken",
+      "giver": "Wichtel",
+      "receiver": "Beschenkt",
+      "changeAction": "Ändern",
+      "changePlaceholder": "Ändern...",
+      "clearOption": "Zuweisung entfernen",
+      "none": "–",
+      "hidden": "*****",
+      "confirmTitle": "Zuweisung ändern",
+      "confirmQuestion": "Möchten Sie diese Zuweisung wirklich ändern?",
+      "previousReceiver": "Bisher beschenkt",
+      "newReceiver": "Neu beschenkt",
+      "warningsColumn": "Warnungen",
+      "warningDuplicate": "{name} wird doppelt beschenkt",
+      "warningNoReceiver": "Bekommt kein Geschenk",
+      "updateSuccess": "Zuweisung aktualisiert.",
+      "updateError": "Aktualisierung fehlgeschlagen.",
+      "selfAssignmentError": "Ein Mitglied kann nicht sich selbst beschenken."
+    }
   },
   "resultManagement": {
     "title": "Ergebnisse verwalten",
