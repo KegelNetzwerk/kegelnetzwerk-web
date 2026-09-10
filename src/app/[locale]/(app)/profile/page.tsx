@@ -1,6 +1,7 @@
 import { getCurrentMember } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
+import { buildSantaHistoryRows } from '@/lib/secret-santa-utils';
 import ProfileClient from './ProfileClient';
 
 export default async function ProfilePage() {
@@ -27,21 +28,12 @@ export default async function ProfilePage() {
     }),
   ]);
 
-  const historyByYear = new Map(history.map((h) => [h.year, { nickname: h.receiver.nickname, pic: h.receiver.pic }]));
-
-  // If the current year has no assignment row yet but a partner pointer exists, synthesize a row
-  const hasCurrentYearRow = allYears.some(({ year }) => year === currentYear);
-  const legacyPartner = fullMember?.secretSantaPartner ?? null;
-  if (!hasCurrentYearRow && legacyPartner) {
-    allYears.unshift({ year: currentYear });
-    historyByYear.set(currentYear, { nickname: legacyPartner.nickname, pic: legacyPartner.pic });
-  }
-
-  const santaRows = allYears.map(({ year }) => ({
-    year,
-    receiverNickname: historyByYear.get(year)?.nickname ?? null,
-    receiverPic: historyByYear.get(year)?.pic ?? null,
-  }));
+  const santaRows = buildSantaHistoryRows(
+    history,
+    allYears,
+    currentYear,
+    fullMember?.secretSantaPartner ?? null
+  );
 
   return (
     <ProfileClient

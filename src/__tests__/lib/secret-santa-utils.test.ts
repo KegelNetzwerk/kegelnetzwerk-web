@@ -1,4 +1,4 @@
-import { cryptoShuffle, generateAssignment } from '@/lib/secret-santa-utils';
+import { cryptoShuffle, generateAssignment, buildSantaHistoryRows } from '@/lib/secret-santa-utils';
 
 describe('cryptoShuffle', () => {
   it('returns an array of the same length', () => {
@@ -93,5 +93,71 @@ describe('generateAssignment', () => {
     const result = generateAssignment([1], new Set());
     // With only 1 member, any assignment maps 1->1 which is always invalid
     expect(result).toBeNull();
+  });
+});
+
+describe('buildSantaHistoryRows', () => {
+  const CURRENT_YEAR = 2026;
+
+  it('uses the member\'s own current-year assignment when present', () => {
+    const rows = buildSantaHistoryRows(
+      [{ year: CURRENT_YEAR, receiver: { nickname: 'Bob', pic: 'none' } }],
+      [{ year: CURRENT_YEAR }],
+      CURRENT_YEAR,
+      { nickname: 'StalePartner', pic: 'none' }
+    );
+    expect(rows).toEqual([{ year: CURRENT_YEAR, receiverNickname: 'Bob', receiverPic: 'none' }]);
+  });
+
+  it('falls back to the legacy partner pointer when nobody in the club has a current-year row yet', () => {
+    const rows = buildSantaHistoryRows([], [], CURRENT_YEAR, { nickname: 'Patrick', pic: 'none' });
+    expect(rows).toEqual([{ year: CURRENT_YEAR, receiverNickname: 'Patrick', receiverPic: 'none' }]);
+  });
+
+  it('still falls back to the legacy pointer for this member even when other members already have a current-year row', () => {
+    // Regression test: this is the exact scenario that broke — an admin edits one member's
+    // pairing via the pairings table, creating a real current-year row for THAT member only.
+    // A different member with no row of their own must still see their legacy partner,
+    // not silently lose their history entry.
+    const rows = buildSantaHistoryRows(
+      [], // this member has no assignment row of their own
+      [{ year: CURRENT_YEAR }], // but the club already has a current-year row (for someone else)
+      CURRENT_YEAR,
+      { nickname: 'Patrick', pic: 'none' }
+    );
+    expect(rows).toEqual([{ year: CURRENT_YEAR, receiverNickname: 'Patrick', receiverPic: 'none' }]);
+  });
+
+  it('does not duplicate the current year when it is synthesized but already present in the years list', () => {
+    const rows = buildSantaHistoryRows(
+      [],
+      [{ year: CURRENT_YEAR }, { year: CURRENT_YEAR - 1 }],
+      CURRENT_YEAR,
+      { nickname: 'Patrick', pic: 'none' }
+    );
+    expect(rows.filter((r) => r.year === CURRENT_YEAR)).toHaveLength(1);
+  });
+
+  it('shows no partner for the current year when there is no own row and no legacy pointer', () => {
+    const rows = buildSantaHistoryRows([], [{ year: CURRENT_YEAR }], CURRENT_YEAR, null);
+    expect(rows).toEqual([{ year: CURRENT_YEAR, receiverNickname: null, receiverPic: null }]);
+  });
+
+  it('does not synthesize a current-year row at all when there is no legacy pointer and no club history', () => {
+    const rows = buildSantaHistoryRows([], [], CURRENT_YEAR, null);
+    expect(rows).toEqual([]);
+  });
+
+  it('preserves past years alongside the synthesized current year', () => {
+    const rows = buildSantaHistoryRows(
+      [{ year: CURRENT_YEAR - 1, receiver: { nickname: 'Alice', pic: 'none' } }],
+      [{ year: CURRENT_YEAR - 1 }],
+      CURRENT_YEAR,
+      { nickname: 'Patrick', pic: 'none' }
+    );
+    expect(rows).toEqual([
+      { year: CURRENT_YEAR, receiverNickname: 'Patrick', receiverPic: 'none' },
+      { year: CURRENT_YEAR - 1, receiverNickname: 'Alice', receiverPic: 'none' },
+    ]);
   });
 });
