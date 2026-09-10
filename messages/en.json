@@ -484,10 +484,15 @@
     "notParticipated": "Did not participate",
     "noRoundsYet": "No Secret Santa rounds have taken place yet.",
     "pairings": {
-      "title": "Manage pairings",
+      "title": "Secret Santa Pairings",
       "description": "Set new pairings without revealing the current ones.",
+      "inactiveHint": "Use the toggle to exclude a member from the draw.",
+      "excludedMembersLabel": "The following members are inactive and will be excluded from the draw:",
       "reveal": "Reveal names",
       "giver": "Giver",
+      "statusColumn": "Status",
+      "activeLabel": "Active",
+      "inactiveLabel": "Inactive",
       "receiver": "Receiver",
       "changeAction": "Change",
       "changePlaceholder": "Change...",
@@ -501,9 +506,13 @@
       "warningsColumn": "Warnings",
       "warningDuplicate": "{name} is gifted twice",
       "warningNoReceiver": "Receives no gift",
+      "inactiveInfo": "Was inactive and excluded from the last draw.",
       "updateSuccess": "Pairing updated.",
       "updateError": "Update failed.",
-      "selfAssignmentError": "A member cannot be paired with themselves."
+      "selfAssignmentError": "A member cannot be paired with themselves.",
+      "inactiveReceiverError": "This member is inactive and cannot receive a gift.",
+      "inactiveToggled": "Member updated.",
+      "inactiveError": "Update failed."
     }
   },
   "resultManagement": {

@@ -484,10 +484,15 @@
     "notParticipated": "Nicht teilgenommen",
     "noRoundsYet": "Es wurden noch keine Wichtelrunden durchgeführt.",
     "pairings": {
-      "title": "Zuweisungen verwalten",
+      "title": "Wichtel-Zuweisungen",
       "description": "Neue Zuweisungen festlegen, ohne die aktuellen aufzudecken.",
+      "inactiveHint": "Über den Schalter können Mitglieder von der Auslosung ausgeschlossen werden.",
+      "excludedMembersLabel": "Folgende Mitglieder sind inaktiv und werden von der Auslosung ausgeschlossen:",
       "reveal": "Namen aufdecken",
       "giver": "Wichtel",
+      "statusColumn": "Status",
+      "activeLabel": "Aktiv",
+      "inactiveLabel": "Inaktiv",
       "receiver": "Beschenkt",
       "changeAction": "Ändern",
       "changePlaceholder": "Ändern...",
@@ -501,9 +506,13 @@
       "warningsColumn": "Warnungen",
       "warningDuplicate": "{name} wird doppelt beschenkt",
       "warningNoReceiver": "Bekommt kein Geschenk",
+      "inactiveInfo": "War bei der letzten Auslosung inaktiv und ausgeschlossen.",
       "updateSuccess": "Zuweisung aktualisiert.",
       "updateError": "Aktualisierung fehlgeschlagen.",
-      "selfAssignmentError": "Ein Mitglied kann nicht sich selbst beschenken."
+      "selfAssignmentError": "Ein Mitglied kann nicht sich selbst beschenken.",
+      "inactiveReceiverError": "Dieses Mitglied ist inaktiv und kann nicht beschenkt werden.",
+      "inactiveToggled": "Mitglied aktualisiert.",
+      "inactiveError": "Aktualisierung fehlgeschlagen."
     }
   },
   "resultManagement": {
