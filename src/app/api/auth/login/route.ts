@@ -3,7 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { verifyPassword, createSession, setSessionCookie } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
-  const { clubName, nickname, password } = await req.json();
+  const body = await req.json();
+  const clubName = body.clubName?.trim();
+  const nickname = body.nickname?.trim();
+  const password = body.password?.trim();
 
   if (!clubName || !nickname || !password) {
     return NextResponse.json({ error: 'All fields are required.' }, { status: 400 });

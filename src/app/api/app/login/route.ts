@@ -7,7 +7,10 @@ import { verifyPassword } from '@/lib/auth';
 // Returns: { memberId, clubId, nickname, role, token } or error
 export async function POST(req: NextRequest) {
   try {
-    const { clubName, nickname, password } = await req.json();
+    const body = await req.json();
+    const clubName = body.clubName?.trim();
+    const nickname = body.nickname?.trim();
+    const password = body.password?.trim();
     if (!clubName || !nickname || !password) {
       return NextResponse.json({ error: 'Missing credentials' }, { status: 400 });
     }
