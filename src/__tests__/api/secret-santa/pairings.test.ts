@@ -41,16 +41,17 @@ describe('GET /api/secret-santa/pairings', () => {
     expect(res.status).toBe(403);
   });
 
-  it('returns club members with their current partner', async () => {
+  it('returns club members with their current partner and inactive status', async () => {
     mockGetCurrentMember.mockResolvedValue(admin);
     mockMemberFindMany.mockResolvedValue([
-      { id: 2, nickname: 'Alice', pic: 'none', secretSantaPartner: { id: 3, nickname: 'Bob', pic: 'none' } },
+      { id: 2, nickname: 'Alice', pic: 'none', isInactive: false, secretSantaPartner: { id: 3, nickname: 'Bob', pic: 'none' } },
     ]);
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(1);
     expect(body[0].secretSantaPartner.nickname).toBe('Bob');
+    expect(body[0].isInactive).toBe(false);
     expect(mockMemberFindMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { clubId: admin.clubId } })
     );
@@ -94,6 +95,22 @@ describe('PATCH /api/secret-santa/pairings', () => {
   it('clears the pairing when receiverId is null', async () => {
     mockGetCurrentMember.mockResolvedValue(admin);
     mockMemberFindFirst.mockResolvedValueOnce({ id: 2 });
+    const res = await PATCH(makeRequest({ giverId: 2, receiverId: null }));
+    expect(res.status).toBe(200);
+    expect(mockTransaction).toHaveBeenCalled();
+  });
+
+  it('returns 422 when the chosen receiver is inactive', async () => {
+    mockGetCurrentMember.mockResolvedValue(admin);
+    mockMemberFindFirst.mockResolvedValueOnce({ id: 2 }).mockResolvedValueOnce({ id: 3, isInactive: true });
+    const res = await PATCH(makeRequest({ giverId: 2, receiverId: 3 }));
+    expect(res.status).toBe(422);
+    expect(mockTransaction).not.toHaveBeenCalled();
+  });
+
+  it('allows clearing an inactive giver\'s stale pairing', async () => {
+    mockGetCurrentMember.mockResolvedValue(admin);
+    mockMemberFindFirst.mockResolvedValueOnce({ id: 2, isInactive: true });
     const res = await PATCH(makeRequest({ giverId: 2, receiverId: null }));
     expect(res.status).toBe(200);
     expect(mockTransaction).toHaveBeenCalled();

@@ -17,6 +17,7 @@ export async function GET() {
       id: true,
       nickname: true,
       pic: true,
+      isInactive: true,
       secretSantaPartner: { select: { id: true, nickname: true, pic: true } },
     },
   });
@@ -47,6 +48,9 @@ export async function PATCH(req: NextRequest) {
   ]);
   if (!giver || (receiverId !== null && !receiver)) {
     return NextResponse.json({ error: 'invalidMember' }, { status: 404 });
+  }
+  if (receiver?.isInactive) {
+    return NextResponse.json({ error: 'inactiveReceiver' }, { status: 422 });
   }
 
   const year = new Date().getFullYear();

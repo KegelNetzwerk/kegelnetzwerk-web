@@ -33,7 +33,7 @@ export async function POST(_req: NextRequest) {
 
   const [members, recentHistory] = await Promise.all([
     prisma.member.findMany({
-      where: { clubId: current.clubId },
+      where: { clubId: current.clubId, isInactive: false },
       select: { id: true },
     }),
     prisma.secretSantaAssignment.findMany({

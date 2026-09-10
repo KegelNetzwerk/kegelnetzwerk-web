@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import Modal from '@/components/admin/AdminModal';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Shuffle, Eye, AlertTriangle } from 'lucide-react';
+import { Shuffle, Eye, AlertTriangle, Info, ToggleLeft, ToggleRight } from 'lucide-react';
 
 interface Partner {
   id: number;
@@ -18,6 +18,7 @@ interface PairingRow {
   id: number;
   nickname: string;
   pic: string;
+  isInactive: boolean;
   secretSantaPartner: Partner | null;
 }
 
@@ -54,6 +55,8 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
     }
     return counts;
   }, [pairings]);
+
+  const inactiveMembers = useMemo(() => (pairings ?? []).filter((row) => row.isInactive), [pairings]);
 
   useEffect(() => {
     if (isAdmin) fetchPairings();
@@ -100,13 +103,35 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        toast.error(data.error === 'selfAssignment' ? t('pairings.selfAssignmentError') : t('pairings.updateError'));
+        const message =
+          data.error === 'selfAssignment'
+            ? t('pairings.selfAssignmentError')
+            : data.error === 'inactiveReceiver'
+              ? t('pairings.inactiveReceiverError')
+              : t('pairings.updateError');
+        toast.error(message);
         return;
       }
       toast.success(t('pairings.updateSuccess'));
       await fetchPairings();
     } finally {
       setSavingId(null);
+    }
+  }
+
+  async function toggleInactive(row: PairingRow) {
+    const next = !row.isInactive;
+    try {
+      const res = await fetch(`/api/finance/members/${row.id}/inactive`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isInactive: next }),
+      });
+      if (!res.ok) throw new Error('Request failed');
+      setPairings((prev) => prev?.map((m) => (m.id === row.id ? { ...m, isInactive: next } : m)) ?? prev);
+      toast.success(t('pairings.inactiveToggled'));
+    } catch {
+      toast.error(t('pairings.inactiveError'));
     }
   }
 
@@ -158,6 +183,7 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
             <div>
               <h2 className="text-sm font-medium">{t('pairings.title')}</h2>
               <p className="text-sm text-muted-foreground">{t('pairings.description')}</p>
+              <p className="text-sm text-muted-foreground">{t('pairings.inactiveHint')}</p>
             </div>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -178,6 +204,7 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="py-2 pr-4 font-medium">{t('pairings.giver')}</th>
+                    <th className="py-2 pr-4 font-medium">{t('pairings.statusColumn')}</th>
                     <th className="py-2 pr-4 font-medium">{t('pairings.receiver')}</th>
                     <th className="py-2 pr-4 font-medium">{t('pairings.changeAction')}</th>
                     <th className="py-2 font-medium">{t('pairings.warningsColumn')}</th>
@@ -191,6 +218,21 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
                     return (
                     <tr key={row.id} className="border-b last:border-0">
                       <td className="py-2 pr-4">{row.nickname}</td>
+                      <td className="py-2 pr-4">
+                        <button
+                          type="button"
+                          onClick={() => toggleInactive(row)}
+                          className="flex items-center gap-2 cursor-pointer"
+                          aria-label={row.nickname}
+                        >
+                          {row.isInactive
+                            ? <ToggleLeft size={20} className="text-gray-400" />
+                            : <ToggleRight size={20} style={{ color: 'var(--kn-primary, #005982)' }} />}
+                          <span className="text-xs text-muted-foreground">
+                            {row.isInactive ? t('pairings.inactiveLabel') : t('pairings.activeLabel')}
+                          </span>
+                        </button>
+                      </td>
                       <td className="py-2 pr-4">
                         <span>
                           {reveal
@@ -222,7 +264,7 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
                           <option value="">{t('pairings.changePlaceholder')}</option>
                           <option value="clear">{t('pairings.clearOption')}</option>
                           {pairings
-                            .filter((m) => m.id !== row.id)
+                            .filter((m) => m.id !== row.id && !m.isInactive)
                             .map((m) => (
                               <option key={m.id} value={m.id}>
                                 {m.nickname}
@@ -241,10 +283,17 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
                             </span>
                           )}
                           {hasNoReceiver && (
-                            <span className="inline-flex items-center gap-1 text-xs text-destructive">
-                              <AlertTriangle size={13} />
-                              {t('pairings.warningNoReceiver')}
-                            </span>
+                            row.isInactive ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                <Info size={13} />
+                                {t('pairings.inactiveInfo')}
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-xs text-destructive">
+                                <AlertTriangle size={13} />
+                                {t('pairings.warningNoReceiver')}
+                              </span>
+                            )
                           )}
                         </div>
                       </td>
@@ -263,6 +312,16 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
         <Modal onClose={() => setShowAssignConfirm(false)} title={t('assign')}>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">{t('assignConfirm')}</p>
+            {inactiveMembers.length > 0 && (
+              <div className="rounded-lg border bg-gray-50 px-4 py-3 text-sm space-y-2">
+                <p className="text-gray-500">{t('pairings.excludedMembersLabel')}</p>
+                <ul className="space-y-1">
+                  {inactiveMembers.map((m) => (
+                    <li key={m.id} className="font-medium">{m.nickname}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowAssignConfirm(false)}>
                 {tCommon('cancel')}
