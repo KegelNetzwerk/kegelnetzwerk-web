@@ -1,17 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import Modal from '@/components/admin/AdminModal';
 import { toast } from 'sonner';
 import Image from 'next/image';
-import { Shuffle, Eye, AlertTriangle, Info, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Shuffle, Eye, EyeOff, AlertTriangle, Info, ToggleLeft, ToggleRight, ChevronDown, ChevronRight } from 'lucide-react';
 
 interface Partner {
   id: number;
   nickname: string;
   pic: string;
+}
+
+interface HistoryEntry {
+  year: number;
+  receiverNickname: string | null;
+  receiverPic: string | null;
 }
 
 interface PairingRow {
@@ -20,6 +26,7 @@ interface PairingRow {
   pic: string;
   isInactive: boolean;
   secretSantaPartner: Partner | null;
+  history: HistoryEntry[];
 }
 
 interface PendingChange {
@@ -42,9 +49,12 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
   const [assigning, setAssigning] = useState(false);
   const [showAssignConfirm, setShowAssignConfirm] = useState(false);
   const [pairings, setPairings] = useState<PairingRow[] | null>(null);
-  const [reveal, setReveal] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [revealedCurrentIds, setRevealedCurrentIds] = useState<Set<number>>(new Set());
+  const [revealedHistoryIds, setRevealedHistoryIds] = useState<Set<number>>(new Set());
+  const currentYear = new Date().getFullYear();
 
   const receivedCounts = useMemo(() => {
     const counts = new Map<number, number>();
@@ -119,6 +129,25 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
     }
   }
 
+  function toggleSetMember(set: Set<number>, id: number): Set<number> {
+    const next = new Set(set);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    return next;
+  }
+
+  function toggleExpand(id: number) {
+    setExpandedIds((prev) => toggleSetMember(prev, id));
+  }
+
+  function toggleRevealCurrent(id: number) {
+    setRevealedCurrentIds((prev) => toggleSetMember(prev, id));
+  }
+
+  function toggleRevealHistory(id: number) {
+    setRevealedHistoryIds((prev) => toggleSetMember(prev, id));
+  }
+
   async function toggleInactive(row: PairingRow) {
     const next = !row.isInactive;
     try {
@@ -179,21 +208,10 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
       {/* Admin pairings table */}
       {isAdmin && (
         <div className="rounded-lg border p-6 space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h2 className="text-sm font-medium">{t('pairings.title')}</h2>
-              <p className="text-sm text-muted-foreground">{t('pairings.description')}</p>
-              <p className="text-sm text-muted-foreground">{t('pairings.inactiveHint')}</p>
-            </div>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={reveal}
-                onChange={(e) => setReveal(e.target.checked)}
-              />
-              <Eye size={15} />
-              <span>{t('pairings.reveal')}</span>
-            </label>
+          <div>
+            <h2 className="text-sm font-medium">{t('pairings.title')}</h2>
+            <p className="text-sm text-muted-foreground">{t('pairings.description')}</p>
+            <p className="text-sm text-muted-foreground">{t('pairings.inactiveHint')}</p>
           </div>
 
           {pairings === null ? (
@@ -203,11 +221,13 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
+                    <th className="py-2 pr-2 font-medium sr-only">{t('pairings.historyTitle')}</th>
                     <th className="py-2 pr-4 font-medium">{t('pairings.giver')}</th>
                     <th className="py-2 pr-4 font-medium">{t('pairings.statusColumn')}</th>
                     <th className="py-2 pr-4 font-medium">{t('pairings.receiver')}</th>
                     <th className="py-2 pr-4 font-medium">{t('pairings.changeAction')}</th>
-                    <th className="py-2 font-medium">{t('pairings.warningsColumn')}</th>
+                    <th className="py-2 pr-4 font-medium">{t('pairings.warningsColumn')}</th>
+                    <th className="py-2 font-medium">{t('pairings.revealColumn')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -215,8 +235,21 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
                     const isDuplicate =
                       !!row.secretSantaPartner && (receivedCounts.get(row.secretSantaPartner.id) ?? 0) > 1;
                     const hasNoReceiver = (receivedCounts.get(row.id) ?? 0) === 0;
+                    const isExpanded = expandedIds.has(row.id);
                     return (
-                    <tr key={row.id} className="border-b last:border-0">
+                    <Fragment key={row.id}>
+                    <tr className="border-b last:border-0">
+                      <td className="py-2 pr-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(row.id)}
+                          className="cursor-pointer text-muted-foreground"
+                          aria-label={t('pairings.historyTitle')}
+                          aria-expanded={isExpanded}
+                        >
+                          {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                        </button>
+                      </td>
                       <td className="py-2 pr-4">{row.nickname}</td>
                       <td className="py-2 pr-4">
                         <button
@@ -235,7 +268,7 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
                       </td>
                       <td className="py-2 pr-4">
                         <span>
-                          {reveal
+                          {revealedCurrentIds.has(row.id)
                             ? (row.secretSantaPartner ? row.secretSantaPartner.nickname : t('pairings.none'))
                             : t('pairings.hidden')}
                         </span>
@@ -278,7 +311,9 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
                             <span className="inline-flex items-center gap-1 text-xs text-destructive">
                               <AlertTriangle size={13} />
                               {t('pairings.warningDuplicate', {
-                                name: reveal && row.secretSantaPartner ? row.secretSantaPartner.nickname : t('pairings.hidden'),
+                                name: revealedCurrentIds.has(row.id) && row.secretSantaPartner
+                                  ? row.secretSantaPartner.nickname
+                                  : t('pairings.hidden'),
                               })}
                             </span>
                           )}
@@ -297,7 +332,57 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
                           )}
                         </div>
                       </td>
+                      <td className="py-2">
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleRevealCurrent(row.id)}
+                            className="cursor-pointer inline-flex items-center gap-1 text-xs text-muted-foreground"
+                            aria-pressed={revealedCurrentIds.has(row.id)}
+                          >
+                            {revealedCurrentIds.has(row.id) ? <EyeOff size={14} /> : <Eye size={14} />}
+                            <span>{t('pairings.revealCurrent')}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggleRevealHistory(row.id)}
+                            className="cursor-pointer inline-flex items-center gap-1 text-xs text-muted-foreground"
+                            aria-pressed={revealedHistoryIds.has(row.id)}
+                          >
+                            {revealedHistoryIds.has(row.id) ? <EyeOff size={14} /> : <Eye size={14} />}
+                            <span>{t('pairings.revealHistory')}</span>
+                          </button>
+                        </div>
+                      </td>
                     </tr>
+                    {isExpanded && (
+                      <tr className="border-b last:border-0 bg-muted/30">
+                        <td colSpan={7} className="py-3 px-4">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">{t('pairings.historyTitle')}</p>
+                          {row.history.length === 0 ? (
+                            <p className="text-xs text-muted-foreground">{t('pairings.historyEmpty')}</p>
+                          ) : (
+                            <ul className="space-y-1 text-sm max-w-xs">
+                              {row.history.map((h) => {
+                                const isCurrentYear = h.year === currentYear;
+                                const isRevealed = isCurrentYear
+                                  ? revealedHistoryIds.has(row.id) && revealedCurrentIds.has(row.id)
+                                  : revealedHistoryIds.has(row.id);
+                                return (
+                                  <li key={h.year} className="flex justify-between gap-4">
+                                    <span className="text-gray-500">{h.year}</span>
+                                    <span className="font-medium">
+                                      {isRevealed ? (h.receiverNickname ?? t('pairings.none')) : t('pairings.hidden')}
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                    </Fragment>
                     );
                   })}
                 </tbody>

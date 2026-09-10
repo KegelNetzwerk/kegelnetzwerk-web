@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 jest.mock('@/lib/prisma', () => ({
   prisma: {
     member: { findMany: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
-    secretSantaAssignment: { upsert: jest.fn(), deleteMany: jest.fn() },
+    secretSantaAssignment: { findMany: jest.fn(), upsert: jest.fn(), deleteMany: jest.fn() },
     $transaction: jest.fn(),
   },
 }));
@@ -16,6 +16,7 @@ import { getCurrentMember } from '@/lib/auth';
 const mockGetCurrentMember = getCurrentMember as jest.Mock;
 const mockMemberFindMany = prisma.member.findMany as jest.Mock;
 const mockMemberFindFirst = prisma.member.findFirst as jest.Mock;
+const mockAssignmentFindMany = prisma.secretSantaAssignment.findMany as jest.Mock;
 const mockTransaction = prisma.$transaction as jest.Mock;
 
 const admin = { id: 1, clubId: 10, role: 'ADMIN' };
@@ -32,6 +33,7 @@ function makeRequest(body: object) {
 beforeEach(() => {
   jest.clearAllMocks();
   mockTransaction.mockResolvedValue(undefined);
+  mockAssignmentFindMany.mockResolvedValue([]);
 });
 
 describe('GET /api/secret-santa/pairings', () => {
@@ -55,6 +57,40 @@ describe('GET /api/secret-santa/pairings', () => {
     expect(mockMemberFindMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { clubId: admin.clubId } })
     );
+  });
+
+  it("includes each member's own yearly history", async () => {
+    const currentYear = new Date().getFullYear();
+    mockGetCurrentMember.mockResolvedValue(admin);
+    mockMemberFindMany.mockResolvedValue([
+      { id: 2, nickname: 'Alice', pic: 'none', isInactive: false, secretSantaPartner: null },
+    ]);
+    mockAssignmentFindMany.mockResolvedValueOnce([
+      { giverId: 2, year: currentYear - 1, receiver: { nickname: 'Carol', pic: 'none' } },
+    ]);
+    mockAssignmentFindMany.mockResolvedValueOnce([{ year: currentYear - 1 }]);
+    const res = await GET();
+    const body = await res.json();
+    expect(body[0].history).toEqual([
+      { year: currentYear - 1, receiverNickname: 'Carol', receiverPic: 'none' },
+    ]);
+  });
+
+  it("does not leak other members' assignments into this member's history", async () => {
+    const currentYear = new Date().getFullYear();
+    mockGetCurrentMember.mockResolvedValue(admin);
+    mockMemberFindMany.mockResolvedValue([
+      { id: 2, nickname: 'Alice', pic: 'none', isInactive: false, secretSantaPartner: null },
+    ]);
+    mockAssignmentFindMany.mockResolvedValueOnce([
+      { giverId: 999, year: currentYear, receiver: { nickname: 'Someone Else', pic: 'none' } },
+    ]);
+    mockAssignmentFindMany.mockResolvedValueOnce([{ year: currentYear }]);
+    const res = await GET();
+    const body = await res.json();
+    // The club has a row for `currentYear`, but it belongs to a different giver — Alice's
+    // own history must not pick up "Someone Else" as her receiver for that year.
+    expect(body[0].history).toEqual([{ year: currentYear, receiverNickname: null, receiverPic: null }]);
   });
 });
 
