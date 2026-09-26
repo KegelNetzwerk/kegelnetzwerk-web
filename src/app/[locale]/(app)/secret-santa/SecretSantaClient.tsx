@@ -68,14 +68,14 @@ export default function SecretSantaClient({ isAdmin, partner: initialPartner }: 
 
   const inactiveMembers = useMemo(() => (pairings ?? []).filter((row) => row.isInactive), [pairings]);
 
-  useEffect(() => {
-    if (isAdmin) fetchPairings();
-  }, [isAdmin]);
-
   async function fetchPairings() {
     const res = await fetch('/api/secret-santa/pairings');
     if (res.ok) setPairings(await res.json());
   }
+
+  useEffect(() => {
+    if (isAdmin) fetchPairings();
+  }, [isAdmin]);
 
   async function confirmAssign() {
     setShowAssignConfirm(false);

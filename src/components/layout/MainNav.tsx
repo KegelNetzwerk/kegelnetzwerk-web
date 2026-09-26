@@ -24,8 +24,12 @@ export default function MainNav({ isAdmin, locale, nickname, memberPic, clubPic,
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Close menu on navigation
-  useEffect(() => { setMenuOpen(false); }, [pathname]);
+  // Close menu on navigation (adjust state during render, not in an effect)
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setMenuOpen(false);
+  }
 
   // Lock body scroll when menu open
   useEffect(() => {
