@@ -11,6 +11,15 @@ import { Label } from '@/components/ui/label';
 
 const ScoreChart = dynamic(() => import('./ScoreChart'), { ssr: false });
 
+type TableSortKey = 'nickname' | 'total' | 'rawTotal' | `session:${number}`;
+
+function SortIcon({ activeSort, colKey }: { activeSort: { key: TableSortKey; asc: boolean } | null; colKey: TableSortKey }) {
+  if (activeSort?.key !== colKey) return <ArrowUpDown size={11} className="inline ml-1 opacity-40" />;
+  return activeSort.asc
+    ? <ArrowUp size={11} className="inline ml-1" />
+    : <ArrowDown size={11} className="inline ml-1" />;
+}
+
 interface GameOption {
   id: number;
   name: string;
@@ -180,7 +189,6 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
   }
 
   // Local table sort (client-side, independent of API sort)
-  type TableSortKey = 'nickname' | 'total' | 'rawTotal' | `session:${number}`;
   const [tableSort, setTableSort] = useState<{ key: TableSortKey; asc: boolean } | null>(null);
 
   function toggleTableSort(key: TableSortKey) {
@@ -212,13 +220,6 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
       if (typeof va === 'string') return asc ? va.localeCompare(vb as string) : (vb as string).localeCompare(va);
       return asc ? (va as number) - (vb as number) : (vb as number) - (va as number);
     });
-  }
-
-  function SortIcon({ colKey }: { colKey: TableSortKey }) {
-    if (tableSort?.key !== colKey) return <ArrowUpDown size={11} className="inline ml-1 opacity-40" />;
-    return tableSort.asc
-      ? <ArrowUp size={11} className="inline ml-1" />
-      : <ArrowDown size={11} className="inline ml-1" />;
   }
 
   const unitLabel = unit === 'EURO' ? '€' : t('unitPoints');
@@ -429,7 +430,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                     className="px-2 py-2 text-left cursor-pointer select-none rounded-tl-xl"
                     onClick={() => toggleTableSort('nickname')}
                   >
-                    {t('name')}<SortIcon colKey="nickname" />
+                    {t('name')}<SortIcon activeSort={tableSort} colKey="nickname" />
                   </th>
                   {data.sessions.map((s) => {
                     const d = new Date(s.date);
@@ -443,7 +444,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                       >
                         <div>{day}</div>
                         <div className="opacity-75">{year}</div>
-                        <SortIcon colKey={`session:${s.sessionGroup}`} />
+                        <SortIcon activeSort={tableSort} colKey={`session:${s.sessionGroup}`} />
                       </th>
                     );
                   })}
@@ -453,13 +454,13 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                         className="px-1 py-2 text-right cursor-pointer select-none leading-tight"
                         onClick={() => toggleTableSort('rawTotal')}
                       >
-                        <div>{t('totalAll')}</div><SortIcon colKey="rawTotal" />
+                        <div>{t('totalAll')}</div><SortIcon activeSort={tableSort} colKey="rawTotal" />
                       </th>
                       <th
                         className="px-1 py-2 text-right cursor-pointer select-none leading-tight rounded-tr-xl"
                         onClick={() => toggleTableSort('total')}
                       >
-                        <div>{t('totalFiltered')}</div><SortIcon colKey="total" />
+                        <div>{t('totalFiltered')}</div><SortIcon activeSort={tableSort} colKey="total" />
                       </th>
                     </>
                   ) : (
@@ -467,7 +468,7 @@ export default function ScoringClient({ games, defaultScoringFilter }: ScoringCl
                       className="px-1 py-2 text-right cursor-pointer select-none rounded-tr-xl"
                       onClick={() => toggleTableSort('total')}
                     >
-                      {t('total')}<SortIcon colKey="total" />
+                      {t('total')}<SortIcon activeSort={tableSort} colKey="total" />
                     </th>
                   )}
                 </tr>

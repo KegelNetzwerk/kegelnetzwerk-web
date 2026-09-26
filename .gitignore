@@ -22,7 +22,8 @@
 
 # misc
 .DS_Store
-.claude/
+.claude/*
+!.claude/skills/
 *.pem
 
 # debug
